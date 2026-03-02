@@ -7,10 +7,10 @@ import { FileCheck, Calendar, DollarSign, User, Loader } from 'lucide-react';
 interface Application {
   id: string;
   created_at: string;
-  customer_name: string;
-  customer_email: string;
-  loan_amount: number;
-  term_months: number;
+  full_name: string;
+  email: string;
+  project_cost: number;
+  loan_term_years: number;
   status: string;
 }
 
@@ -31,7 +31,7 @@ export function Submissions() {
       setLoading(true);
       const { data, error } = await supabase
         .from('applications')
-        .select('id, created_at, customer_name, customer_email, loan_amount, term_months, status')
+        .select('id, created_at, full_name, email, project_cost, loan_term_years, status')
         .eq('installer_id', installerProfile.id)
         .order('created_at', { ascending: false });
 
@@ -98,9 +98,9 @@ export function Submissions() {
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-[#3A475B] mb-1">
-                            {app.customer_name}
+                            {app.full_name}
                           </h3>
-                          <p className="text-sm text-gray-600">{app.customer_email}</p>
+                          <p className="text-sm text-gray-600">{app.email}</p>
                         </div>
                       </div>
                       <span
@@ -118,7 +118,7 @@ export function Submissions() {
                         <div>
                           <div className="text-xs text-gray-600">Loan Amount</div>
                           <div className="font-bold text-[#3A475B]">
-                            ${app.loan_amount?.toLocaleString() || '0'}
+                            ${app.project_cost?.toLocaleString() || '0'}
                           </div>
                         </div>
                       </div>
@@ -128,7 +128,7 @@ export function Submissions() {
                         <div>
                           <div className="text-xs text-gray-600">Term</div>
                           <div className="font-bold text-[#3A475B]">
-                            {app.term_months} months
+                            {app.loan_term_years} years
                           </div>
                         </div>
                       </div>
