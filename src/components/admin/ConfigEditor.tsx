@@ -108,14 +108,11 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
         throw new Error('Configuration not found');
       }
 
-      const { error } = await supabase
-        .from('calculator_config')
-        .update({
-          config,
-          enabled: calculatorStates[activeCalculatorType].enabled,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', configRow.id);
+      const { error } = await supabase.rpc('update_calculator_config', {
+        p_type: activeCalculatorType,
+        p_config: config,
+        p_enabled: calculatorStates[activeCalculatorType].enabled
+      });
 
       if (error) throw error;
 
@@ -127,7 +124,7 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
 
       onUpdate();
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+      setMessage({ type: 'error', text: error.message || 'Failed to save configuration' });
     } finally {
       setSaving(false);
     }
@@ -164,10 +161,9 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
         <div
           className={`
             p-4 rounded-lg flex items-center gap-2
-            ${
-              message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
+            ${message.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
             }
           `}
         >
@@ -185,10 +181,9 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
               disabled={loading}
               className={`
                 px-4 py-3 font-semibold whitespace-nowrap transition-colors
-                ${
-                  activeCalculatorType === tab.id
-                    ? 'border-b-2 border-[#28AA48] text-[#28AA48]'
-                    : 'text-gray-600 hover:text-[#3A475B]'
+                ${activeCalculatorType === tab.id
+                  ? 'border-b-2 border-[#28AA48] text-[#28AA48]'
+                  : 'text-gray-600 hover:text-[#3A475B]'
                 }
                 ${loading ? 'opacity-50 cursor-not-allowed' : ''}
               `}
@@ -241,727 +236,727 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
             </div>
           </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Interest Rates</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Interest Rates</h3>
 
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Minimum Interest Rate
-            </label>
-            <input
-              type="number"
-              value={config.interestRateMin}
-              onChange={e => updateConfig({ interestRateMin: Number(e.target.value) })}
-              step="0.001"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Maximum Interest Rate
-            </label>
-            <input
-              type="number"
-              value={config.interestRateMax}
-              onChange={e => updateConfig({ interestRateMax: Number(e.target.value) })}
-              step="0.001"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Rate Strategy
-            </label>
-            <select
-              value={config.rateUsedStrategy}
-              onChange={e => updateConfig({ rateUsedStrategy: e.target.value as any })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="min">Minimum</option>
-              <option value="max">Maximum</option>
-              <option value="midpoint">Midpoint</option>
-              <option value="custom">Custom</option>
-              <option value="term_based">Term-Based</option>
-              <option value="amount_based">Amount-Based</option>
-            </select>
-          </div>
-
-          {config.rateUsedStrategy === 'custom' && (
-            <div>
-              <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                Custom Rate Used
-              </label>
-              <input
-                type="number"
-                value={config.customRateUsed}
-                onChange={e => updateConfig({ customRateUsed: Number(e.target.value) })}
-                step="0.001"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-          )}
-
-          {config.rateUsedStrategy === 'term_based' && (
-            <>
               <div>
                 <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Rate for Loans Under 5 Years
+                  Minimum Interest Rate
                 </label>
                 <input
                   type="number"
-                  value={config.rateUnder5Years}
-                  onChange={e => updateConfig({ rateUnder5Years: Number(e.target.value) })}
-                  step="0.0001"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Currently: {(config.rateUnder5Years * 100).toFixed(2)}%
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Rate for 5 Years and Above
-                </label>
-                <input
-                  type="number"
-                  value={config.rate5YearsAndAbove}
-                  onChange={e => updateConfig({ rate5YearsAndAbove: Number(e.target.value) })}
-                  step="0.0001"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Currently: {(config.rate5YearsAndAbove * 100).toFixed(2)}%
-                </p>
-              </div>
-            </>
-          )}
-
-          {config.rateUsedStrategy === 'amount_based' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newTiers = [...(config.interestRateTiers || [])];
-                    const lastTier = newTiers[newTiers.length - 1];
-                    const newMinAmount = lastTier?.maxAmount ? lastTier.maxAmount + 1 : 100001;
-                    newTiers.push({
-                      minAmount: newMinAmount,
-                      maxAmount: null,
-                      rate: 0.0799
-                    });
-                    updateConfig({ interestRateTiers: newTiers });
-                  }}
-                  className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Tier
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {(config.interestRateTiers || []).map((tier, index) => (
-                  <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 bg-gray-50 rounded-lg">
-                    <div className="col-span-4">
-                      <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                        Min Amount ($)
-                      </label>
-                      <input
-                        type="number"
-                        value={tier.minAmount}
-                        onChange={e => {
-                          const newTiers = [...(config.interestRateTiers || [])];
-                          newTiers[index].minAmount = Number(e.target.value);
-                          updateConfig({ interestRateTiers: newTiers });
-                        }}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <div className="col-span-4">
-                      <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                        Max Amount ($) {index === (config.interestRateTiers || []).length - 1 && '(null = unlimited)'}
-                      </label>
-                      <input
-                        type="number"
-                        value={tier.maxAmount || ''}
-                        onChange={e => {
-                          const newTiers = [...(config.interestRateTiers || [])];
-                          newTiers[index].maxAmount = e.target.value ? Number(e.target.value) : null;
-                          updateConfig({ interestRateTiers: newTiers });
-                        }}
-                        placeholder="Unlimited"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                        Rate (%)
-                      </label>
-                      <input
-                        type="number"
-                        value={(tier.rate * 100).toFixed(2)}
-                        onChange={e => {
-                          const newTiers = [...(config.interestRateTiers || [])];
-                          newTiers[index].rate = Number(e.target.value) / 100;
-                          updateConfig({ interestRateTiers: newTiers });
-                        }}
-                        step="0.01"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newTiers = (config.interestRateTiers || []).filter((_, i) => i !== index);
-                          updateConfig({ interestRateTiers: newTiers });
-                        }}
-                        className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        disabled={(config.interestRateTiers || []).length === 1}
-                      >
-                        <Trash2 className="w-4 h-4 mx-auto" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Repayment Type</h3>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Repayment Type
-            </label>
-            <select
-              value={config.repaymentType}
-              onChange={e => updateConfig({ repaymentType: e.target.value as any })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="amortised">Amortised</option>
-              <option value="interest_only">Interest Only</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="feesEnabled"
-              checked={config.feesEnabled}
-              onChange={e => updateConfig({ feesEnabled: e.target.checked })}
-              className="w-5 h-5 text-[#28AA48] rounded"
-            />
-            <label htmlFor="feesEnabled" className="font-semibold text-[#3A475B]">
-              Enable Fees
-            </label>
-          </div>
-
-          {config.feesEnabled && (
-            <>
-              <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Origination Fee Type
-                </label>
-                <select
-                  value={config.originationFeeType}
-                  onChange={e => updateConfig({ originationFeeType: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="percent">Percentage</option>
-                  <option value="fixed">Fixed Amount</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Origination Fee Value
-                </label>
-                <input
-                  type="number"
-                  value={config.originationFeeValue}
-                  onChange={e => updateConfig({ originationFeeValue: Number(e.target.value) })}
+                  value={config.interestRateMin}
+                  onChange={e => updateConfig({ interestRateMin: Number(e.target.value) })}
                   step="0.001"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="feeCapitalised"
-                  checked={config.feeCapitalised}
-                  onChange={e => updateConfig({ feeCapitalised: e.target.checked })}
-                  className="w-5 h-5 text-[#28AA48] rounded"
-                />
-                <label htmlFor="feeCapitalised" className="font-semibold text-[#3A475B]">
-                  Capitalise Fee
-                </label>
-              </div>
-
               <div>
                 <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Monthly Fee
+                  Maximum Interest Rate
                 </label>
                 <input
                   type="number"
-                  value={config.monthlyFee}
-                  onChange={e => updateConfig({ monthlyFee: Number(e.target.value) })}
-                  step="1"
+                  value={config.interestRateMax}
+                  onChange={e => updateConfig({ interestRateMax: Number(e.target.value) })}
+                  step="0.001"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
-            </>
-          )}
-        </div>
 
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Balloon Payment</h3>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="balloonEnabled"
-              checked={config.balloonEnabled}
-              onChange={e => updateConfig({ balloonEnabled: e.target.checked })}
-              className="w-5 h-5 text-[#28AA48] rounded"
-            />
-            <label htmlFor="balloonEnabled" className="font-semibold text-[#3A475B]">
-              Enable Balloon Payment
-            </label>
-          </div>
-
-          {config.balloonEnabled && (
-            <>
               <div>
                 <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Balloon Type
+                  Rate Strategy
                 </label>
                 <select
-                  value={config.balloonType}
-                  onChange={e => updateConfig({ balloonType: e.target.value as any })}
+                  value={config.rateUsedStrategy}
+                  onChange={e => updateConfig({ rateUsedStrategy: e.target.value as any })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="percent">Percentage</option>
-                  <option value="fixed">Fixed Amount</option>
+                  <option value="min">Minimum</option>
+                  <option value="max">Maximum</option>
+                  <option value="midpoint">Midpoint</option>
+                  <option value="custom">Custom</option>
+                  <option value="term_based">Term-Based</option>
+                  <option value="amount_based">Amount-Based</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Balloon Value
-                </label>
-                <input
-                  type="number"
-                  value={config.balloonValue}
-                  onChange={e => updateConfig({ balloonValue: Number(e.target.value) })}
-                  step="0.01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Approval Settings</h3>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Approval Mode
-            </label>
-            <select
-              value={config.approvalMode}
-              onChange={e => updateConfig({ approvalMode: e.target.value as any })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="multiplier">Multiplier</option>
-              <option value="ltv">Loan-to-Value (LTV)</option>
-            </select>
-          </div>
-
-          {config.approvalMode === 'multiplier' ? (
-            <div>
-              <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                Approval Multiplier
-              </label>
-              <input
-                type="number"
-                value={config.approvalMultiplier}
-                onChange={e => updateConfig({ approvalMultiplier: Number(e.target.value) })}
-                step="0.1"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                Maximum LTV
-              </label>
-              <input
-                type="number"
-                value={config.maxLTV}
-                onChange={e => updateConfig({ maxLTV: Number(e.target.value) })}
-                step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Approval Floor (optional)
-            </label>
-            <input
-              type="number"
-              value={config.approvalFloor || ''}
-              onChange={e => updateConfig({ approvalFloor: Number(e.target.value) || undefined })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Approval Ceiling (optional)
-            </label>
-            <input
-              type="number"
-              value={config.approvalCeiling || ''}
-              onChange={e => updateConfig({ approvalCeiling: Number(e.target.value) || undefined })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Energy Savings</h3>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Default Monthly Energy Savings
-            </label>
-            <input
-              type="number"
-              value={config.defaultMonthlyEnergySavings}
-              onChange={e => updateConfig({ defaultMonthlyEnergySavings: Number(e.target.value) })}
-              step="50"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="allowOverride"
-              checked={config.allowUserEnergySavingsOverride}
-              onChange={e => updateConfig({ allowUserEnergySavingsOverride: e.target.checked })}
-              className="w-5 h-5 text-[#28AA48] rounded"
-            />
-            <label htmlFor="allowOverride" className="font-semibold text-[#3A475B]">
-              Allow User Override
-            </label>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Cost Slider Settings</h3>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Minimum Cost
-            </label>
-            <input
-              type="text"
-              value={config.costSliderMin.toLocaleString('en-US')}
-              onChange={e => {
-                const value = e.target.value.replace(/,/g, '');
-                const numValue = Number(value);
-                if (!isNaN(numValue)) {
-                  updateConfig({ costSliderMin: numValue });
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Maximum Cost
-            </label>
-            <input
-              type="text"
-              value={config.costSliderMax.toLocaleString('en-US')}
-              onChange={e => {
-                const value = e.target.value.replace(/,/g, '');
-                const numValue = Number(value);
-                if (!isNaN(numValue)) {
-                  updateConfig({ costSliderMax: numValue });
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Default Cost
-            </label>
-            <input
-              type="text"
-              value={config.costSliderDefault.toLocaleString('en-US')}
-              onChange={e => {
-                const value = e.target.value.replace(/,/g, '');
-                const numValue = Number(value);
-                if (!isNaN(numValue)) {
-                  updateConfig({ costSliderDefault: numValue });
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Step Size
-            </label>
-            <input
-              type="text"
-              value={config.costSliderStep.toLocaleString('en-US')}
-              onChange={e => {
-                const value = e.target.value.replace(/,/g, '');
-                const numValue = Number(value);
-                if (!isNaN(numValue)) {
-                  updateConfig({ costSliderStep: numValue });
-                }
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-              Max Label
-            </label>
-            <input
-              type="text"
-              value={config.costSliderMaxLabel}
-              onChange={e => updateConfig({ costSliderMaxLabel: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="md:col-span-2 space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Commission Structure</h3>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="commissionEnabled"
-              checked={config.commissionEnabled}
-              onChange={e => updateConfig({ commissionEnabled: e.target.checked })}
-              className="w-5 h-5 text-[#28AA48] rounded"
-            />
-            <label htmlFor="commissionEnabled" className="font-semibold text-[#3A475B]">
-              Enable Commission Calculation
-            </label>
-          </div>
-
-          {config.commissionEnabled && (
-            <>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="gstEnabled"
-                  checked={config.gstEnabled}
-                  onChange={e => updateConfig({ gstEnabled: e.target.checked })}
-                  className="w-5 h-5 text-[#28AA48] rounded"
-                />
-                <label htmlFor="gstEnabled" className="font-semibold text-[#3A475B]">
-                  Add GST to Commission
-                </label>
-              </div>
-
-              {config.gstEnabled && (
+              {config.rateUsedStrategy === 'custom' && (
                 <div>
                   <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                    GST Rate
+                    Custom Rate Used
                   </label>
                   <input
                     type="number"
-                    value={config.gstRate}
-                    onChange={e => updateConfig({ gstRate: Number(e.target.value) })}
+                    value={config.customRateUsed}
+                    onChange={e => updateConfig({ customRateUsed: Number(e.target.value) })}
+                    step="0.001"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              )}
+
+              {config.rateUsedStrategy === 'term_based' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Rate for Loans Under 5 Years
+                    </label>
+                    <input
+                      type="number"
+                      value={config.rateUnder5Years}
+                      onChange={e => updateConfig({ rateUnder5Years: Number(e.target.value) })}
+                      step="0.0001"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Currently: {(config.rateUnder5Years * 100).toFixed(2)}%
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Rate for 5 Years and Above
+                    </label>
+                    <input
+                      type="number"
+                      value={config.rate5YearsAndAbove}
+                      onChange={e => updateConfig({ rate5YearsAndAbove: Number(e.target.value) })}
+                      step="0.0001"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Currently: {(config.rate5YearsAndAbove * 100).toFixed(2)}%
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {config.rateUsedStrategy === 'amount_based' && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newTiers = [...(config.interestRateTiers || [])];
+                        const lastTier = newTiers[newTiers.length - 1];
+                        const newMinAmount = lastTier?.maxAmount ? lastTier.maxAmount + 1 : 100001;
+                        newTiers.push({
+                          minAmount: newMinAmount,
+                          maxAmount: null,
+                          rate: 0.0799
+                        });
+                        updateConfig({ interestRateTiers: newTiers });
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Tier
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(config.interestRateTiers || []).map((tier, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 bg-gray-50 rounded-lg">
+                        <div className="col-span-4">
+                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                            Min Amount ($)
+                          </label>
+                          <input
+                            type="number"
+                            value={tier.minAmount}
+                            onChange={e => {
+                              const newTiers = [...(config.interestRateTiers || [])];
+                              newTiers[index].minAmount = Number(e.target.value);
+                              updateConfig({ interestRateTiers: newTiers });
+                            }}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                            Max Amount ($) {index === (config.interestRateTiers || []).length - 1 && '(null = unlimited)'}
+                          </label>
+                          <input
+                            type="number"
+                            value={tier.maxAmount || ''}
+                            onChange={e => {
+                              const newTiers = [...(config.interestRateTiers || [])];
+                              newTiers[index].maxAmount = e.target.value ? Number(e.target.value) : null;
+                              updateConfig({ interestRateTiers: newTiers });
+                            }}
+                            placeholder="Unlimited"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div className="col-span-3">
+                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                            Rate (%)
+                          </label>
+                          <input
+                            type="number"
+                            value={(tier.rate * 100).toFixed(2)}
+                            onChange={e => {
+                              const newTiers = [...(config.interestRateTiers || [])];
+                              newTiers[index].rate = Number(e.target.value) / 100;
+                              updateConfig({ interestRateTiers: newTiers });
+                            }}
+                            step="0.01"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newTiers = (config.interestRateTiers || []).filter((_, i) => i !== index);
+                              updateConfig({ interestRateTiers: newTiers });
+                            }}
+                            className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            disabled={(config.interestRateTiers || []).length === 1}
+                          >
+                            <Trash2 className="w-4 h-4 mx-auto" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Repayment Type</h3>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Repayment Type
+                </label>
+                <select
+                  value={config.repaymentType}
+                  onChange={e => updateConfig({ repaymentType: e.target.value as any })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="amortised">Amortised</option>
+                  <option value="interest_only">Interest Only</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="feesEnabled"
+                  checked={config.feesEnabled}
+                  onChange={e => updateConfig({ feesEnabled: e.target.checked })}
+                  className="w-5 h-5 text-[#28AA48] rounded"
+                />
+                <label htmlFor="feesEnabled" className="font-semibold text-[#3A475B]">
+                  Enable Fees
+                </label>
+              </div>
+
+              {config.feesEnabled && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Origination Fee Type
+                    </label>
+                    <select
+                      value={config.originationFeeType}
+                      onChange={e => updateConfig({ originationFeeType: e.target.value as any })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="percent">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Origination Fee Value
+                    </label>
+                    <input
+                      type="number"
+                      value={config.originationFeeValue}
+                      onChange={e => updateConfig({ originationFeeValue: Number(e.target.value) })}
+                      step="0.001"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="feeCapitalised"
+                      checked={config.feeCapitalised}
+                      onChange={e => updateConfig({ feeCapitalised: e.target.checked })}
+                      className="w-5 h-5 text-[#28AA48] rounded"
+                    />
+                    <label htmlFor="feeCapitalised" className="font-semibold text-[#3A475B]">
+                      Capitalise Fee
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Monthly Fee
+                    </label>
+                    <input
+                      type="number"
+                      value={config.monthlyFee}
+                      onChange={e => updateConfig({ monthlyFee: Number(e.target.value) })}
+                      step="1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Balloon Payment</h3>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="balloonEnabled"
+                  checked={config.balloonEnabled}
+                  onChange={e => updateConfig({ balloonEnabled: e.target.checked })}
+                  className="w-5 h-5 text-[#28AA48] rounded"
+                />
+                <label htmlFor="balloonEnabled" className="font-semibold text-[#3A475B]">
+                  Enable Balloon Payment
+                </label>
+              </div>
+
+              {config.balloonEnabled && (
+                <>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Balloon Type
+                    </label>
+                    <select
+                      value={config.balloonType}
+                      onChange={e => updateConfig({ balloonType: e.target.value as any })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="percent">Percentage</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Balloon Value
+                    </label>
+                    <input
+                      type="number"
+                      value={config.balloonValue}
+                      onChange={e => updateConfig({ balloonValue: Number(e.target.value) })}
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Approval Settings</h3>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Approval Mode
+                </label>
+                <select
+                  value={config.approvalMode}
+                  onChange={e => updateConfig({ approvalMode: e.target.value as any })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="multiplier">Multiplier</option>
+                  <option value="ltv">Loan-to-Value (LTV)</option>
+                </select>
+              </div>
+
+              {config.approvalMode === 'multiplier' ? (
+                <div>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                    Approval Multiplier
+                  </label>
+                  <input
+                    type="number"
+                    value={config.approvalMultiplier}
+                    onChange={e => updateConfig({ approvalMultiplier: Number(e.target.value) })}
+                    step="0.1"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                    Maximum LTV
+                  </label>
+                  <input
+                    type="number"
+                    value={config.maxLTV}
+                    onChange={e => updateConfig({ maxLTV: Number(e.target.value) })}
                     step="0.01"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Currently: {(config.gstRate * 100).toFixed(0)}%
-                  </p>
                 </div>
               )}
 
               <div>
-                <label className="block font-semibold text-[#3A475B] mb-2">
-                  Application Fee (inc. GST)
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Approval Floor (optional)
                 </label>
                 <input
                   type="number"
-                  value={config.applicationFee || 649}
-                  onChange={e => updateConfig({ applicationFee: Number(e.target.value) })}
-                  step="0.01"
+                  value={config.approvalFloor || ''}
+                  onChange={e => updateConfig({ approvalFloor: Number(e.target.value) || undefined })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  This fee is automatically added to all loans but hidden from public quotes
-                </p>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#3A475B] mb-2">
-                  PPSR Fee (inc. GST)
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Approval Ceiling (optional)
                 </label>
                 <input
                   type="number"
-                  value={config.ppsrFee || 6}
-                  onChange={e => updateConfig({ ppsrFee: Number(e.target.value) })}
-                  step="0.01"
+                  value={config.approvalCeiling || ''}
+                  onChange={e => updateConfig({ approvalCeiling: Number(e.target.value) || undefined })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  This fee is automatically added to all loans but hidden from public quotes
-                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Energy Savings</h3>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Default Monthly Energy Savings
+                </label>
+                <input
+                  type="number"
+                  value={config.defaultMonthlyEnergySavings}
+                  onChange={e => updateConfig({ defaultMonthlyEnergySavings: Number(e.target.value) })}
+                  step="50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
               </div>
 
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  id="commissionCapitalised"
-                  checked={config.commissionCapitalised}
-                  onChange={e => updateConfig({ commissionCapitalised: e.target.checked })}
+                  id="allowOverride"
+                  checked={config.allowUserEnergySavingsOverride}
+                  onChange={e => updateConfig({ allowUserEnergySavingsOverride: e.target.checked })}
                   className="w-5 h-5 text-[#28AA48] rounded"
                 />
-                <label htmlFor="commissionCapitalised" className="font-semibold text-[#3A475B]">
-                  Add Commission to Loan Amount
+                <label htmlFor="allowOverride" className="font-semibold text-[#3A475B]">
+                  Allow User Override
                 </label>
               </div>
-              <p className="text-xs text-gray-600 -mt-3 ml-7">
-                When enabled, commission will be added to the total financed amount and included in monthly payments.
-              </p>
+            </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="font-semibold text-[#3A475B]">Commission Tiers</h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newTiers = [...config.commissionTiers];
-                      const lastTier = newTiers[newTiers.length - 1];
-                      const newMinAmount = lastTier?.maxAmount || 0;
-                      newTiers.push({
-                        minAmount: newMinAmount,
-                        maxAmount: newMinAmount + 50000,
-                        percentage: 0.01
-                      });
-                      updateConfig({ commissionTiers: newTiers });
-                    }}
-                    className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Tier
-                  </button>
-                </div>
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Cost Slider Settings</h3>
 
-                <div className="space-y-3">
-                  {config.commissionTiers.map((tier, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 bg-gray-50 rounded-lg">
-                      <div className="col-span-4">
-                        <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                          Min Amount ($)
-                        </label>
-                        <input
-                          type="number"
-                          value={tier.minAmount}
-                          onChange={e => {
-                            const newTiers = [...config.commissionTiers];
-                            newTiers[index].minAmount = Number(e.target.value);
-                            updateConfig({ commissionTiers: newTiers });
-                          }}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      <div className="col-span-4">
-                        <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                          Max Amount ($) {index === config.commissionTiers.length - 1 && '(null = unlimited)'}
-                        </label>
-                        <input
-                          type="number"
-                          value={tier.maxAmount || ''}
-                          onChange={e => {
-                            const newTiers = [...config.commissionTiers];
-                            newTiers[index].maxAmount = e.target.value ? Number(e.target.value) : null;
-                            updateConfig({ commissionTiers: newTiers });
-                          }}
-                          placeholder="Unlimited"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      <div className="col-span-3">
-                        <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                          Rate (%)
-                        </label>
-                        <input
-                          type="number"
-                          value={Math.round(tier.percentage * 100 * 100) / 100}
-                          onChange={e => {
-                            const newTiers = [...config.commissionTiers];
-                            newTiers[index].percentage = Number(e.target.value) / 100;
-                            updateConfig({ commissionTiers: newTiers });
-                          }}
-                          step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      <div className="col-span-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newTiers = config.commissionTiers.filter((_, i) => i !== index);
-                            updateConfig({ commissionTiers: newTiers });
-                          }}
-                          className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                          disabled={config.commissionTiers.length === 1}
-                        >
-                          <Trash2 className="w-4 h-4 mx-auto" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Minimum Cost
+                </label>
+                <input
+                  type="text"
+                  value={config.costSliderMin.toLocaleString('en-US')}
+                  onChange={e => {
+                    const value = e.target.value.replace(/,/g, '');
+                    const numValue = Number(value);
+                    if (!isNaN(numValue)) {
+                      updateConfig({ costSliderMin: numValue });
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
               </div>
-            </>
-          )}
-        </div>
 
-        <div className="md:col-span-2 space-y-6">
-          <h3 className="text-lg font-bold text-[#3A475B]">Disclaimer Text</h3>
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Maximum Cost
+                </label>
+                <input
+                  type="text"
+                  value={config.costSliderMax.toLocaleString('en-US')}
+                  onChange={e => {
+                    const value = e.target.value.replace(/,/g, '');
+                    const numValue = Number(value);
+                    if (!isNaN(numValue)) {
+                      updateConfig({ costSliderMax: numValue });
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
 
-          <div>
-            <textarea
-              value={config.disclaimerText}
-              onChange={e => updateConfig({ disclaimerText: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Default Cost
+                </label>
+                <input
+                  type="text"
+                  value={config.costSliderDefault.toLocaleString('en-US')}
+                  onChange={e => {
+                    const value = e.target.value.replace(/,/g, '');
+                    const numValue = Number(value);
+                    if (!isNaN(numValue)) {
+                      updateConfig({ costSliderDefault: numValue });
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Step Size
+                </label>
+                <input
+                  type="text"
+                  value={config.costSliderStep.toLocaleString('en-US')}
+                  onChange={e => {
+                    const value = e.target.value.replace(/,/g, '');
+                    const numValue = Number(value);
+                    if (!isNaN(numValue)) {
+                      updateConfig({ costSliderStep: numValue });
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Max Label
+                </label>
+                <input
+                  type="text"
+                  value={config.costSliderMaxLabel}
+                  onChange={e => updateConfig({ costSliderMaxLabel: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-2 space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Commission Structure</h3>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="commissionEnabled"
+                  checked={config.commissionEnabled}
+                  onChange={e => updateConfig({ commissionEnabled: e.target.checked })}
+                  className="w-5 h-5 text-[#28AA48] rounded"
+                />
+                <label htmlFor="commissionEnabled" className="font-semibold text-[#3A475B]">
+                  Enable Commission Calculation
+                </label>
+              </div>
+
+              {config.commissionEnabled && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="gstEnabled"
+                      checked={config.gstEnabled}
+                      onChange={e => updateConfig({ gstEnabled: e.target.checked })}
+                      className="w-5 h-5 text-[#28AA48] rounded"
+                    />
+                    <label htmlFor="gstEnabled" className="font-semibold text-[#3A475B]">
+                      Add GST to Commission
+                    </label>
+                  </div>
+
+                  {config.gstEnabled && (
+                    <div>
+                      <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                        GST Rate
+                      </label>
+                      <input
+                        type="number"
+                        value={config.gstRate}
+                        onChange={e => updateConfig({ gstRate: Number(e.target.value) })}
+                        step="0.01"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Currently: {(config.gstRate * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-semibold text-[#3A475B] mb-2">
+                      Application Fee (inc. GST)
+                    </label>
+                    <input
+                      type="number"
+                      value={config.applicationFee || 649}
+                      onChange={e => updateConfig({ applicationFee: Number(e.target.value) })}
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This fee is automatically added to all loans but hidden from public quotes
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-[#3A475B] mb-2">
+                      PPSR Fee (inc. GST)
+                    </label>
+                    <input
+                      type="number"
+                      value={config.ppsrFee || 6}
+                      onChange={e => updateConfig({ ppsrFee: Number(e.target.value) })}
+                      step="0.01"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This fee is automatically added to all loans but hidden from public quotes
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="commissionCapitalised"
+                      checked={config.commissionCapitalised}
+                      onChange={e => updateConfig({ commissionCapitalised: e.target.checked })}
+                      className="w-5 h-5 text-[#28AA48] rounded"
+                    />
+                    <label htmlFor="commissionCapitalised" className="font-semibold text-[#3A475B]">
+                      Add Commission to Loan Amount
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-600 -mt-3 ml-7">
+                    When enabled, commission will be added to the total financed amount and included in monthly payments.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold text-[#3A475B]">Commission Tiers</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newTiers = [...config.commissionTiers];
+                          const lastTier = newTiers[newTiers.length - 1];
+                          const newMinAmount = lastTier?.maxAmount || 0;
+                          newTiers.push({
+                            minAmount: newMinAmount,
+                            maxAmount: newMinAmount + 50000,
+                            percentage: 0.01
+                          });
+                          updateConfig({ commissionTiers: newTiers });
+                        }}
+                        className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Tier
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {config.commissionTiers.map((tier, index) => (
+                        <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 bg-gray-50 rounded-lg">
+                          <div className="col-span-4">
+                            <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                              Min Amount ($)
+                            </label>
+                            <input
+                              type="number"
+                              value={tier.minAmount}
+                              onChange={e => {
+                                const newTiers = [...config.commissionTiers];
+                                newTiers[index].minAmount = Number(e.target.value);
+                                updateConfig({ commissionTiers: newTiers });
+                              }}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div className="col-span-4">
+                            <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                              Max Amount ($) {index === config.commissionTiers.length - 1 && '(null = unlimited)'}
+                            </label>
+                            <input
+                              type="number"
+                              value={tier.maxAmount || ''}
+                              onChange={e => {
+                                const newTiers = [...config.commissionTiers];
+                                newTiers[index].maxAmount = e.target.value ? Number(e.target.value) : null;
+                                updateConfig({ commissionTiers: newTiers });
+                              }}
+                              placeholder="Unlimited"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div className="col-span-3">
+                            <label className="block text-xs font-semibold text-[#3A475B] mb-1">
+                              Rate (%)
+                            </label>
+                            <input
+                              type="number"
+                              value={Math.round(tier.percentage * 100 * 100) / 100}
+                              onChange={e => {
+                                const newTiers = [...config.commissionTiers];
+                                newTiers[index].percentage = Number(e.target.value) / 100;
+                                updateConfig({ commissionTiers: newTiers });
+                              }}
+                              step="0.01"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTiers = config.commissionTiers.filter((_, i) => i !== index);
+                                updateConfig({ commissionTiers: newTiers });
+                              }}
+                              className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              disabled={config.commissionTiers.length === 1}
+                            >
+                              <Trash2 className="w-4 h-4 mx-auto" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="md:col-span-2 space-y-6">
+              <h3 className="text-lg font-bold text-[#3A475B]">Disclaimer Text</h3>
+
+              <div>
+                <textarea
+                  value={config.disclaimerText}
+                  onChange={e => updateConfig({ disclaimerText: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </div>
       )}
     </div>
