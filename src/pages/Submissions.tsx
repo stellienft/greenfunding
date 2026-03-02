@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { FileCheck, Calendar, DollarSign, User, Loader } from 'lucide-react';
+import { FileCheck, Calendar, DollarSign, Loader } from 'lucide-react';
 
 interface Application {
   id: string;
   created_at: string;
   full_name: string;
   email: string;
+  company_name: string;
   project_cost: number;
   loan_term_years: number;
-  status: string;
+  calculated_monthly_repayment: number;
+  calculated_approval_amount: number;
 }
 
 export function Submissions() {
@@ -31,7 +33,7 @@ export function Submissions() {
       setLoading(true);
       const { data, error } = await supabase
         .from('applications')
-        .select('id, created_at, full_name, email, project_cost, loan_term_years, status')
+        .select('id, created_at, full_name, email, company_name, project_cost, loan_term_years, calculated_monthly_repayment, calculated_approval_amount')
         .eq('installer_id', installerProfile.id)
         .order('created_at', { ascending: false });
 
@@ -44,19 +46,6 @@ export function Submissions() {
       setLoading(false);
     }
   }
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
 
   return (
     <Layout>
@@ -101,24 +90,33 @@ export function Submissions() {
                             {app.full_name}
                           </h3>
                           <p className="text-sm text-gray-600">{app.email}</p>
+                          {app.company_name && (
+                            <p className="text-sm text-gray-500">{app.company_name}</p>
+                          )}
                         </div>
                       </div>
-                      <span
-                        className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
-                          app.status
-                        )}`}
-                      >
-                        {app.status || 'Submitted'}
+                      <span className="px-4 py-2 rounded-full text-sm font-semibold border bg-green-100 text-green-800 border-green-200">
+                        Submitted
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                         <DollarSign className="w-5 h-5 text-[#6EAE3C]" />
                         <div>
-                          <div className="text-xs text-gray-600">Loan Amount</div>
+                          <div className="text-xs text-gray-600">Project Cost</div>
                           <div className="font-bold text-[#3A475B]">
                             ${app.project_cost?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-[#6EAE3C]" />
+                        <div>
+                          <div className="text-xs text-gray-600">Monthly Repayment</div>
+                          <div className="font-bold text-[#3A475B]">
+                            ${app.calculated_monthly_repayment?.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0'}
                           </div>
                         </div>
                       </div>
