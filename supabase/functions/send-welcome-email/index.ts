@@ -24,10 +24,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const elasticEmailApiKey = Deno.env.get("ELASTIC_EMAIL_API_KEY");
 
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not configured");
+    if (!elasticEmailApiKey) {
+      console.error("ELASTIC_EMAIL_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -267,29 +267,30 @@ Green Funding
 If you have any questions, please contact your administrator.
     `.trim();
 
-    const emailResponse = await fetch("https://api.resend.com/emails", {
+    const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${resendApiKey}`,
+        "X-ElasticEmail-ApiKey": elasticEmailApiKey,
       },
       body: JSON.stringify({
-        from: "Green Funding <noreply@portal.greenfunding.com.au>",
-        to: [email],
-        subject: "Welcome to Green Funding Installer Portal - Your Login Credentials",
-        html: emailHtml,
-        text: plainTextEmail,
-        reply_to: "support@greenfundingcalculator.com",
-        headers: {
-          "X-Entity-Ref-ID": `installer-${Date.now()}`,
-        },
+        Recipients: [{ Email: email }],
+        Content: {
+          From: "noreply@portal.greenfunding.com.au",
+          ReplyTo: "support@greenfundingcalculator.com",
+          Subject: "Welcome to Green Funding Installer Portal - Your Login Credentials",
+          Body: [
+            { ContentType: "HTML", Charset: "utf-8", Content: emailHtml },
+            { ContentType: "PlainText", Charset: "utf-8", Content: plainTextEmail }
+          ]
+        }
       }),
     });
 
     const emailResult = await emailResponse.json();
 
-    if (!emailResponse.ok) {
-      console.error("Resend API error:", emailResult);
+    if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== "")) {
+      console.error("Elastic Email API error:", emailResult);
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: emailResult }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -297,7 +298,7 @@ If you have any questions, please contact your administrator.
     }
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResult.id }),
+      JSON.stringify({ success: true, emailId: emailResult.TransactionID || 'sent' }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

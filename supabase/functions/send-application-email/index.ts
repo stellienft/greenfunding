@@ -68,10 +68,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
 
-    if (!resendApiKey) {
-      console.error('RESEND_API_KEY not configured');
+    if (!elasticEmailApiKey) {
+      console.error('ELASTIC_EMAIL_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Email service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -535,24 +535,26 @@ Deno.serve(async (req: Request) => {
       ? `New ${equipmentType} Application - ${application.full_name} - ${formatCurrency(application.project_cost)} (via ${installerInfo.full_name}${installerInfo.company_name ? ' - ' + installerInfo.company_name : ''})`
       : `New ${equipmentType} Financing Application - ${application.full_name} - ${formatCurrency(application.project_cost)}`;
 
-    const emailResponse = await fetch('https://api.resend.com/emails', {
+    const emailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${resendApiKey}`,
+        'X-ElasticEmail-ApiKey': elasticEmailApiKey,
       },
       body: JSON.stringify({
-        from: 'Green Funding solutions <noreply@portal.greenfunding.com.au>',
-        to: ['solutions@greenfunding.com.au'],
-        subject: subjectLine,
-        html: emailHtml,
+        Recipients: [{ Email: 'solutions@greenfunding.com.au' }],
+        Content: {
+          From: 'noreply@portal.greenfunding.com.au',
+          Subject: subjectLine,
+          Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: emailHtml }]
+        }
       }),
     });
 
     const emailResult = await emailResponse.json();
 
-    if (!emailResponse.ok) {
-      console.error('Resend API error:', emailResult);
+    if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== '')) {
+      console.error('Elastic Email API error:', emailResult);
       return new Response(
         JSON.stringify({ error: 'Failed to send email', details: emailResult }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -914,24 +916,26 @@ Deno.serve(async (req: Request) => {
       const installerEmailSubject = `Application Submitted for ${application.full_name}`;
 
       try {
-        const installerEmailResponse = await fetch('https://api.resend.com/emails', {
+        const installerEmailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${resendApiKey}`,
+            'X-ElasticEmail-ApiKey': elasticEmailApiKey,
           },
           body: JSON.stringify({
-            from: 'Green Funding solutions <noreply@portal.greenfunding.com.au>',
-            to: [installerInfo.email],
-            subject: installerEmailSubject,
-            html: installerEmailHtml,
+            Recipients: [{ Email: installerInfo.email }],
+            Content: {
+              From: 'noreply@portal.greenfunding.com.au',
+              Subject: installerEmailSubject,
+              Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: installerEmailHtml }]
+            }
           }),
         });
 
         const installerEmailResult = await installerEmailResponse.json();
 
-        if (installerEmailResponse.ok) {
-          installerEmailId = installerEmailResult.id;
+        if (installerEmailResponse.ok && (!installerEmailResult.Error || installerEmailResult.Error === '')) {
+          installerEmailId = installerEmailResult.TransactionID || 'sent';
           console.log('Installer confirmation email sent successfully:', installerEmailId);
         } else {
           console.error('Failed to send installer confirmation email:', installerEmailResult);
@@ -944,7 +948,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        emailId: emailResult.id,
+        emailId: emailResult.TransactionID || 'sent',
         installerEmailId: installerEmailId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
