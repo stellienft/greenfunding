@@ -164,16 +164,17 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      if (userType === 'admin') {
-        function generatePassword() {
-          const length = 12;
-          const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-          let password = '';
-          for (let i = 0; i < length; i++) {
-            password += charset.charAt(Math.floor(Math.random() * charset.length));
-          }
-          return password;
+      function generatePassword() {
+        const length = 12;
+        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < length; i++) {
+          password += charset.charAt(Math.floor(Math.random() * charset.length));
         }
+        return password;
+      }
+
+      if (userType === 'admin') {
 
         const newPassword = generatePassword();
 
@@ -199,12 +200,106 @@ Deno.serve(async (req: Request) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } else {
-        const { error } = await supabase
+        const elasticEmailApiKey = Deno.env.get("ELASTIC_EMAIL_API_KEY");
+        if (!elasticEmailApiKey) {
+          throw new Error("ELASTIC_EMAIL_API_KEY not configured");
+        }
+
+        const { data: userData, error: fetchError } = await supabase
+          .from("installer_users")
+          .select("email, full_name, company_name")
+          .eq("id", userId)
+          .single();
+
+        if (fetchError || !userData) {
+          throw new Error("Installer user not found");
+        }
+
+        const newPassword = generatePassword();
+
+        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+          password: newPassword
+        });
+
+        if (authError) throw authError;
+
+        const { error: updateError } = await supabase
           .from("installer_users")
           .update({ needs_password_reset: true })
           .eq("id", userId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { font-family: sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .credentials { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .password { font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #28AA48; }
+                .important { color: #d32f2f; font-weight: bold; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Password Reset Requested</h2>
+                <p>Hi ${userData.full_name},</p>
+                <p>An administrator has reset your password for the Green Funding Installer Portal.</p>
+                
+                <div class="credentials">
+                   <p><strong>Your new temporary password is:</strong></p>
+                   <p class="password">${newPassword}</p>
+                </div>
+                
+                <p class="important">Important: For security reasons, you will be required to create a new password when you first log in.</p>
+                
+                <p>Visit <a href="https://portal.greenfunding.com.au/installer-login">portal.greenfunding.com.au/installer-login</a> to log in.</p>
+                <p>Best regards,<br>Green Funding Support</p>
+              </div>
+            </body>
+          </html>
+        `;
+
+        const plainTextEmail = `Hi ${userData.full_name},
+
+An administrator has reset your password.
+Your new temporary password is: ${newPassword}
+
+For security reasons, you will be required to create a new password when you first log in.
+Go to: https://portal.greenfunding.com.au/installer-login
+
+Green Funding Support`;
+
+        const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-ElasticEmail-ApiKey": elasticEmailApiKey,
+          },
+          body: JSON.stringify({
+            Recipients: [{ Email: userData.email }],
+            Content: {
+              From: "noreply@portal.greenfunding.com.au",
+              ReplyTo: "support@greenfundingcalculator.com",
+              Subject: "Green Funding Portal - Your Password Has Been Reset",
+              Body: [
+                { ContentType: "HTML", Charset: "utf-8", Content: emailHtml },
+                { ContentType: "PlainText", Charset: "utf-8", Content: plainTextEmail }
+              ]
+            }
+          }),
+        });
+
+        const emailResult = await emailResponse.json();
+
+        if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== "")) {
+          console.error("Elastic Email API error:", emailResult);
+          throw new Error("Failed to send reset email");
+        }
 
         return new Response(
           JSON.stringify({ success: true }),

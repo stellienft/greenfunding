@@ -262,7 +262,7 @@ export function UserManagement() {
         alert(passwordMessage);
         setSuccess('Admin password reset successfully. New password has been displayed.');
       } else {
-        setSuccess('Password reset flag set successfully');
+        setSuccess('Password reset successfully. An email with the new temporary password has been sent to the user.');
       }
 
       loadUsers();
