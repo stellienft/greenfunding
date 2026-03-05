@@ -63,6 +63,8 @@ export interface CalculationResults {
   baseLoanAmount: number;
   originationFee: number;
   monthlyRepayment: number;
+  monthlyRepaymentExGst: number;
+  monthlyRepaymentIncGst: number;
   balloonAmount: number;
   totalRepayment: number;
   approvalAmount: number;
@@ -393,10 +395,14 @@ export function calculateAll(
   const monthlyPaymentInc = config.gstEnabled ? monthlyPaymentEx * GST : monthlyPaymentEx;
 
   // Round to cents
-  const monthlyRepayment = Math.round(monthlyPaymentInc * 100) / 100;
+  const monthlyRepaymentExGst = Math.round(monthlyPaymentEx * 100) / 100;
+  const monthlyRepaymentIncGst = Math.round(monthlyPaymentInc * 100) / 100;
 
-  // 11) Calculate total repayment
-  const totalRepayment = monthlyRepayment * n;
+  // For backwards compatibility, use ex-GST as default monthlyRepayment
+  const monthlyRepayment = monthlyRepaymentExGst;
+
+  // 11) Calculate total repayment (using ex-GST)
+  const totalRepayment = monthlyRepaymentExGst * n;
 
   // 12) Calculate balloon amount (not used in standard calculation, set to 0)
   const balloonAmount = 0;
@@ -406,6 +412,8 @@ export function calculateAll(
     baseLoanAmount: principal,
     originationFee: estFeeEx,
     monthlyRepayment,
+    monthlyRepaymentExGst,
+    monthlyRepaymentIncGst,
     balloonAmount,
     totalRepayment,
     approvalAmount,

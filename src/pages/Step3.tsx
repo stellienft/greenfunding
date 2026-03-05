@@ -274,11 +274,14 @@ export function Step3() {
                   </div>
 
                   <div className="pt-4 border-t border-gray-200">
-                    <div className="text-sm text-gray-600 mb-1">Monthly Payment (ex. GST)</div>
+                    <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
                     <div className={`text-2xl font-bold ${selectedTerm === option.years ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                       {formatCurrency(option.monthlyPayment, true)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">per month</div>
+                    <div className="text-xs text-gray-500 mt-1">ex. GST per month</div>
+                    <div className="text-sm text-gray-600 mt-2">
+                      {formatCurrency(option.monthlyPayment * 1.10, true)} <span className="text-xs">(inc. GST)</span>
+                    </div>
 
                     {showCostPerKwh && option.costPerKwh && (
                       <div className="mt-3 pt-3 border-t border-gray-100">
@@ -340,11 +343,14 @@ export function Step3() {
                         </div>
 
                         <div className="pt-4 border-t border-gray-200">
-                          <div className="text-sm text-gray-600 mb-1">Monthly Payment (ex. GST)</div>
+                          <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
                           <div className={`text-2xl font-bold ${selectedTerm === option.years ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                             {formatCurrency(option.monthlyPayment, true)}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">per month</div>
+                          <div className="text-xs text-gray-500 mt-1">ex. GST per month</div>
+                          <div className="text-sm text-gray-600 mt-2">
+                            {formatCurrency(option.monthlyPayment * 1.10, true)} <span className="text-xs">(inc. GST)</span>
+                          </div>
 
                           {showCostPerKwh && option.costPerKwh && (
                             <div className="mt-3 pt-3 border-t border-gray-100">
