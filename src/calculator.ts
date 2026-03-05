@@ -274,7 +274,7 @@ export function calculateApprovalAmount(
 }
 
 export function calculateCommission(
-  approvalAmount: number,
+  invoiceAmountExGst: number,
   config: CalculatorConfig
 ): { commission: number; commissionWithGst: number } {
   if (!config.commissionEnabled || !config.commissionTiers || config.commissionTiers.length === 0) {
@@ -286,15 +286,15 @@ export function calculateCommission(
   const sortedTiers = [...config.commissionTiers].sort((a, b) => a.minAmount - b.minAmount);
 
   for (const tier of sortedTiers) {
-    if (approvalAmount <= tier.minAmount) {
+    if (invoiceAmountExGst <= tier.minAmount) {
       break;
     }
 
     const tierMin = tier.minAmount;
     const tierMax = tier.maxAmount || Infinity;
 
-    if (approvalAmount > tierMin) {
-      const amountInTier = Math.min(approvalAmount, tierMax) - tierMin;
+    if (invoiceAmountExGst > tierMin) {
+      const amountInTier = Math.min(invoiceAmountExGst, tierMax) - tierMin;
       totalCommission += amountInTier * tier.percentage;
     }
   }
@@ -340,7 +340,7 @@ export function calculateAll(
     inputs.selectedAssetIds,
     inputs.assetRiskAdjustments
   );
-  const { commission, commissionWithGst } = calculateCommission(approvalAmount, config);
+  const { commission, commissionWithGst } = calculateCommission(invoiceAmountExGst, config);
 
   // Commission is financed WITH GST
   if (config.commissionEnabled && config.commissionCapitalised) {
@@ -446,7 +446,7 @@ export function calculateProgressPayment(
     inputs.assetRiskAdjustments
   );
 
-  const { commission, commissionWithGst } = calculateCommission(approvalAmount, config);
+  const { commission, commissionWithGst } = calculateCommission(invoiceAmountExGst, config);
 
   if (!inputs.progressPayments || inputs.progressPayments.length === 0) {
     return calculateAll(inputs, config);
