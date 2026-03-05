@@ -106,7 +106,14 @@ export function calculateRateUsed(config: CalculatorConfig, loanTermYears?: numb
       if (projectCost !== undefined && config.interestRateTiers && config.interestRateTiers.length > 0) {
         for (const tier of config.interestRateTiers) {
           if (projectCost >= tier.minAmount && (tier.maxAmount === null || projectCost <= tier.maxAmount)) {
-            return tier.rate;
+            let baseRate = tier.rate;
+
+            // For amounts over $100k: if term is over 5 years, add 1.5% to the base rate
+            if (projectCost > 100000 && loanTermYears !== undefined && loanTermYears > 5) {
+              baseRate += 0.015;
+            }
+
+            return baseRate;
           }
         }
       }
