@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, Edit2, RotateCcw } from 'lucide-react';
+import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, CreditCard as Edit2, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface InstallerUser {
