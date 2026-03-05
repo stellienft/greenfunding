@@ -323,9 +323,9 @@ export function calculateAll(
   const ppsrFee = config.ppsrFee || 0;
 
   const rateUsed = calculateRateUsed(config, inputs.loanTermYears, invoiceAmountExGst);
-  const originationFee = calculateOriginationFee(invoiceAmountIncGst, config);
+  const originationFee = calculateOriginationFee(invoiceAmountExGst, config);
 
-  let baseLoanAmount = invoiceAmountIncGst;
+  let baseLoanAmount = invoiceAmountExGst;
 
   if (config.feesEnabled && config.feeCapitalised) {
     baseLoanAmount += originationFee;
