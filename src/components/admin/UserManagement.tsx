@@ -43,48 +43,21 @@ export function UserManagement() {
     try {
       setLoading(true);
 
-      const { data: installerUsers, error: installerError } = await supabase
-        .from('installer_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users?action=list`;
+      const headers = {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      };
 
-      if (installerError) {
-        console.error('Error loading installer users:', installerError);
-        throw installerError;
+      const response = await fetch(apiUrl, { headers });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load users');
       }
 
-      const { data: adminUsersData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id, email, first_name, last_name, company, phone, created_at, needs_password_reset')
-        .order('created_at', { ascending: false });
-
-      if (adminError) {
-        console.error('Error loading admin users:', adminError);
-        throw adminError;
-      }
-
-      const adminUsers = (adminUsersData || []).map(user => ({
-        id: user.id,
-        full_name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'Admin',
-        first_name: user.first_name,
-        last_name: user.last_name,
-        company_name: user.company || 'Angle Finance',
-        phone: user.phone,
-        email: user.email || '',
-        needs_password_reset: user.needs_password_reset || false,
-        created_at: user.created_at,
-        application_count: 0,
-        quote_count: 0,
-        user_type: 'admin' as const,
-      }));
-
-      const installerUsersWithType = (installerUsers || []).map(user => ({
-        ...user,
-        user_type: 'installer' as const,
-      }));
-
-      const allUsers = [...adminUsers, ...installerUsersWithType];
-      setUsers(allUsers);
+      const { users: allUsers } = await response.json();
+      setUsers(allUsers || []);
     } catch (error: any) {
       console.error('Error loading users:', error);
       setError(error.message || 'Failed to load users');
