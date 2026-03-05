@@ -100,11 +100,11 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
     try {
       const { data: configRow } = await supabase
         .from('calculator_config')
-        .select('id')
+        .select('calculator_type')
         .eq('calculator_type', activeCalculatorType)
         .maybeSingle();
 
-      if (!configRow?.id) {
+      if (!configRow?.calculator_type) {
         throw new Error('Configuration not found');
       }
 
