@@ -274,30 +274,24 @@ export function calculateApprovalAmount(
 }
 
 export function calculateCommission(
-  invoiceAmountExGst: number,
+  invoiceAmountIncGst: number,
   config: CalculatorConfig
 ): { commission: number; commissionWithGst: number } {
   if (!config.commissionEnabled || !config.commissionTiers || config.commissionTiers.length === 0) {
     return { commission: 0, commissionWithGst: 0 };
   }
 
-  let totalCommission = 0;
-
   const sortedTiers = [...config.commissionTiers].sort((a, b) => a.minAmount - b.minAmount);
 
+  let applicableTier = sortedTiers[0];
   for (const tier of sortedTiers) {
-    if (invoiceAmountExGst <= tier.minAmount) {
+    if (invoiceAmountIncGst >= tier.minAmount && (tier.maxAmount === null || invoiceAmountIncGst <= tier.maxAmount)) {
+      applicableTier = tier;
       break;
     }
-
-    const tierMin = tier.minAmount;
-    const tierMax = tier.maxAmount || Infinity;
-
-    if (invoiceAmountExGst > tierMin) {
-      const amountInTier = Math.min(invoiceAmountExGst, tierMax) - tierMin;
-      totalCommission += amountInTier * tier.percentage;
-    }
   }
+
+  const totalCommission = invoiceAmountIncGst * applicableTier.percentage;
 
   const commissionWithGst = config.gstEnabled
     ? totalCommission * (1 + config.gstRate)
@@ -340,7 +334,7 @@ export function calculateAll(
     inputs.selectedAssetIds,
     inputs.assetRiskAdjustments
   );
-  const { commission, commissionWithGst } = calculateCommission(invoiceAmountExGst, config);
+  const { commission, commissionWithGst } = calculateCommission(invoiceAmountIncGst, config);
 
   // Commission is financed WITH GST
   if (config.commissionEnabled && config.commissionCapitalised) {
@@ -446,7 +440,7 @@ export function calculateProgressPayment(
     inputs.assetRiskAdjustments
   );
 
-  const { commission, commissionWithGst } = calculateCommission(invoiceAmountExGst, config);
+  const { commission, commissionWithGst } = calculateCommission(invoiceAmountIncGst, config);
 
   if (!inputs.progressPayments || inputs.progressPayments.length === 0) {
     return calculateAll(inputs, config);
