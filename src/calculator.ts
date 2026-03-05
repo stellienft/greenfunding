@@ -313,9 +313,14 @@ export function calculateAll(
   config: CalculatorConfig
 ): CalculationResults {
   const invoiceAmountIncGst = inputs.projectCost;
+
+  const { commission, commissionWithGst } = calculateCommission(invoiceAmountIncGst, config);
+
+  const totalIncGst = invoiceAmountIncGst + (config.commissionEnabled && config.commissionCapitalised ? commissionWithGst : 0);
+
   const invoiceAmountExGst = config.gstEnabled
-    ? invoiceAmountIncGst / (1 + config.gstRate)
-    : invoiceAmountIncGst;
+    ? totalIncGst / (1 + config.gstRate)
+    : totalIncGst;
 
   // Application fee and PPSR fee are stored as inc-GST values
   // Add them to the loan as inc-GST amounts
@@ -339,12 +344,6 @@ export function calculateAll(
     inputs.selectedAssetIds,
     inputs.assetRiskAdjustments
   );
-  const { commission, commissionWithGst } = calculateCommission(invoiceAmountIncGst, config);
-
-  // Commission is financed WITH GST
-  if (config.commissionEnabled && config.commissionCapitalised) {
-    baseLoanAmount += commissionWithGst;
-  }
 
   const balloonAmount = calculateBalloonAmount(invoiceAmountExGst, config, inputs.residualPercentage);
   const monthlyRepayment = calculateMonthlyRepayment(
