@@ -173,7 +173,8 @@ export function calculateMonthlyRepayment(
   loanTermYears: number,
   config: CalculatorConfig,
   userResidualPercentage?: number,
-  userPaymentTiming?: 'advance' | 'arrears'
+  userPaymentTiming?: 'advance' | 'arrears',
+  balloonAmountOverride?: number
 ): number {
   const n = loanTermYears * 12;
   const i = rateUsed / 12;
@@ -184,7 +185,9 @@ export function calculateMonthlyRepayment(
   if (config.repaymentType === 'interest_only') {
     payment = (principal * rateUsed) / 12;
   } else {
-    const balloonAmount = calculateBalloonAmount(principal, config, userResidualPercentage);
+    const balloonAmount = balloonAmountOverride !== undefined
+      ? balloonAmountOverride
+      : calculateBalloonAmount(principal, config, userResidualPercentage);
 
     if (balloonAmount === 0) {
       if (i === 0) {
@@ -211,7 +214,6 @@ export function calculateMonthlyRepayment(
 
   const paymentWithFee = payment + config.monthlyFee;
 
-  // Round to the nearest 1 cent
   return Math.round(paymentWithFee * 100) / 100;
 }
 
@@ -220,7 +222,8 @@ export function calculateTotalRepayment(
   loanTermYears: number,
   principal: number,
   config: CalculatorConfig,
-  userResidualPercentage?: number
+  userResidualPercentage?: number,
+  balloonAmountOverride?: number
 ): number {
   const n = loanTermYears * 12;
   const monthlyPaymentWithoutFee = monthlyRepayment - config.monthlyFee;
@@ -229,7 +232,9 @@ export function calculateTotalRepayment(
 
   let balloonAmount = 0;
 
-  if (config.repaymentType === 'interest_only') {
+  if (balloonAmountOverride !== undefined) {
+    balloonAmount = balloonAmountOverride;
+  } else if (config.repaymentType === 'interest_only') {
     balloonAmount = principal;
   } else if (userResidualPercentage !== undefined && userResidualPercentage > 0) {
     balloonAmount = calculateBalloonAmount(principal, config, userResidualPercentage);
@@ -341,21 +346,23 @@ export function calculateAll(
     baseLoanAmount += commissionWithGst;
   }
 
-  const balloonAmount = calculateBalloonAmount(baseLoanAmount, config, inputs.residualPercentage);
+  const balloonAmount = calculateBalloonAmount(invoiceAmountExGst, config, inputs.residualPercentage);
   const monthlyRepayment = calculateMonthlyRepayment(
     baseLoanAmount,
     rateUsed,
     inputs.loanTermYears,
     config,
     inputs.residualPercentage,
-    inputs.paymentTiming
+    inputs.paymentTiming,
+    balloonAmount
   );
   const totalRepayment = calculateTotalRepayment(
     monthlyRepayment,
     inputs.loanTermYears,
     baseLoanAmount,
     config,
-    inputs.residualPercentage
+    inputs.residualPercentage,
+    balloonAmount
   );
 
   return {
