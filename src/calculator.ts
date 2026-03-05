@@ -312,32 +312,54 @@ export function calculateAll(
   inputs: CalculationInputs,
   config: CalculatorConfig
 ): CalculationResults {
-  const invoiceAmountIncGst = inputs.projectCost;
+  // Constants
+  const GST = 1 + config.gstRate; // e.g., 1.10
 
-  const { commission, commissionWithGst } = calculateCommission(invoiceAmountIncGst, config);
+  // 1) Asset value (inc-GST) - this is the project cost
+  const assetInc = inputs.projectCost;
 
-  const totalIncGst = invoiceAmountIncGst + (config.commissionEnabled && config.commissionCapitalised ? commissionWithGst : 0);
+  // 2) Convert asset from inc-GST to ex-GST
+  const assetEx = config.gstEnabled ? assetInc / GST : assetInc;
 
-  const invoiceAmountExGst = config.gstEnabled
-    ? totalIncGst / (1 + config.gstRate)
-    : totalIncGst;
+  // 3) Calculate commission based on asset inc-GST
+  const { commission, commissionWithGst } = calculateCommission(assetInc, config);
 
-  // Application fee and PPSR fee are stored as inc-GST values
-  // Add them to the loan as inc-GST amounts
-  const applicationFee = config.applicationFee || 0;
+  // 4) Convert commission from inc-GST to ex-GST
+  const commissionInc = commissionWithGst;
+  const commissionEx = config.gstEnabled ? commissionInc / GST : commissionInc;
+
+  // 5) Establishment fee (ex-GST) and PPSR fee (GST-free)
+  const estFeeEx = config.feesEnabled && config.feeCapitalised
+    ? calculateOriginationFee(assetEx, config)
+    : 0;
   const ppsrFee = config.ppsrFee || 0;
 
-  const rateUsed = calculateRateUsed(config, inputs.loanTermYears, invoiceAmountExGst);
-  const originationFee = calculateOriginationFee(invoiceAmountExGst, config);
+  // 6) Build principal (ex-GST basis)
+  let principal = assetEx;
 
-  let baseLoanAmount = invoiceAmountExGst;
-
-  if (config.feesEnabled && config.feeCapitalised) {
-    baseLoanAmount += originationFee;
+  // Add commission if capitalised
+  if (config.commissionEnabled && config.commissionCapitalised) {
+    principal += commissionEx;
   }
 
-  baseLoanAmount += applicationFee + ppsrFee;
+  // Add establishment fee if capitalised
+  if (config.feesEnabled && config.feeCapitalised) {
+    principal += estFeeEx;
+  }
 
+  // Add PPSR fee (GST-free)
+  principal += ppsrFee;
+
+  // Add application fee (ex-GST)
+  const applicationFee = config.applicationFee || 0;
+  const applicationFeeEx = config.gstEnabled ? applicationFee / GST : applicationFee;
+  principal += applicationFeeEx;
+
+  // 7) Calculate interest rate
+  const invoiceAmountExGst = assetEx;
+  const rateUsed = calculateRateUsed(config, inputs.loanTermYears, invoiceAmountExGst);
+
+  // 8) Calculate approval amount
   const approvalAmount = calculateApprovalAmount(
     invoiceAmountExGst,
     config,
@@ -345,34 +367,49 @@ export function calculateAll(
     inputs.assetRiskAdjustments
   );
 
-  const balloonAmount = calculateBalloonAmount(invoiceAmountExGst, config, inputs.residualPercentage);
-  const monthlyRepayment = calculateMonthlyRepayment(
-    baseLoanAmount,
-    rateUsed,
-    inputs.loanTermYears,
-    config,
-    inputs.residualPercentage,
-    inputs.paymentTiming,
-    balloonAmount
-  );
-  const totalRepayment = calculateTotalRepayment(
-    monthlyRepayment,
-    inputs.loanTermYears,
-    baseLoanAmount,
-    config,
-    inputs.residualPercentage,
-    balloonAmount
-  );
+  // 9) Calculate monthly payment (ex-GST)
+  const n = inputs.loanTermYears * 12;
+  const r = rateUsed / 12;
+
+  let monthlyPaymentEx = 0;
+
+  if (principal <= 0 || r <= 0 || n <= 0) {
+    monthlyPaymentEx = 0;
+  } else {
+    // PMT in arrears (ex-GST)
+    const disc = Math.pow(1 + r, -n);
+    const pmtArrearsEx = (principal * r) / (1 - disc);
+
+    // Convert to advance if needed
+    const paymentTiming = inputs.paymentTiming || config.paymentTiming || 'arrears';
+    if (paymentTiming === 'advance') {
+      monthlyPaymentEx = pmtArrearsEx / (1 + r);
+    } else {
+      monthlyPaymentEx = pmtArrearsEx;
+    }
+  }
+
+  // 10) Display payment as "inc-GST equivalent"
+  const monthlyPaymentInc = config.gstEnabled ? monthlyPaymentEx * GST : monthlyPaymentEx;
+
+  // Round to cents
+  const monthlyRepayment = Math.round(monthlyPaymentInc * 100) / 100;
+
+  // 11) Calculate total repayment
+  const totalRepayment = monthlyRepayment * n;
+
+  // 12) Calculate balloon amount (not used in standard calculation, set to 0)
+  const balloonAmount = 0;
 
   return {
     rateUsed,
-    baseLoanAmount,
-    originationFee,
+    baseLoanAmount: principal,
+    originationFee: estFeeEx,
     monthlyRepayment,
     balloonAmount,
     totalRepayment,
     approvalAmount,
-    commission,
+    commission: config.gstEnabled ? commission / GST : commission,
     commissionWithGst,
     applicationFee,
     ppsrFee,
