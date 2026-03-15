@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
-import { Calendar, Check, Plus, Trash2, DollarSign } from 'lucide-react';
+import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface LoanTermOption {
   years: number;
@@ -34,6 +34,14 @@ export function Step3() {
     ]
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTo, setEmailTo] = useState(state.recipientEmail || '');
+  const [emailName, setEmailName] = useState(state.recipientName || '');
+  const [emailCompany, setEmailCompany] = useState(state.recipientCompany || '');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [sentQuoteNumber, setSentQuoteNumber] = useState<string | null>(null);
 
   const isSolarOnlyProject = () => {
     if (state.selectedAssetIds.length !== 1) return false;
@@ -187,6 +195,77 @@ export function Step3() {
 
     trackQuoteView();
   }, [user, refreshProfile]);
+
+  const handleSendQuote = async () => {
+    if (!emailTo.trim()) {
+      setEmailError('Please enter a recipient email address.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTo.trim())) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+
+    setSendingEmail(true);
+    setEmailError(null);
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const allTerms = [...termOptions, ...additionalTermOptions];
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-quote-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+          'Apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          recipientEmail: emailTo.trim(),
+          recipientName: emailName.trim() || undefined,
+          recipientCompany: emailCompany.trim() || undefined,
+          siteAddress: state.siteAddress,
+          systemSize: state.systemSize,
+          projectCost: state.projectCost,
+          selectedAssetIds: state.selectedAssetIds,
+          termOptions: allTerms.map(t => ({
+            years: t.years,
+            monthlyPayment: t.monthlyPayment,
+            interestRate: t.interestRate,
+            totalFinanced: t.totalFinanced,
+          })),
+          paymentTiming: state.paymentTiming,
+          calculatorType: state.calculatorType,
+          installerId: user?.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to send quote');
+      }
+
+      setEmailSent(true);
+      setSentQuoteNumber(result.quoteNumber);
+    } catch (err: any) {
+      setEmailError(err.message || 'Failed to send quote. Please try again.');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleCloseEmailModal = () => {
+    setShowEmailModal(false);
+    setEmailSent(false);
+    setEmailError(null);
+    setSentQuoteNumber(null);
+  };
 
   const handleContinue = () => {
     if (selectedTerm === null) {
@@ -593,14 +672,29 @@ export function Step3() {
             <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
               <button
                 onClick={handleBack}
-                className="px-6 sm:px-8 py-3 sm:py-3.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors touch-manipulation order-2 sm:order-1"
+                className="px-6 sm:px-8 py-3 sm:py-3.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors touch-manipulation order-3 sm:order-1"
               >
                 Back
               </button>
               <button
+                onClick={() => {
+                  setEmailTo(state.recipientEmail || '');
+                  setEmailName(state.recipientName || '');
+                  setEmailCompany(state.recipientCompany || '');
+                  setEmailSent(false);
+                  setEmailError(null);
+                  setSentQuoteNumber(null);
+                  setShowEmailModal(true);
+                }}
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white border-2 border-[#28AA48] text-[#28AA48] font-semibold rounded-xl hover:bg-[#28AA48]/5 transition-all touch-manipulation order-2 sm:order-2"
+              >
+                <Mail className="w-5 h-5" />
+                Email Quote
+              </button>
+              <button
                 onClick={handleContinue}
                 disabled={selectedTerm === null}
-                className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base sm:text-lg touch-manipulation order-1 sm:order-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base sm:text-lg touch-manipulation order-1 sm:order-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue to Application
               </button>
@@ -608,6 +702,129 @@ export function Step3() {
           </div>
         </div>
       </div>
+
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 relative">
+            <button
+              onClick={handleCloseEmailModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {emailSent ? (
+              <div className="text-center py-4">
+                <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-[#28AA48]" />
+                </div>
+                <h3 className="text-2xl font-bold text-[#3A475B] mb-2">Quote Sent!</h3>
+                {sentQuoteNumber && (
+                  <p className="text-[#28AA48] font-bold text-lg mb-3">{sentQuoteNumber}</p>
+                )}
+                <p className="text-gray-600 mb-2">
+                  The quote has been emailed to
+                </p>
+                <p className="font-semibold text-[#3A475B] mb-6">{emailTo}</p>
+                <button
+                  onClick={handleCloseEmailModal}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-10 h-10 bg-[#28AA48]/10 rounded-xl">
+                    <Mail className="w-5 h-5 text-[#28AA48]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-[#3A475B]">Email Quote</h3>
+                    <p className="text-sm text-gray-500">Send the quote with all term options</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">
+                      Recipient Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={emailTo}
+                      onChange={e => setEmailTo(e.target.value)}
+                      placeholder="e.g. client@company.com.au"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">
+                      Recipient Name
+                    </label>
+                    <input
+                      type="text"
+                      value={emailName}
+                      onChange={e => setEmailName(e.target.value)}
+                      placeholder="e.g. John Smith"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">
+                      Company Name
+                    </label>
+                    <input
+                      type="text"
+                      value={emailCompany}
+                      onChange={e => setEmailCompany(e.target.value)}
+                      placeholder="e.g. Acme Pty Ltd"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+
+                  <div className="bg-[#F8FAFB] rounded-lg p-3 text-sm text-gray-600">
+                    The quote will include all {[...termOptions, ...additionalTermOptions].length} term options with monthly repayment amounts.
+                  </div>
+
+                  {emailError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{emailError}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={handleCloseEmailModal}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendQuote}
+                    disabled={sendingEmail}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {sendingEmail ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        Send Quote
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
