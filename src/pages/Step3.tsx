@@ -210,6 +210,11 @@ export function Step3() {
       return;
     }
 
+    if (selectedQuoteTerms.length === 0) {
+      setEmailError('Please select at least one loan term to include in the quote.');
+      return;
+    }
+
     setSendingEmail(true);
     setEmailError(null);
 
@@ -220,15 +225,7 @@ export function Step3() {
       const { data: { session } } = await supabase.auth.getSession();
 
       const allTerms = [...termOptions, ...additionalTermOptions];
-      const filteredTerms = selectedQuoteTerms.length > 0
-        ? allTerms.filter(t => selectedQuoteTerms.includes(t.years))
-        : allTerms;
-
-      if (filteredTerms.length === 0) {
-        setEmailError('Please select at least one loan term to include in the quote.');
-        setSendingEmail(false);
-        return;
-      }
+      const filteredTerms = allTerms.filter(t => selectedQuoteTerms.includes(t.years));
 
       const response = await fetch(`${supabaseUrl}/functions/v1/send-quote-email`, {
         method: 'POST',
