@@ -103,14 +103,7 @@ function generateQuotePdfHtml(
       margin-bottom: 40px;
     }
     .logo-block {}
-    .logo-text {
-      font-size: 32px;
-      font-weight: 800;
-      color: #3A475B;
-      letter-spacing: -1px;
-      line-height: 1;
-    }
-    .logo-text span { color: #28AA48; }
+    .logo-img { height: 48px; width: auto; display: block; }
     .quote-meta-box {
       border: 2px solid #E5E7EB;
       border-radius: 10px;
@@ -260,7 +253,7 @@ function generateQuotePdfHtml(
 
     <div class="header-row">
       <div class="logo-block">
-        <div class="logo-text"><span>green</span> funding</div>
+        <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" class="logo-img" />
       </div>
       <div class="quote-meta-box">
         <div class="quote-meta-label">Quotation Date</div>
@@ -371,8 +364,8 @@ function generateQuoteEmailHtml(
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f5f5f5; padding: 24px; color: #3A475B; line-height: 1.6; }
     .wrapper { max-width: 680px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
     .email-header { background: linear-gradient(135deg, #28AA48 0%, #34AC48 60%, #AFD235 100%); padding: 40px 36px 32px; }
-    .logo { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; margin-bottom: 20px; }
-    .logo span { color: rgba(255,255,255,0.85); }
+    .logo { margin-bottom: 20px; }
+    .logo img { height: 44px; width: auto; display: block; }
     .header-title { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
     .header-sub { color: rgba(255,255,255,0.9); font-size: 15px; }
     .content { padding: 36px; }
@@ -409,7 +402,7 @@ function generateQuoteEmailHtml(
 <body>
   <div class="wrapper">
     <div class="email-header">
-      <div class="logo"><span>green</span> funding</div>
+      <div class="logo"><img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" /></div>
       <div class="header-title">Your Financing Quote is Ready</div>
       <div class="header-sub">Quote ${quoteNumber} &bull; ${quoteDate}</div>
     </div>
