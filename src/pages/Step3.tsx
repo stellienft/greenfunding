@@ -40,6 +40,7 @@ export function Step3() {
   const [emailCompany, setEmailCompany] = useState(state.recipientCompany || '');
   const [siteAddressInput, setSiteAddressInput] = useState(state.siteAddress || '');
   const [systemSizeInput, setSystemSizeInput] = useState(state.systemSize || '');
+  const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -219,6 +220,15 @@ export function Step3() {
       const { data: { session } } = await supabase.auth.getSession();
 
       const allTerms = [...termOptions, ...additionalTermOptions];
+      const filteredTerms = selectedQuoteTerms.length > 0
+        ? allTerms.filter(t => selectedQuoteTerms.includes(t.years))
+        : allTerms;
+
+      if (filteredTerms.length === 0) {
+        setEmailError('Please select at least one loan term to include in the quote.');
+        setSendingEmail(false);
+        return;
+      }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/send-quote-email`, {
         method: 'POST',
@@ -235,7 +245,7 @@ export function Step3() {
           systemSize: systemSizeInput.trim() || undefined,
           projectCost: state.projectCost,
           selectedAssetIds: state.selectedAssetIds,
-          termOptions: allTerms.map(t => ({
+          termOptions: filteredTerms.map(t => ({
             years: t.years,
             monthlyPayment: t.monthlyPayment,
             interestRate: t.interestRate,
@@ -741,6 +751,8 @@ export function Step3() {
               </button>
               <button
                 onClick={() => {
+                  const allTerms = [...termOptions, ...additionalTermOptions];
+                  setSelectedQuoteTerms(allTerms.map(t => t.years));
                   setEmailSent(false);
                   setEmailError(null);
                   setSentQuoteNumber(null);
@@ -801,7 +813,7 @@ export function Step3() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-[#3A475B]">Email Quote</h3>
-                    <p className="text-sm text-gray-500">Send the quote with all term options</p>
+                    <p className="text-sm text-gray-500">Choose which loan terms to include in the quote</p>
                   </div>
                 </div>
 
@@ -843,8 +855,39 @@ export function Step3() {
                     />
                   </div>
 
-                  <div className="bg-[#F8FAFB] rounded-lg p-3 text-sm text-gray-600">
-                    The quote will include all {[...termOptions, ...additionalTermOptions].length} term options with monthly repayment amounts.
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Loan Terms to Include <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[...termOptions, ...additionalTermOptions].map(t => {
+                        const checked = selectedQuoteTerms.includes(t.years);
+                        return (
+                          <button
+                            key={t.years}
+                            type="button"
+                            onClick={() => {
+                              setSelectedQuoteTerms(prev =>
+                                checked
+                                  ? prev.filter(y => y !== t.years)
+                                  : [...prev, t.years]
+                              );
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                              checked
+                                ? 'bg-[#28AA48]/10 border-[#28AA48] text-[#28AA48]'
+                                : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                            }`}
+                          >
+                            {checked && <Check className="w-3.5 h-3.5" />}
+                            {t.years} yr — {formatCurrency(t.monthlyPayment)}/mo
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedQuoteTerms.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1.5">Select at least one term.</p>
+                    )}
                   </div>
 
                   {emailError && (
