@@ -347,132 +347,153 @@ function generateQuoteEmailHtml(
     .map(
       (t) => `
       <tr>
-        <td style="padding: 14px 20px; font-size: 15px; color: #3A475B; border-bottom: 1px solid #E5E7EB;">${t.years} ${t.years === 1 ? 'Year' : 'Years'}</td>
-        <td style="padding: 14px 20px; font-size: 15px; font-weight: 700; color: #3A475B; text-align: right; border-bottom: 1px solid #E5E7EB;">${formatCurrency(t.monthlyPayment)}</td>
+        <td style="padding: 14px 20px; font-size: 15px; color: #3A475B; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">${t.years} ${t.years === 1 ? 'Year' : 'Years'}</td>
+        <td style="padding: 14px 20px; font-size: 15px; font-weight: 700; color: #3A475B; text-align: right; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">${formatCurrency(t.monthlyPayment)}</td>
       </tr>`
     )
     .join('');
+
+  const summaryRows = [
+    siteAddress ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Location:</strong> ${siteAddress}</td></tr>` : '',
+    systemSize ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>System Size:</strong> ${systemSize}</td></tr>` : '',
+    assetNames.length > 0 ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Equipment:</strong> ${assetNames.join(', ')}</td></tr>` : '',
+    `<tr><td style="padding: 8px 20px 16px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Net Capex:</strong> ${formatCurrency(netCapex)} ex GST</td></tr>`,
+  ].join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f5f5f5; padding: 24px; color: #3A475B; line-height: 1.6; }
-    .wrapper { max-width: 680px; margin: 0 auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-    .email-header { background: linear-gradient(135deg, #28AA48 0%, #34AC48 60%, #AFD235 100%); padding: 40px 36px 32px; }
-    .logo { margin-bottom: 20px; }
-    .logo img { height: 44px; width: auto; display: block; }
-    .header-title { color: #fff; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-    .header-sub { color: rgba(255,255,255,0.9); font-size: 15px; }
-    .content { padding: 36px; }
-    .greeting { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #3A475B; }
-    .intro-text { font-size: 15px; color: #4B5563; margin-bottom: 28px; line-height: 1.7; }
-    .quote-card { border: 2px solid #E5E7EB; border-radius: 12px; overflow: hidden; margin-bottom: 28px; }
-    .quote-card-header { background: #F8FAFB; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #E5E7EB; }
-    .quote-card-header .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; }
-    .quote-card-header .value { font-size: 14px; font-weight: 700; color: #3A475B; }
-    .summary-block { background: linear-gradient(135deg, #4BB543 0%, #28AA48 60%, #AFD235 100%); padding: 16px 20px; }
-    .summary-block p { color: #fff; font-size: 14px; font-weight: 600; line-height: 1.9; }
-    .terms-table { width: 100%; border-collapse: collapse; }
-    .terms-table th { padding: 10px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; text-align: left; background: #F8FAFB; border-bottom: 1px solid #E5E7EB; }
-    .terms-table th:last-child { text-align: right; }
-    .disclaimer-box { background: #F8FAFB; border-left: 4px solid #28AA48; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 24px; font-size: 13px; color: #4B5563; line-height: 1.7; }
-    .valid-box { background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
-    .valid-box strong { color: #065F46; font-size: 14px; display: block; margin-bottom: 4px; }
-    .valid-box p { color: #047857; font-size: 13px; }
-    .cta-section { text-align: center; margin-bottom: 28px; }
-    .cta-btn { display: inline-block; background: linear-gradient(135deg, #34AC48 0%, #AFD235 100%); color: #fff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; }
-    .footer { border-top: 2px solid #E5E7EB; padding: 24px 36px; text-align: center; }
-    .footer-company { font-size: 13px; font-weight: 700; color: #3A475B; margin-bottom: 6px; }
-    .footer-details { font-size: 12px; color: #9CA3AF; line-height: 1.8; }
-    .footer-details a { color: #28AA48; text-decoration: none; }
-    .legal-text { font-size: 11px; color: #9CA3AF; line-height: 1.6; margin-top: 12px; }
-    @media (max-width: 600px) {
-      body { padding: 12px; }
-      .email-header { padding: 28px 24px 24px; }
-      .content { padding: 24px; }
-      .footer { padding: 20px 24px; }
-    }
-  </style>
 </head>
-<body>
-  <div class="wrapper">
-    <div class="email-header">
-      <div class="logo"><img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" /></div>
-      <div class="header-title">Your Financing Quote is Ready</div>
-      <div class="header-sub">Quote ${quoteNumber} &bull; ${quoteDate}</div>
-    </div>
+<body style="margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif; color: #3A475B;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
 
-    <div class="content">
-      <div class="greeting">Hi ${displayName},</div>
-      <div class="intro-text">
-        Thank you for your interest in Green Funding. Please find your personalised project funding quote below.
-        A PDF copy of this quote is attached to this email for your records.
-      </div>
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #28AA48; padding: 36px 36px 28px 36px;">
+              <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" height="44" style="display: block; margin-bottom: 20px;" />
+              <p style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Your Financing Quote is Ready</p>
+              <p style="color: #e0f7e8; font-size: 15px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
+            </td>
+          </tr>
 
-      <div class="quote-card">
-        <div class="quote-card-header">
-          <span class="label">Quote Reference</span>
-          <span class="value">${quoteNumber}</span>
-        </div>
-        <div class="quote-card-header" style="border-top: none;">
-          <span class="label">Prepared For</span>
-          <span class="value">${preparedFor}</span>
-        </div>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 36px;">
 
-        <div class="summary-block">
-          ${siteAddress ? `<p><strong>Location:</strong> ${siteAddress}</p>` : ''}
-          ${systemSize ? `<p><strong>System Size:</strong> ${systemSize}</p>` : ''}
-          ${assetNames.length > 0 ? `<p><strong>Equipment:</strong> ${assetNames.join(', ')}</p>` : ''}
-          <p><strong>Net Capex:</strong> ${formatCurrency(netCapex)} ex GST</p>
-        </div>
+              <p style="font-size: 18px; font-weight: 600; margin: 0 0 12px 0; color: #3A475B; font-family: Arial, sans-serif;">Hi ${displayName},</p>
+              <p style="font-size: 15px; color: #4B5563; margin: 0 0 28px 0; line-height: 1.7; font-family: Arial, sans-serif;">
+                Thank you for your interest in Green Funding. Please find your personalised project funding quote below.
+                A PDF copy of this quote is attached to this email for your records.
+              </p>
 
-        <table class="terms-table">
-          <thead>
-            <tr>
-              <th>Term</th>
-              <th style="text-align:right;">Monthly Repayment (ex GST)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${termRows}
-          </tbody>
+              <!-- Quote Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 2px solid #E5E7EB; border-radius: 8px; margin-bottom: 24px;">
+                <tr>
+                  <td style="background-color: #F8FAFB; padding: 14px 20px; border-bottom: 2px solid #E5E7EB;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; font-family: Arial, sans-serif;">Quote Reference</td>
+                        <td style="font-size: 14px; font-weight: 700; color: #3A475B; text-align: right; font-family: Arial, sans-serif;">${quoteNumber}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="background-color: #F8FAFB; padding: 14px 20px; border-bottom: 2px solid #E5E7EB;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; font-family: Arial, sans-serif;">Prepared For</td>
+                        <td style="font-size: 14px; font-weight: 700; color: #3A475B; text-align: right; font-family: Arial, sans-serif;">${preparedFor}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Summary Block -->
+                <tr>
+                  <td style="background-color: #E8F5E9; border-bottom: 2px solid #E5E7EB; padding-top: 8px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      ${summaryRows}
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Terms Table -->
+                <tr>
+                  <td>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <thead>
+                        <tr>
+                          <th style="padding: 10px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; text-align: left; background-color: #F8FAFB; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">Term</th>
+                          <th style="padding: 10px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; text-align: right; background-color: #F8FAFB; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">Monthly Repayment (ex GST)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${termRows}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Disclaimer -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
+                <tr>
+                  <td style="background-color: #F8FAFB; border-left: 4px solid #28AA48; padding: 16px 20px; font-size: 13px; color: #4B5563; line-height: 1.7; font-family: Arial, sans-serif;">
+                    Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Valid Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 16px 20px;">
+                    <p style="color: #065F46; font-size: 14px; font-weight: 700; margin: 0 0 4px 0; font-family: Arial, sans-serif;">Quote valid for 30 days</p>
+                    <p style="color: #047857; font-size: 13px; margin: 0; font-family: Arial, sans-serif;">This quote is valid until ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })}. Please contact us to proceed or to discuss your options.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <a href="mailto:solutions@greenfunding.com.au" style="display: inline-block; background-color: #28AA48; color: #ffffff; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-family: Arial, sans-serif;">Contact Us to Proceed</a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="border-top: 2px solid #E5E7EB; padding: 24px 36px; text-align: center;">
+              <p style="font-size: 13px; font-weight: 700; color: #3A475B; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Green Funding</p>
+              <p style="font-size: 12px; color: #9CA3AF; line-height: 1.8; margin: 0 0 12px 0; font-family: Arial, sans-serif;">
+                Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
+                <a href="tel:1300403100" style="color: #28AA48; text-decoration: none;">1300 403 100</a> &bull;
+                <a href="mailto:solutions@greenfunding.com.au" style="color: #28AA48; text-decoration: none;">solutions@greenfunding.com.au</a> &bull;
+                <a href="https://greenfunding.com.au" style="color: #28AA48; text-decoration: none;">greenfunding.com.au</a>
+              </p>
+              <p style="font-size: 11px; color: #9CA3AF; line-height: 1.6; margin: 0; font-family: Arial, sans-serif;">
+                This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement.
+                Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856.
+                All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.
+              </p>
+            </td>
+          </tr>
+
         </table>
-      </div>
-
-      <div class="disclaimer-box">
-        Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.
-      </div>
-
-      <div class="valid-box">
-        <strong>Quote valid for 30 days</strong>
-        <p>This quote is valid until ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })}. Please contact us to proceed or to discuss your options.</p>
-      </div>
-
-      <div class="cta-section">
-        <a href="mailto:solutions@greenfunding.com.au" class="cta-btn">Contact Us to Proceed</a>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-company">Green Funding</div>
-      <div class="footer-details">
-        Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
-        <a href="tel:1300403100">1300 403 100</a> &bull;
-        <a href="mailto:solutions@greenfunding.com.au">solutions@greenfunding.com.au</a> &bull;
-        <a href="https://greenfunding.com.au">greenfunding.com.au</a>
-      </div>
-      <div class="legal-text">
-        This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement.
-        Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856.
-        All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.
-      </div>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 }
