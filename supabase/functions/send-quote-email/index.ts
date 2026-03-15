@@ -49,6 +49,23 @@ const formatDate = (date: Date): string => {
   });
 };
 
+async function fetchLogoBase64(): Promise<string | null> {
+  try {
+    const res = await fetch('https://portal.greenfunding.com.au/image.png');
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return 'data:image/png;base64,' + btoa(binary);
+  } catch {
+    return null;
+  }
+}
+
 async function generateQuotePdf(
   quoteNumber: string,
   quoteDate: string,
@@ -64,6 +81,8 @@ async function generateQuotePdf(
 ): Promise<Uint8Array> {
   const netCapex = projectCost / 1.1;
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
+
+  const logoBase64 = await fetchLogoBase64();
 
   const fonts = {
     Helvetica: {
@@ -149,21 +168,9 @@ async function generateQuotePdf(
       {
         columns: [
           {
-            stack: [
-              {
-                text: 'green funding',
-                fontSize: 26,
-                bold: true,
-                color: DARK,
-                margin: [0, 0, 0, 4],
-              },
-              {
-                canvas: [
-                  { type: 'rect', x: 0, y: 0, w: 8, h: 8, r: 4, color: GREEN },
-                ],
-                margin: [0, 0, 0, 0],
-              },
-            ],
+            stack: logoBase64
+              ? [{ image: logoBase64, height: 48, width: 180, margin: [0, 0, 0, 0] }]
+              : [{ text: 'Green Funding', fontSize: 26, bold: true, color: DARK }],
           },
           {
             stack: [
@@ -294,7 +301,7 @@ async function generateQuotePdf(
           body: [
             [
               {
-                text: 'Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.',
+                text: 'Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.',
                 fontSize: 10,
                 color: '#4B5563',
                 margin: [12, 10, 12, 10],
@@ -493,7 +500,7 @@ function generateQuoteEmailHtml(
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
                 <tr>
                   <td style="background-color: #F8FAFB; border-left: 4px solid #28AA48; padding: 16px 20px; font-size: 13px; color: #4B5563; line-height: 1.7; font-family: Arial, sans-serif;">
-                    Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.
+                    Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.
                   </td>
                 </tr>
               </table>
