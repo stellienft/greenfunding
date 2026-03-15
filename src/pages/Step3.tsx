@@ -38,6 +38,8 @@ export function Step3() {
   const [emailTo, setEmailTo] = useState(state.recipientEmail || '');
   const [emailName, setEmailName] = useState(state.recipientName || '');
   const [emailCompany, setEmailCompany] = useState(state.recipientCompany || '');
+  const [siteAddressInput, setSiteAddressInput] = useState(state.siteAddress || '');
+  const [systemSizeInput, setSystemSizeInput] = useState(state.systemSize || '');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -229,8 +231,8 @@ export function Step3() {
           recipientEmail: emailTo.trim(),
           recipientName: emailName.trim() || undefined,
           recipientCompany: emailCompany.trim() || undefined,
-          siteAddress: state.siteAddress,
-          systemSize: state.systemSize,
+          siteAddress: siteAddressInput.trim() || undefined,
+          systemSize: systemSizeInput.trim() || undefined,
           projectCost: state.projectCost,
           selectedAssetIds: state.selectedAssetIds,
           termOptions: allTerms.map(t => ({
@@ -669,6 +671,67 @@ export function Step3() {
               </p>
             </div>
 
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-base font-semibold text-[#3A475B] mb-1">
+                Quote Recipient <span className="text-sm font-normal text-gray-500">(Optional)</span>
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Enter who this quote is for — click "Email Quote" to send it to them directly.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Recipient Name</label>
+                  <input
+                    type="text"
+                    value={emailName}
+                    onChange={e => setEmailName(e.target.value)}
+                    placeholder="e.g. John Smith"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Company Name</label>
+                  <input
+                    type="text"
+                    value={emailCompany}
+                    onChange={e => setEmailCompany(e.target.value)}
+                    placeholder="e.g. Acme Pty Ltd"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={emailTo}
+                    onChange={e => setEmailTo(e.target.value)}
+                    placeholder="e.g. john@company.com.au"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Site Address</label>
+                  <input
+                    type="text"
+                    value={siteAddressInput}
+                    onChange={e => setSiteAddressInput(e.target.value)}
+                    placeholder="e.g. 42 Example St, Brisbane QLD"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#3A475B] mb-1">System Size</label>
+                  <input
+                    type="text"
+                    value={systemSizeInput}
+                    onChange={e => setSystemSizeInput(e.target.value)}
+                    placeholder="e.g. 100kW"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
               <button
                 onClick={handleBack}
@@ -678,9 +741,6 @@ export function Step3() {
               </button>
               <button
                 onClick={() => {
-                  setEmailTo(state.recipientEmail || '');
-                  setEmailName(state.recipientName || '');
-                  setEmailCompany(state.recipientCompany || '');
                   setEmailSent(false);
                   setEmailError(null);
                   setSentQuoteNumber(null);

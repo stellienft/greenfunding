@@ -20,11 +20,6 @@ export function Step1() {
   const [hasShownModal, setHasShownModal] = useState(false);
   const [residualPercentage, setResidualPercentage] = useState<number | undefined>(state.residualPercentage);
   const [paymentTiming, setPaymentTiming] = useState<'advance' | 'arrears'>(state.paymentTiming || 'arrears');
-  const [recipientEmail, setRecipientEmail] = useState(state.recipientEmail || '');
-  const [recipientName, setRecipientName] = useState(state.recipientName || '');
-  const [recipientCompany, setRecipientCompany] = useState(state.recipientCompany || '');
-  const [siteAddress, setSiteAddress] = useState(state.siteAddress || '');
-  const [systemSize, setSystemSize] = useState(state.systemSize || '');
 
   useEffect(() => {
     if (config && !state.projectCost) {
@@ -115,11 +110,6 @@ export function Step1() {
       specialPricingRequested,
       residualPercentage: isCarOnlyProject() ? residualPercentage : undefined,
       paymentTiming,
-      recipientEmail: recipientEmail.trim() || undefined,
-      recipientName: recipientName.trim() || undefined,
-      recipientCompany: recipientCompany.trim() || undefined,
-      siteAddress: siteAddress.trim() || undefined,
-      systemSize: systemSize.trim() || undefined,
     });
 
     navigate('/step-3');
@@ -390,67 +380,6 @@ export function Step1() {
                   )}
                 </div>
               )}
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-base font-semibold text-[#3A475B] mb-1">
-                Quote Recipient <span className="text-sm font-normal text-gray-500">(Optional)</span>
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Enter the details of who this quote is for. You can email the quote directly from the next step.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Recipient Name</label>
-                  <input
-                    type="text"
-                    value={recipientName}
-                    onChange={e => setRecipientName(e.target.value)}
-                    placeholder="e.g. John Smith"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Company Name</label>
-                  <input
-                    type="text"
-                    value={recipientCompany}
-                    onChange={e => setRecipientCompany(e.target.value)}
-                    placeholder="e.g. Acme Pty Ltd"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={recipientEmail}
-                    onChange={e => setRecipientEmail(e.target.value)}
-                    placeholder="e.g. john@company.com.au"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Site Address</label>
-                  <input
-                    type="text"
-                    value={siteAddress}
-                    onChange={e => setSiteAddress(e.target.value)}
-                    placeholder="e.g. 42 Example St, Brisbane QLD"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">System Size</label>
-                  <input
-                    type="text"
-                    value={systemSize}
-                    onChange={e => setSystemSize(e.target.value)}
-                    placeholder="e.g. 100kW"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-              </div>
             </div>
 
             <div className="mt-4 flex justify-end">
