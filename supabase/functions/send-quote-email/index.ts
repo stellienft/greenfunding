@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import PdfPrinter from 'npm:pdfmake@0.2.12';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +49,7 @@ const formatDate = (date: Date): string => {
   });
 };
 
-function generateQuotePdfHtml(
+async function generateQuotePdf(
   quoteNumber: string,
   quoteDate: string,
   recipientName: string | undefined,
@@ -60,271 +61,318 @@ function generateQuotePdfHtml(
   termOptions: TermOption[],
   installerName?: string,
   installerCompany?: string
-): string {
+): Promise<Uint8Array> {
   const netCapex = projectCost / 1.1;
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
 
-  const termRows = termOptions
-    .map(
-      (t) => `
-    <tr>
-      <td style="padding: 14px 20px; font-size: 15px; color: #3A475B; border-bottom: 1px solid #E5E7EB;">${t.years} ${t.years === 1 ? 'Year' : 'Years'}</td>
-      <td style="padding: 14px 20px; font-size: 15px; font-weight: 700; color: #3A475B; text-align: right; border-bottom: 1px solid #E5E7EB;">${formatCurrency(t.monthlyPayment)}</td>
-    </tr>`
-    )
-    .join('');
+  const fonts = {
+    Helvetica: {
+      normal: 'Helvetica',
+      bold: 'Helvetica-Bold',
+      italics: 'Helvetica-Oblique',
+      bolditalics: 'Helvetica-BoldOblique',
+    },
+  };
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Green Funding Quote ${quoteNumber}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', Arial, sans-serif;
-      color: #3A475B;
-      background: #fff;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .page {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 48px 48px 40px 48px;
-      background: #fff;
-    }
-    .header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 40px;
-    }
-    .logo-block {}
-    .logo-img { height: 48px; width: auto; display: block; }
-    .quote-meta-box {
-      border: 2px solid #E5E7EB;
-      border-radius: 10px;
-      padding: 20px 28px;
-      text-align: center;
-      min-width: 200px;
-    }
-    .quote-meta-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #6B7280;
-      margin-bottom: 6px;
-    }
-    .quote-meta-value {
-      font-size: 24px;
-      font-weight: 800;
-      color: #3A475B;
-      margin-bottom: 14px;
-    }
-    .quote-meta-divider {
-      border: none;
-      border-top: 1px solid #E5E7EB;
-      margin: 10px 0;
-    }
-    .from-section {
-      margin-bottom: 36px;
-    }
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #28AA48;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid #28AA48;
-      display: inline-block;
-    }
-    .from-details {
-      font-size: 14px;
-      color: #3A475B;
-      line-height: 1.8;
-      margin-top: 10px;
-    }
-    .from-details strong {
-      font-weight: 700;
-    }
-    .prepared-for {
-      margin-bottom: 40px;
-    }
-    .prepared-for h2 {
-      font-size: 26px;
-      font-weight: 800;
-      color: #3A475B;
-      margin-top: 10px;
-    }
-    .summary-heading {
-      font-size: 16px;
-      font-weight: 700;
-      color: #28AA48;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #E5E7EB;
-    }
-    .summary-card {
-      background: linear-gradient(135deg, #4BB543 0%, #28AA48 60%, #AFD235 100%);
-      border-radius: 8px;
-      padding: 18px 22px;
-      margin-bottom: 8px;
-    }
-    .summary-card p {
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1.9;
-    }
-    .terms-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 8px;
-    }
-    .terms-table thead tr {
-      background: #F8FAFB;
-    }
-    .terms-table th {
-      padding: 12px 20px;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #6B7280;
-      text-align: left;
-      border-bottom: 2px solid #E5E7EB;
-    }
-    .terms-table th:last-child { text-align: right; }
-    .green-footer-bar {
-      background: linear-gradient(135deg, #4BB543 0%, #28AA48 60%, #AFD235 100%);
-      border-radius: 0 0 8px 8px;
-      height: 12px;
-      margin-bottom: 28px;
-    }
-    .disclaimer {
-      font-size: 12px;
-      color: #6B7280;
-      line-height: 1.7;
-      margin-bottom: 36px;
-    }
-    .notes-section {
-      margin-bottom: 28px;
-    }
-    .notes-divider {
-      border: none;
-      border-top: 1px solid #E5E7EB;
-      margin-bottom: 14px;
-    }
-    .notes-heading {
-      font-size: 14px;
-      font-weight: 700;
-      color: #28AA48;
-      margin-bottom: 14px;
-    }
-    .notes-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #3A475B;
-      margin-bottom: 10px;
-    }
-    .notes-text {
-      font-size: 12px;
-      color: #4B5563;
-      line-height: 1.7;
-      margin-bottom: 12px;
-    }
-    .page-footer {
-      text-align: center;
-      font-size: 13px;
-      color: #9CA3AF;
-      padding-top: 20px;
-      border-top: 1px solid #E5E7EB;
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
+  const GREEN = '#28AA48';
+  const DARK = '#3A475B';
+  const GRAY = '#6B7280';
+  const LIGHT_BG = '#F8FAFB';
+  const BORDER_COLOR = '#E5E7EB';
+  const GREEN_LIGHT = '#E8F5E9';
 
-    <div class="header-row">
-      <div class="logo-block">
-        <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" class="logo-img" />
-      </div>
-      <div class="quote-meta-box">
-        <div class="quote-meta-label">Quotation Date</div>
-        <div class="quote-meta-value">${quoteDate}</div>
-        <hr class="quote-meta-divider"/>
-        <div class="quote-meta-label">Quote No:</div>
-        <div class="quote-meta-value" style="font-size:20px;">${quoteNumber}</div>
-      </div>
-    </div>
+  const summaryRows: object[] = [];
+  if (siteAddress) {
+    summaryRows.push({
+      columns: [
+        { text: 'Location:', bold: true, fontSize: 10, color: DARK, width: 100 },
+        { text: siteAddress, fontSize: 10, color: DARK },
+      ],
+      margin: [0, 4, 0, 0],
+    });
+  }
+  if (systemSize) {
+    summaryRows.push({
+      columns: [
+        { text: 'System Size:', bold: true, fontSize: 10, color: DARK, width: 100 },
+        { text: systemSize, fontSize: 10, color: DARK },
+      ],
+      margin: [0, 4, 0, 0],
+    });
+  }
+  if (assetNames.length > 0) {
+    summaryRows.push({
+      columns: [
+        { text: 'Equipment:', bold: true, fontSize: 10, color: DARK, width: 100 },
+        { text: assetNames.join(', '), fontSize: 10, color: DARK },
+      ],
+      margin: [0, 4, 0, 0],
+    });
+  }
+  summaryRows.push({
+    columns: [
+      { text: 'Net Capex:', bold: true, fontSize: 10, color: DARK, width: 100 },
+      { text: `${formatCurrency(netCapex)} ex GST`, fontSize: 10, color: DARK },
+    ],
+    margin: [0, 4, 0, 0],
+  });
 
-    <div class="from-section">
-      <span class="section-label">FROM</span>
-      <div class="from-details">
-        <strong>Green Funding</strong><br/>
-        Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
-        1300 403 100<br/>
-        solutions@greenfunding.com.au<br/>
-        greenfunding.com.au
-      </div>
-    </div>
+  const termTableBody: object[][] = [
+    [
+      { text: 'TERM', style: 'tableHeader', alignment: 'left' },
+      { text: 'MONTHLY REPAYMENT (EX GST)', style: 'tableHeader', alignment: 'right' },
+    ],
+  ];
+  termOptions.forEach((t) => {
+    termTableBody.push([
+      { text: `${t.years} ${t.years === 1 ? 'Year' : 'Years'}`, fontSize: 12, color: DARK, margin: [0, 8, 0, 8] },
+      { text: formatCurrency(t.monthlyPayment), fontSize: 12, bold: true, color: DARK, alignment: 'right', margin: [0, 8, 0, 8] },
+    ]);
+  });
 
-    <div class="prepared-for">
-      <span class="section-label">PREPARED FOR</span>
-      <h2>${preparedFor}</h2>
-    </div>
+  const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-AU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
-    <div class="summary-heading">Project Funding Summary</div>
+  const docDefinition = {
+    pageSize: 'A4',
+    pageMargins: [40, 40, 40, 60],
+    defaultStyle: {
+      font: 'Helvetica',
+      fontSize: 11,
+      color: DARK,
+      lineHeight: 1.4,
+    },
+    content: [
+      {
+        columns: [
+          {
+            stack: [
+              {
+                text: 'green funding',
+                fontSize: 26,
+                bold: true,
+                color: DARK,
+                margin: [0, 0, 0, 4],
+              },
+              {
+                canvas: [
+                  { type: 'rect', x: 0, y: 0, w: 8, h: 8, r: 4, color: GREEN },
+                ],
+                margin: [0, 0, 0, 0],
+              },
+            ],
+          },
+          {
+            stack: [
+              {
+                text: 'QUOTATION DATE',
+                fontSize: 8,
+                bold: true,
+                color: GRAY,
+                alignment: 'right',
+                characterSpacing: 1,
+              },
+              {
+                text: quoteDate,
+                fontSize: 18,
+                bold: true,
+                color: DARK,
+                alignment: 'right',
+                margin: [0, 2, 0, 8],
+              },
+              {
+                text: 'QUOTE NO',
+                fontSize: 8,
+                bold: true,
+                color: GRAY,
+                alignment: 'right',
+                characterSpacing: 1,
+              },
+              {
+                text: quoteNumber,
+                fontSize: 16,
+                bold: true,
+                color: DARK,
+                alignment: 'right',
+                margin: [0, 2, 0, 0],
+              },
+            ],
+            width: 180,
+          },
+        ],
+        margin: [0, 0, 0, 24],
+      },
 
-    <div class="summary-card">
-      ${siteAddress ? `<p><strong>Location:</strong> ${siteAddress}</p>` : ''}
-      ${systemSize ? `<p><strong>System Size:</strong> ${systemSize}</p>` : ''}
-      ${assetNames.length > 0 ? `<p><strong>Equipment:</strong> ${assetNames.join(', ')}</p>` : ''}
-      <p><strong>Net Capex:</strong> ${formatCurrency(netCapex)} ex GST</p>
-    </div>
+      {
+        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: BORDER_COLOR }],
+        margin: [0, 0, 0, 20],
+      },
 
-    <table class="terms-table">
-      <thead>
-        <tr>
-          <th>Term</th>
-          <th style="text-align:right;">Monthly Repayment (ex GST)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${termRows}
-      </tbody>
-    </table>
-    <div class="green-footer-bar"></div>
+      {
+        columns: [
+          {
+            stack: [
+              { text: 'FROM', fontSize: 9, bold: true, color: GREEN, characterSpacing: 1.5, margin: [0, 0, 0, 6] },
+              { text: 'Green Funding', bold: true, fontSize: 11, color: DARK },
+              { text: 'Level 18, 324 Queen Street', fontSize: 10, color: GRAY },
+              { text: 'Brisbane QLD 4000', fontSize: 10, color: GRAY },
+              { text: '1300 403 100', fontSize: 10, color: GRAY },
+              { text: 'solutions@greenfunding.com.au', fontSize: 10, color: GREEN },
+            ],
+          },
+          {
+            stack: [
+              { text: 'PREPARED FOR', fontSize: 9, bold: true, color: GREEN, characterSpacing: 1.5, margin: [0, 0, 0, 6] },
+              { text: preparedFor, bold: true, fontSize: 18, color: DARK },
+            ],
+          },
+        ],
+        margin: [0, 0, 0, 28],
+      },
 
-    <div class="disclaimer">
-      Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.
-    </div>
+      {
+        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: BORDER_COLOR }],
+        margin: [0, 0, 0, 20],
+      },
 
-    <div class="notes-section">
-      <hr class="notes-divider"/>
-      <div class="notes-heading">Notes</div>
-      <div class="notes-title">Quote valid for 30 days</div>
-      <div class="notes-text">
-        This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a
-        legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and
-        subject to change following a detailed site inspection, technical assessment, and credit approval.
-      </div>
-      <div class="notes-text">
-        Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian
-        Credit Licence Number 387856. All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.
-      </div>
-    </div>
+      { text: 'Project Funding Summary', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 12] },
 
-    <div class="page-footer">greenfunding.com.au</div>
-  </div>
-</body>
-</html>`;
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                stack: summaryRows,
+                fillColor: GREEN_LIGHT,
+                margin: [12, 12, 12, 12],
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0,
+          vLineWidth: () => 0,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+        margin: [0, 0, 0, 16],
+      },
+
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', '*'],
+          body: termTableBody,
+        },
+        layout: {
+          hLineWidth: (i: number, node: { table: { body: object[][] } }) => {
+            return i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5;
+          },
+          vLineWidth: () => 0,
+          hLineColor: () => BORDER_COLOR,
+          fillColor: (rowIndex: number) => (rowIndex === 0 ? LIGHT_BG : null),
+          paddingLeft: () => 12,
+          paddingRight: () => 12,
+        },
+        margin: [0, 0, 0, 8],
+      },
+
+      {
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 515, h: 6, r: 3, color: GREEN }],
+        margin: [0, 0, 0, 24],
+      },
+
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                text: 'Discounted payout available after 12 months; only 15% of the present value of all the future interest and capital recovery would be payable.',
+                fontSize: 10,
+                color: '#4B5563',
+                margin: [12, 10, 12, 10],
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0,
+          vLineWidth: (i: number) => (i === 0 ? 3 : 0),
+          vLineColor: () => GREEN,
+          fillColor: () => LIGHT_BG,
+          paddingLeft: () => 12,
+          paddingRight: () => 12,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+        margin: [0, 0, 0, 20],
+      },
+
+      {
+        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: BORDER_COLOR }],
+        margin: [0, 0, 0, 16],
+      },
+
+      { text: 'Notes', fontSize: 12, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
+      { text: `Quote valid for 30 days (until ${validUntil})`, fontSize: 11, bold: true, color: DARK, margin: [0, 0, 0, 8] },
+      {
+        text: 'This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.',
+        fontSize: 9,
+        color: '#4B5563',
+        lineHeight: 1.6,
+        margin: [0, 0, 0, 8],
+      },
+      {
+        text: 'Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider\'s lending criteria. Fees, terms, and conditions apply.',
+        fontSize: 9,
+        color: '#4B5563',
+        lineHeight: 1.6,
+      },
+    ],
+
+    footer: () => ({
+      columns: [
+        { text: 'greenfunding.com.au', fontSize: 9, color: GRAY, alignment: 'center' },
+      ],
+      margin: [40, 0, 40, 20],
+    }),
+
+    styles: {
+      tableHeader: {
+        fontSize: 9,
+        bold: true,
+        color: GRAY,
+        characterSpacing: 0.5,
+      },
+    },
+  };
+
+  const printer = new PdfPrinter(fonts);
+  const pdfDoc = printer.createPdfKitDocument(docDefinition);
+
+  return new Promise<Uint8Array>((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    pdfDoc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+    pdfDoc.on('end', () => {
+      const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      resolve(result);
+    });
+    pdfDoc.on('error', reject);
+    pdfDoc.end();
+  });
 }
 
 function generateQuoteEmailHtml(
@@ -498,6 +546,16 @@ function generateQuoteEmailHtml(
 </html>`;
 }
 
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -597,32 +655,35 @@ Deno.serve(async (req: Request) => {
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);
     const quoteDate = formatDate(new Date(quoteRecord.created_at));
 
-    const pdfHtml = generateQuotePdfHtml(
-      quoteNumber,
-      quoteDate,
-      recipientName,
-      recipientCompany,
-      siteAddress,
-      systemSize,
-      projectCost,
-      assetNames,
-      termOptions,
-      installerName,
-      installerCompany
-    );
+    const [pdfBytes, emailHtml] = await Promise.all([
+      generateQuotePdf(
+        quoteNumber,
+        quoteDate,
+        recipientName,
+        recipientCompany,
+        siteAddress,
+        systemSize,
+        projectCost,
+        assetNames,
+        termOptions,
+        installerName,
+        installerCompany
+      ),
+      Promise.resolve(generateQuoteEmailHtml(
+        quoteNumber,
+        quoteDate,
+        recipientName,
+        recipientCompany,
+        siteAddress,
+        systemSize,
+        projectCost,
+        assetNames,
+        termOptions,
+        installerName
+      )),
+    ]);
 
-    const emailHtml = generateQuoteEmailHtml(
-      quoteNumber,
-      quoteDate,
-      recipientName,
-      recipientCompany,
-      siteAddress,
-      systemSize,
-      projectCost,
-      assetNames,
-      termOptions,
-      installerName
-    );
+    const pdfBase64 = uint8ArrayToBase64(pdfBytes);
 
     const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
 
@@ -651,9 +712,9 @@ Deno.serve(async (req: Request) => {
           Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: emailHtml }],
           Attachments: [
             {
-              BinaryContent: btoa(unescape(encodeURIComponent(pdfHtml))),
-              Name: `GreenFunding-Quote-${quoteNumber}.html`,
-              ContentType: 'text/html',
+              BinaryContent: pdfBase64,
+              Name: `GreenFunding-Quote-${quoteNumber}.pdf`,
+              ContentType: 'application/pdf',
             },
           ],
         },
