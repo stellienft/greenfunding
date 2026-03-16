@@ -169,7 +169,7 @@ async function generateQuotePdf(
         columns: [
           {
             stack: logoBase64
-              ? [{ image: logoBase64, height: 48, width: 180, margin: [0, 0, 0, 0] }]
+              ? [{ image: logoBase64, fit: [200, 60], margin: [0, 0, 0, 0] }]
               : [{ text: 'Green Funding', fontSize: 26, bold: true, color: DARK }],
           },
           {
@@ -429,10 +429,10 @@ function generateQuoteEmailHtml(
 
           <!-- Header -->
           <tr>
-            <td style="background-color: #28AA48; padding: 36px 36px 28px 36px;">
+            <td style="background-color: #ffffff; padding: 36px 36px 28px 36px; border-bottom: 2px solid #E5E7EB;">
               <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" height="44" style="display: block; margin-bottom: 20px;" />
-              <p style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Your Financing Quote is Ready</p>
-              <p style="color: #e0f7e8; font-size: 15px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
+              <p style="color: #3A475B; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Your Financing Quote is Ready</p>
+              <p style="color: #6B7280; font-size: 15px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
             </td>
           </tr>
 
