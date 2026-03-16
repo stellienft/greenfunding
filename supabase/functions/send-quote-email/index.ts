@@ -295,32 +295,6 @@ async function generateQuotePdf(
         margin: [0, 0, 0, 24],
       },
 
-      {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                text: 'Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.',
-                fontSize: 10,
-                color: '#4B5563',
-                margin: [12, 10, 12, 10],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 0,
-          vLineWidth: (i: number) => (i === 0 ? 3 : 0),
-          vLineColor: () => GREEN,
-          fillColor: () => LIGHT_BG,
-          paddingLeft: () => 12,
-          paddingRight: () => 12,
-          paddingTop: () => 0,
-          paddingBottom: () => 0,
-        },
-        margin: [0, 0, 0, 20],
-      },
 
       {
         canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: BORDER_COLOR }],
@@ -497,13 +471,6 @@ function generateQuoteEmailHtml(
               </table>
 
               <!-- Disclaimer -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
-                <tr>
-                  <td style="background-color: #F8FAFB; border-left: 4px solid #28AA48; padding: 16px 20px; font-size: 13px; color: #4B5563; line-height: 1.7; font-family: Arial, sans-serif;">
-                    Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.
-                  </td>
-                </tr>
-              </table>
 
               <!-- Valid Box -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
