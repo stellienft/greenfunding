@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
 import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, FileText } from 'lucide-react';
-import { QuoteSection } from '../components/QuoteSection';
+import { QuoteSection, QuoteClientFields } from '../components/QuoteSection';
 
 interface LoanTermOption {
   years: number;
@@ -36,6 +36,7 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
+  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '' });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -339,6 +340,10 @@ export function Step3() {
           paymentTiming: state.paymentTiming,
           calculatorType: state.calculatorType,
           installerId: user?.id,
+          recipientName: quoteClientFields.clientName.trim() || undefined,
+          recipientEmail: quoteClientFields.clientEmail.trim() || undefined,
+          siteAddress: quoteClientFields.clientAddress.trim() || undefined,
+          clientPhone: quoteClientFields.clientPhone.trim() || undefined,
         }),
       });
       const result = await response.json();
@@ -770,6 +775,8 @@ export function Step3() {
               pdfGenerated={pdfGenerated}
               quoteError={quoteError}
               generatedQuoteNumber={generatedQuoteNumber}
+              clientFields={quoteClientFields}
+              onClientFieldChange={(field, value) => setQuoteClientFields(prev => ({ ...prev, [field]: value }))}
               onGenerate={handleGenerateQuote}
               onReset={() => { setPdfGenerated(false); setQuoteError(null); setGeneratedQuoteNumber(null); }}
               formatCurrency={formatCurrency}

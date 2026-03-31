@@ -15,11 +15,12 @@ interface TermOption {
 }
 
 interface QuotePayload {
-  recipientEmail: string;
+  recipientEmail?: string;
   recipientName?: string;
   recipientCompany?: string;
   siteAddress?: string;
   systemSize?: string;
+  clientPhone?: string;
   projectCost: number;
   selectedAssetIds: string[];
   termOptions: TermOption[];
@@ -63,299 +64,325 @@ async function generateQuotePdf(
   quoteDate: string,
   recipientName: string | undefined,
   recipientCompany: string | undefined,
-  _siteAddress: string | undefined,
-  _systemSize: string | undefined,
+  siteAddress: string | undefined,
+  systemSize: string | undefined,
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
   installerName?: string,
   installerCompany?: string,
+  clientPhone?: string,
   _logoBase64?: string | null
 ): Promise<Uint8Array> {
   const GREEN = hexToRgb('#28AA48');
-  const DARK = hexToRgb('#3A475B');
+  const GREEN2 = hexToRgb('#7DC241');
+  const DARK = hexToRgb('#1F2937');
   const GRAY = hexToRgb('#6B7280');
-  const LIGHT_BG = hexToRgb('#F8FAFB');
-  const GREEN_LIGHT = hexToRgb('#E8F5E9');
-  const BORDER = hexToRgb('#E5E7EB');
-  const WHITE = rgb(1, 1, 1);
+  const LIGHT_GRAY = hexToRgb('#9CA3AF');
+  const GREEN_BOX_BG = hexToRgb('#3DAA3A');
+  const GREEN_BOX_BG2 = hexToRgb('#8DC63F');
+  const ROW_ALT = hexToRgb('#F3F4F6');
+  const BORDER_COLOR = hexToRgb('#D1D5DB');
+  const NOTE_BG = hexToRgb('#3DAA3A');
 
   const pdfDoc = await PDFDocument.create();
-
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const pageWidth = PageSizes.A4[0];
   const pageHeight = PageSizes.A4[1];
-  const marginLeft = 40;
-  const marginRight = 40;
-  const contentWidth = pageWidth - marginLeft - marginRight;
-
-  const preparedFor = recipientCompany || recipientName || 'Valued Customer';
+  const ML = 50;
+  const MR = 50;
+  const CW = pageWidth - ML - MR;
   const netCapex = projectCost / 1.1;
 
   const validUntilDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const validUntil = validUntilDate.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+  const preparedFor = recipientCompany || recipientName || '';
+
+  function wrapText(text: string, font: typeof fontRegular, size: number, maxW: number): string[] {
+    const words = String(text ?? '').split(' ');
+    const lines: string[] = [];
+    let current = '';
+    for (const w of words) {
+      const test = current ? `${current} ${w}` : w;
+      if (font.widthOfTextAtSize(test, size) > maxW && current) {
+        lines.push(current);
+        current = w;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  function drawTextWrapped(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxW: number, lineH?: number): number {
+    const font = bold ? fontBold : fontRegular;
+    const lh = lineH ?? size * 1.45;
+    const lines = wrapText(text, font, size, maxW);
+    let curY = py;
+    for (const line of lines) {
+      page.drawText(line, { x, y: curY, size, font, color: rgb(color.r, color.g, color.b) });
+      curY -= lh;
+    }
+    return py - curY;
+  }
+
+  function drawT(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }) {
+    const font = bold ? fontBold : fontRegular;
+    page.drawText(String(text ?? ''), { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
+  }
+
+  function drawRect(page: ReturnType<typeof pdfDoc.addPage>, x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) {
+    page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
+  }
+
+  function drawLine(page: ReturnType<typeof pdfDoc.addPage>, x1: number, py: number, x2: number, color: { r: number; g: number; b: number }, thickness = 0.75) {
+    page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness, color: rgb(color.r, color.g, color.b) });
+  }
+
+  function drawBorderedBox(page: ReturnType<typeof pdfDoc.addPage>, x: number, py: number, w: number, h: number) {
+    page.drawRectangle({ x, y: py, width: w, height: h, borderColor: rgb(BORDER_COLOR.r, BORDER_COLOR.g, BORDER_COLOR.b), borderWidth: 1, color: rgb(1, 1, 1) });
+  }
+
+  function textW(text: string, bold: boolean, size: number) {
+    return (bold ? fontBold : fontRegular).widthOfTextAtSize(String(text ?? ''), size);
+  }
+
   function drawPage1() {
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let y = pageHeight - 40;
+    let y = pageHeight - 48;
 
-    const drawRect = (x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) => {
-      page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
-    };
+    // === LOGO top-left ===
+    // "green" in green, "funding" in dark
+    const logoSize = 22;
+    drawT(page, 'green', ML, y, logoSize, false, GREEN);
+    const greenW = textW('green', false, logoSize);
+    drawT(page, ' funding', ML + greenW, y, logoSize, false, DARK);
 
-    const drawText = (text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxWidth?: number) => {
-      const font = bold ? fontBold : fontRegular;
-      const safeText = String(text ?? '');
-      if (maxWidth) {
-        const words = safeText.split(' ');
-        let line = '';
-        let lineY = py;
-        for (const word of words) {
-          const testLine = line ? `${line} ${word}` : word;
-          const testWidth = font.widthOfTextAtSize(testLine, size);
-          if (testWidth > maxWidth && line) {
-            page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
-            line = word;
-            lineY -= size * 1.5;
-          } else {
-            line = testLine;
-          }
-        }
-        if (line) {
-          page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
-        }
-        return py - lineY;
-      }
-      page.drawText(safeText, { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
-      return 0;
-    };
+    // === DATE BOX top-right ===
+    const boxW = 150;
+    const boxH = 80;
+    const boxX = pageWidth - MR - boxW;
+    const boxY = y - boxH + 14;
+    drawBorderedBox(page, boxX, boxY, boxW, boxH);
 
-    const drawLine = (x1: number, py: number, x2: number, color: { r: number; g: number; b: number }) => {
-      page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness: 1, color: rgb(color.r, color.g, color.b) });
-    };
+    const dateLabel = 'Quotation Date';
+    drawT(page, dateLabel, boxX + (boxW - textW(dateLabel, false, 9)) / 2, y, 9, false, DARK);
+    drawT(page, quoteDate, boxX + (boxW - textW(quoteDate, true, 16)) / 2, y - 18, 16, true, GREEN);
+    const quoteLabel = 'Quote No:';
+    drawT(page, quoteLabel, boxX + (boxW - textW(quoteLabel, false, 9)) / 2, y - 36, 9, false, DARK);
+    drawT(page, quoteNumber, boxX + (boxW - textW(quoteNumber, true, 15)) / 2, y - 52, 15, true, GREEN);
 
-    drawRect(marginLeft, y - 80, contentWidth, 80, GREEN);
-    drawText('Green Funding', marginLeft + 12, y - 22, 18, true, { r: 1, g: 1, b: 1 });
-    drawText('Finance Quote', pageWidth - marginRight - fontBold.widthOfTextAtSize('Finance Quote', 11), y - 22, 11, true, { r: 1, g: 1, b: 1 });
-    drawText(`Quote: ${quoteNumber}`, pageWidth - marginRight - fontRegular.widthOfTextAtSize(`Quote: ${quoteNumber}`, 10), y - 38, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
-    drawText(`Date: ${quoteDate}`, pageWidth - marginRight - fontRegular.widthOfTextAtSize(`Date: ${quoteDate}`, 10), y - 52, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
-    y -= 88;
+    y -= 50;
 
-    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    // === FROM section ===
+    drawT(page, 'FROM', ML, y, 9, true, GREEN);
+    drawLine(page, ML, y - 3, ML + 45, GREEN, 1.5);
+    y -= 18;
+
+    drawT(page, 'Green Funding', ML, y, 10, true, DARK);
+    y -= 14;
+    drawT(page, 'Level 18, 324 Queen Street, Brisbane QLD 4000', ML, y, 9, false, DARK);
+    y -= 13;
+    drawT(page, '1300 403 100', ML, y, 9, false, DARK);
+    y -= 13;
+    drawT(page, 'solutions@greenfunding.com.au', ML, y, 9, false, DARK);
+    y -= 13;
+    drawT(page, 'greenfunding.com.au', ML, y, 9, false, DARK);
+    y -= 22;
+
+    // === PREPARED FOR section ===
+    drawT(page, 'PREPARED FOR', ML, y, 9, true, GREEN);
+    drawLine(page, ML, y - 3, ML + 70, GREEN, 1.5);
     y -= 20;
 
-    drawText('PREPARED FOR', marginLeft, y, 8, true, GRAY);
-    drawText('FROM', marginLeft + contentWidth / 2 + 10, y, 8, true, GRAY);
-    y -= 14;
-
-    drawText(preparedFor, marginLeft, y, 11, true, DARK);
-    drawText('Green Funding', marginLeft + contentWidth / 2 + 10, y, 11, true, DARK);
-    y -= 14;
+    if (preparedFor) {
+      drawT(page, preparedFor, ML, y, 16, true, DARK);
+      y -= 20;
+    }
 
     if (recipientName && recipientCompany) {
-      drawText(recipientName, marginLeft, y, 10, false, GRAY);
+      drawT(page, recipientName, ML, y, 10, false, DARK);
       y -= 13;
     }
 
-    drawText('solutions@greenfunding.com.au', marginLeft + contentWidth / 2 + 10, y, 9, false, GRAY);
-    y -= 13;
-    drawText('1300 403 100', marginLeft + contentWidth / 2 + 10, y, 9, false, GRAY);
-    y -= 20;
-
-    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
-    y -= 20;
-
-    drawText('PROJECT FUNDING SUMMARY', marginLeft, y, 9, true, GRAY);
-    y -= 14;
-
-    const summaryBoxHeight = 16 + (assetNames.length > 0 ? 14 : 0) + 14;
-    drawRect(marginLeft, y - summaryBoxHeight, contentWidth, summaryBoxHeight + 4, GREEN_LIGHT);
-
-    drawText('Net Capex (ex GST):', marginLeft + 8, y - 4, 10, true, DARK);
-    drawText(formatCurrency(netCapex), marginLeft + 8 + 130, y - 4, 10, false, DARK);
-    y -= 16;
-
-    if (assetNames.length > 0) {
-      drawText('Equipment:', marginLeft + 8, y - 2, 10, true, DARK);
-      drawText(assetNames.join(', '), marginLeft + 8 + 130, y - 2, 10, false, DARK, contentWidth - 150);
-      y -= 14;
+    if (siteAddress) {
+      drawT(page, siteAddress, ML, y, 9, false, GRAY);
+      y -= 13;
     }
 
-    drawText(`Total Project Cost (inc GST): ${formatCurrency(projectCost)}`, marginLeft + 8, y - 2, 10, false, GRAY);
-    y -= summaryBoxHeight - 16 + 20;
+    if (clientPhone) {
+      drawT(page, clientPhone, ML, y, 9, false, GRAY);
+      y -= 13;
+    }
 
-    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
-    y -= 20;
+    y -= 4;
+    drawT(page, 'Project Funding Summary', ML, y, 12, true, DARK);
+    y -= 22;
 
-    drawText('FINANCING OPTIONS', marginLeft, y, 9, true, GRAY);
-    y -= 14;
+    // === GREEN SUMMARY BOX ===
+    const summaryLines: string[] = [];
+    if (siteAddress) summaryLines.push(`Location: ${siteAddress}`);
+    if (systemSize) summaryLines.push(`System Size: ${systemSize}`);
+    summaryLines.push(`Net Capex: ${formatCurrency(netCapex)} ex GST`);
 
-    const headerHeight = 24;
-    drawRect(marginLeft, y - headerHeight, contentWidth, headerHeight, DARK);
-    drawText('LOAN TERM', marginLeft + 12, y - 16, 9, true, { r: 1, g: 1, b: 1 });
-    drawText('MONTHLY REPAYMENT (EX GST)', marginLeft + contentWidth - 12 - fontBold.widthOfTextAtSize('MONTHLY REPAYMENT (EX GST)', 9), y - 16, 9, true, { r: 1, g: 1, b: 1 });
-    y -= headerHeight;
+    const summaryLineH = 16;
+    const summaryPadV = 12;
+    const summaryH = summaryLines.length * summaryLineH + summaryPadV * 2 - 4;
+
+    // gradient-like: draw two overlapping rects
+    drawRect(page, ML, y - summaryH, CW, summaryH, GREEN_BOX_BG);
+    drawRect(page, ML + CW * 0.5, y - summaryH, CW * 0.5, summaryH, GREEN_BOX_BG2);
+    // re-draw left to blend
+    page.drawRectangle({ x: ML, y: y - summaryH, width: CW, height: summaryH,
+      color: rgb(GREEN_BOX_BG.r, GREEN_BOX_BG.g, GREEN_BOX_BG.b), opacity: 0 });
+
+    let sy = y - summaryPadV - 2;
+    for (const line of summaryLines) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx > -1) {
+        const label = line.substring(0, colonIdx + 1);
+        const val = line.substring(colonIdx + 1);
+        drawT(page, label, ML + 10, sy, 10, true, { r: 1, g: 1, b: 1 });
+        drawT(page, val, ML + 10 + textW(label, true, 10) + 3, sy, 10, false, { r: 1, g: 1, b: 1 });
+      } else {
+        drawT(page, line, ML + 10, sy, 10, false, { r: 1, g: 1, b: 1 });
+      }
+      sy -= summaryLineH;
+    }
+    y -= summaryH + 16;
+
+    // === TERM TABLE ===
+    // header row: term years on left, payment timing on right
+    const paymentLabel = termOptions.length === 1
+      ? `${termOptions[0].years} Year${termOptions[0].years !== 1 ? 's' : ''}`
+      : `${termOptions[0].years}–${termOptions[termOptions.length - 1].years} Years`;
+
+    const termHeaderH = 28;
+    drawT(page, paymentLabel, ML + 6, y - 18, 10, false, DARK);
+    drawT(page, 'Monthly (ex GST)', pageWidth - MR - textW('Monthly (ex GST)', false, 10) - 6, y - 18, 10, false, GRAY);
+    y -= termHeaderH;
+
+    drawLine(page, ML, y, ML + CW, BORDER_COLOR);
+    y -= 6;
 
     termOptions.forEach((t, i) => {
-      const rowHeight = 28;
+      const rowH = 22;
       if (i % 2 === 0) {
-        drawRect(marginLeft, y - rowHeight, contentWidth, rowHeight, LIGHT_BG);
-      } else {
-        page.drawRectangle({ x: marginLeft, y: y - rowHeight, width: contentWidth, height: rowHeight, color: WHITE });
+        drawRect(page, ML, y - rowH + 4, CW, rowH, ROW_ALT);
       }
-      drawText(`${t.years} ${t.years === 1 ? 'Year' : 'Years'}`, marginLeft + 12, y - 18, 11, false, DARK);
-      const amountText = formatCurrency(t.monthlyPayment);
-      drawText(amountText, marginLeft + contentWidth - 12 - fontBold.widthOfTextAtSize(amountText, 12), y - 18, 12, true, DARK);
-      y -= rowHeight;
+      const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
+      drawT(page, termLabel, ML + 6, y - 14, 10, false, DARK);
+      const amtText = formatCurrency(t.monthlyPayment);
+      drawT(page, amtText, pageWidth - MR - textW(amtText, false, 10) - 6, y - 14, 10, false, DARK);
+      y -= rowH;
     });
 
-    y -= 16;
+    y -= 20;
 
-    const greenBarH = 6;
-    drawRect(marginLeft, y - greenBarH, contentWidth, greenBarH, GREEN);
-    y -= greenBarH + 20;
+    // === GREEN NOTE BOX ===
+    const noteText = 'Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.';
+    const noteLines = wrapText(noteText, fontRegular, 8.5, CW - 20);
+    const noteH = noteLines.length * 13 + 16;
+    drawRect(page, ML, y - noteH, CW, noteH, NOTE_BG);
+    let ny = y - 10;
+    for (const nl of noteLines) {
+      drawT(page, nl, ML + 10, ny, 8.5, false, { r: 1, g: 1, b: 1 });
+      ny -= 13;
+    }
+    y -= noteH + 20;
 
-    drawText('Notes', marginLeft, y, 12, true, GREEN);
-    y -= 16;
-    drawText(`Quote valid for 30 days (until ${validUntil})`, marginLeft, y, 10, true, DARK);
-    y -= 14;
+    // === NOTES SECTION ===
+    drawT(page, 'Notes', ML, y, 13, false, GREEN);
+    y -= 20;
+    drawT(page, 'Quote valid for 30 days', ML, y, 13, true, DARK);
+    y -= 18;
 
-    const disclaimer1 = 'This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.';
-    const disclaimer2 = 'Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider\'s lending criteria. Fees, terms, and conditions apply.';
+    const d1 = `This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.`;
+    const d1H = drawTextWrapped(page, d1, ML, y, 9, false, hexToRgb('#374151'), CW, 14);
+    y -= d1H + 12;
 
-    drawText(disclaimer1, marginLeft, y, 8, false, GRAY, contentWidth);
-    y -= 40;
-    drawText(disclaimer2, marginLeft, y, 8, false, GRAY, contentWidth);
-
-    page.drawText('greenfunding.com.au', {
-      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 9) / 2,
-      y: 20,
-      size: 9,
-      font: fontRegular,
-      color: rgb(GRAY.r, GRAY.g, GRAY.b),
-    });
+    const d2 = `Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.`;
+    drawTextWrapped(page, d2, ML, y, 8.5, false, LIGHT_GRAY, CW, 13);
   }
 
   function drawPage2() {
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let y = pageHeight - 40;
+    let y = pageHeight - 48;
 
-    const drawRect = (x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) => {
-      page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
-    };
-
-    const drawText = (text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxWidth?: number) => {
-      const font = bold ? fontBold : fontRegular;
-      const safeText = String(text ?? '');
-      if (maxWidth) {
-        const words = safeText.split(' ');
-        let line = '';
-        let lineY = py;
-        for (const word of words) {
-          const testLine = line ? `${line} ${word}` : word;
-          const testWidth = font.widthOfTextAtSize(testLine, size);
-          if (testWidth > maxWidth && line) {
-            page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
-            line = word;
-            lineY -= size * 1.5;
-          } else {
-            line = testLine;
-          }
-        }
-        if (line) {
-          page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
-        }
-        return py - lineY;
-      }
-      page.drawText(safeText, { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
-      return 0;
-    };
-
-    const drawLine = (x1: number, py: number, x2: number, color: { r: number; g: number; b: number }) => {
-      page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness: 1, color: rgb(color.r, color.g, color.b) });
-    };
-
-    drawRect(marginLeft, y - 80, contentWidth, 80, GREEN);
-    drawText('Green Funding', marginLeft + 12, y - 22, 18, true, { r: 1, g: 1, b: 1 });
-    drawText('Next Steps', pageWidth - marginRight - fontBold.widthOfTextAtSize('Next Steps', 14), y - 22, 14, true, { r: 1, g: 1, b: 1 });
-    drawText('Requirements to Proceed', pageWidth - marginRight - fontRegular.widthOfTextAtSize('Requirements to Proceed', 10), y - 40, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
-    y -= 96;
-
-    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
-    y -= 24;
+    drawT(page, 'green', ML, y, 22, false, GREEN);
+    const gw = textW('green', false, 22);
+    drawT(page, ' funding', ML + gw, y, 22, false, DARK);
+    y -= 50;
 
     const isLowDoc = projectCost <= 250000;
-    const docTitle = isLowDoc ? 'Low Doc Requirements' : 'Full Doc Requirements';
-    drawText(docTitle, marginLeft, y, 14, true, GREEN);
+
+    drawT(page, isLowDoc ? 'Low Doc Requirements' : 'Full Doc Requirements', ML, y, 14, true, GREEN);
     y -= 18;
 
     const descText = isLowDoc
       ? `Your project cost of ${formatCurrency(projectCost)} qualifies for our Low Doc finance pathway. This is a streamlined process requiring minimal documentation.`
       : `Your project cost of ${formatCurrency(projectCost)} requires our Full Doc finance pathway. Please prepare the documentation listed below.`;
-    drawText(descText, marginLeft, y, 10, false, GRAY, contentWidth);
-    y -= 30;
+    const descH = drawTextWrapped(page, descText, ML, y, 10, false, GRAY, CW, 15);
+    y -= descH + 16;
 
     const lowDocItems = [
       'Completed Finance Application',
       '6 months business bank statements',
-      'Installer\'s quote / invoice',
+      "Installer's quote / invoice",
       'Signed Privacy Consent & Acknowledgement',
     ];
-
     const fullDocItems = [
       'Completed Finance Application',
       '2 years financial statements (P&L and Balance Sheet)',
       '2 years tax returns (business and individual)',
       '6 months business bank statements',
-      'Installer\'s quote / invoice',
+      "Installer's quote / invoice",
       'Signed Privacy Consent & Acknowledgement',
     ];
-
     const items = isLowDoc ? lowDocItems : fullDocItems;
 
     items.forEach((item, i) => {
-      const rowH = 32;
-      drawRect(marginLeft, y - rowH, contentWidth, rowH, i % 2 === 0 ? LIGHT_BG : { r: 1, g: 1, b: 1 });
-      drawRect(marginLeft + 10, y - rowH / 2 - 8, 22, 22, GREEN);
-      drawText(String(i + 1), marginLeft + 18 - fontBold.widthOfTextAtSize(String(i + 1), 10) / 2, y - rowH / 2 - 2, 10, true, { r: 1, g: 1, b: 1 });
-      drawText(item, marginLeft + 42, y - rowH / 2 - 1, 10, false, DARK, contentWidth - 50);
+      const rowH = 30;
+      drawRect(page, ML, y - rowH + 4, CW, rowH, i % 2 === 0 ? ROW_ALT : { r: 1, g: 1, b: 1 });
+      drawRect(page, ML + 8, y - rowH + 9, 18, 18, GREEN);
+      const numStr = String(i + 1);
+      drawT(page, numStr, ML + 8 + (18 - textW(numStr, true, 9)) / 2, y - rowH + 17, 9, true, { r: 1, g: 1, b: 1 });
+      drawT(page, item, ML + 34, y - 12, 10, false, DARK);
       y -= rowH;
     });
 
     y -= 24;
-    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    drawLine(page, ML, y, ML + CW, BORDER_COLOR);
     y -= 20;
 
-    drawText('Ready to Proceed?', marginLeft, y, 14, true, DARK);
+    drawT(page, 'Ready to Proceed?', ML, y, 13, true, DARK);
     y -= 16;
-    drawText('Contact our team to get started with your application.', marginLeft, y, 10, false, GRAY);
+    drawT(page, 'Contact our team to get started with your application.', ML, y, 10, false, GRAY);
     y -= 20;
 
-    drawRect(marginLeft, y - 60, contentWidth, 60, LIGHT_BG);
-    drawText('solutions@greenfunding.com.au', marginLeft + 16, y - 18, 11, false, GREEN);
-    drawText('1300 403 100', marginLeft + 16, y - 34, 11, false, GREEN);
+    drawRect(page, ML, y - 54, CW, 54, ROW_ALT);
+    drawT(page, 'solutions@greenfunding.com.au', ML + 14, y - 16, 10, false, GREEN);
+    drawT(page, '1300 403 100', ML + 14, y - 32, 10, false, GREEN);
 
     const contactRight = installerName || installerCompany
-      ? (installerName ? installerName : '') + (installerCompany ? (installerName ? ' | ' + installerCompany : installerCompany) : '')
+      ? [installerName, installerCompany].filter(Boolean).join(' | ')
       : 'greenfunding.com.au';
-    drawText(contactRight, marginLeft + contentWidth - 16 - fontRegular.widthOfTextAtSize(contactRight, 10), y - 18, 10, false, DARK);
+    drawT(page, contactRight, pageWidth - MR - textW(contactRight, false, 9) - 14, y - 16, 9, false, DARK);
 
     page.drawText('greenfunding.com.au', {
-      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 9) / 2,
-      y: 20,
-      size: 9,
-      font: fontRegular,
-      color: rgb(GRAY.r, GRAY.g, GRAY.b),
+      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 8) / 2,
+      y: 20, size: 8, font: fontRegular, color: rgb(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b),
     });
   }
 
   drawPage1();
   drawPage2();
 
-  const pdfBytes = await pdfDoc.save();
-  return pdfBytes;
+  return await pdfDoc.save();
 }
 
 function generateQuoteEmailHtml(
@@ -690,6 +717,7 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
+      clientPhone,
       projectCost,
       selectedAssetIds,
       termOptions,
@@ -780,6 +808,7 @@ Deno.serve(async (req: Request) => {
       termOptions,
       installerName,
       installerCompany,
+      clientPhone,
       null
     );
 

@@ -1,11 +1,18 @@
 import { useState } from 'react';
-import { Check, Download, CheckCircle, AlertCircle, Copy, ClipboardCheck, ChevronDown, ChevronUp, Mail, RefreshCw } from 'lucide-react';
+import { Check, Download, CheckCircle, AlertCircle, Copy, ClipboardCheck, ChevronDown, ChevronUp, Mail, RefreshCw, User } from 'lucide-react';
 
 interface TermOption {
   years: number;
   monthlyPayment: number;
   interestRate?: number;
   totalFinanced?: number;
+}
+
+export interface QuoteClientFields {
+  clientName: string;
+  clientEmail: string;
+  clientAddress: string;
+  clientPhone: string;
 }
 
 interface QuoteSectionProps {
@@ -19,15 +26,18 @@ interface QuoteSectionProps {
   pdfGenerated: boolean;
   quoteError: string | null;
   generatedQuoteNumber: string | null;
+  clientFields: QuoteClientFields;
+  onClientFieldChange: (field: keyof QuoteClientFields, value: string) => void;
   onGenerate: () => void;
   onReset: () => void;
   formatCurrency: (n: number) => string;
 }
 
-function buildEmailTemplate(projectCost: number, installerName: string, installerCompany: string): string {
+function buildEmailTemplate(projectCost: number, installerName: string, installerCompany: string, clientName: string): string {
   const isLowDoc = projectCost <= 250000;
   const costStr = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(projectCost);
   const docType = isLowDoc ? 'Low Doc' : 'Full Doc';
+  const greeting = clientName.trim() ? clientName.trim() : '[Client Name]';
 
   const lowDocItems = `To progress this to the next stage we will need the following documents:
 
@@ -45,7 +55,7 @@ function buildEmailTemplate(projectCost: number, installerName: string, installe
 5. Installer's quote / invoice
 6. Signed Privacy Consent & Acknowledgement`;
 
-  return `Hi [Client Name],
+  return `Hi ${greeting},
 
 I hope this email finds you well. I wanted to follow up on our recent conversation regarding your renewable energy project.
 
@@ -71,6 +81,8 @@ export function QuoteSection({
   pdfGenerated,
   quoteError,
   generatedQuoteNumber,
+  clientFields,
+  onClientFieldChange,
   onGenerate,
   onReset,
   formatCurrency,
@@ -78,7 +90,7 @@ export function QuoteSection({
   const [showEmailTemplate, setShowEmailTemplate] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const emailTemplate = buildEmailTemplate(projectCost, installerName, installerCompany);
+  const emailTemplate = buildEmailTemplate(projectCost, installerName, installerCompany, clientFields.clientName);
   const isLowDoc = projectCost <= 250000;
 
   const handleCopy = async () => {
@@ -125,7 +137,56 @@ export function QuoteSection({
           </div>
         ) : (
           <>
-            <div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <User className="w-4 h-4 text-[#28AA48]" />
+                <span className="text-sm font-semibold text-[#3A475B]">Client Details <span className="text-xs font-normal text-gray-400">(optional)</span></span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Name</label>
+                  <input
+                    type="text"
+                    value={clientFields.clientName}
+                    onChange={e => onClientFieldChange('clientName', e.target.value)}
+                    placeholder="e.g. Hallet Group"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Email</label>
+                  <input
+                    type="email"
+                    value={clientFields.clientEmail}
+                    onChange={e => onClientFieldChange('clientEmail', e.target.value)}
+                    placeholder="e.g. info@halletgroup.com"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Address</label>
+                  <input
+                    type="text"
+                    value={clientFields.clientAddress}
+                    onChange={e => onClientFieldChange('clientAddress', e.target.value)}
+                    placeholder="e.g. 42 Northern Power Station Road"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Phone</label>
+                  <input
+                    type="tel"
+                    value={clientFields.clientPhone}
+                    onChange={e => onClientFieldChange('clientPhone', e.target.value)}
+                    placeholder="e.g. 0400 000 000"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4">
               <label className="block text-sm font-semibold text-[#3A475B] mb-2">
                 Loan Terms to Include <span className="text-red-500">*</span>
               </label>
