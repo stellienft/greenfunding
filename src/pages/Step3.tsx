@@ -777,8 +777,7 @@ export function Step3() {
               </button>
               <button
                 onClick={() => {
-                  const allTerms = [...termOptions, ...additionalTermOptions];
-                  setSelectedQuoteTerms(allTerms.map(t => t.years));
+                  setSelectedQuoteTerms(selectedTerm !== null ? [selectedTerm] : []);
                   setEmailSent(false);
                   setEmailError(null);
                   setSentQuoteNumber(null);

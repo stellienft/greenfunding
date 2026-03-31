@@ -812,34 +812,54 @@ Deno.serve(async (req: Request) => {
     const preparedFor = recipientCompany || recipientName || 'Valued Customer';
     const quoteSubjectLine = `Your Green Funding Quote ${quoteNumber} - ${preparedFor}`;
 
-    const emailPromises: Promise<Response>[] = [];
+    const hasIntroEmail = !!(introEmailBody && introEmailBody.trim());
 
-    if (introEmailBody && introEmailBody.trim()) {
+    if (hasIntroEmail) {
       const introSubject = introEmailSubject?.trim() || 'Introduction to Green Funding – Solar Finance Options';
-      const introHtml = generateIntroEmailHtml(introEmailBody, logoBase64, projectCost);
-      emailPromises.push(sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml));
+      const introHtml = generateIntroEmailHtml(introEmailBody!, logoBase64, projectCost);
+      const introResponse = await sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml);
+      if (!introResponse.ok) {
+        const introResult = await introResponse.json();
+        console.error('Intro email API error:', introResult);
+        return new Response(
+          JSON.stringify({ error: 'Failed to send intro email', details: introResult }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      EdgeRuntime.waitUntil((async () => {
+        await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000));
+        await sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
+          content: pdfBase64,
+          name: `GreenFunding-Quote-${quoteNumber}.pdf`,
+        });
+      })());
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          quoteNumber,
+          emailId: 'sent',
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    emailPromises.push(
-      sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
-        content: pdfBase64,
-        name: `GreenFunding-Quote-${quoteNumber}.pdf`,
-      })
-    );
+    const quoteResponse = await sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
+      content: pdfBase64,
+      name: `GreenFunding-Quote-${quoteNumber}.pdf`,
+    });
 
-    const emailResponses = await Promise.all(emailPromises);
-    const emailResults = await Promise.all(emailResponses.map(r => r.json()));
-
-    const failedIndex = emailResponses.findIndex(r => !r.ok);
-    if (failedIndex !== -1) {
-      console.error('Email API error:', emailResults[failedIndex]);
+    if (!quoteResponse.ok) {
+      const quoteResult = await quoteResponse.json();
+      console.error('Quote email API error:', quoteResult);
       return new Response(
-        JSON.stringify({ error: 'Failed to send email', details: emailResults[failedIndex] }),
+        JSON.stringify({ error: 'Failed to send email', details: quoteResult }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const quoteResult = emailResults[emailResults.length - 1];
+    const quoteResult = await quoteResponse.json();
 
     return new Response(
       JSON.stringify({
