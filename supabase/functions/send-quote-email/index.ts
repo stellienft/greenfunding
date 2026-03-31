@@ -52,20 +52,28 @@ const formatDate = (date: Date): string => {
 };
 
 async function fetchLogoBase64(): Promise<string | null> {
-  try {
-    const res = await fetch('https://portal.greenfunding.com.au/image.png');
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  const urls = [
+    'https://greenfunding.com.au/wp-content/uploads/2024/02/Logo1.webp',
+    'https://portal.greenfunding.com.au/image.png',
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const buffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const ext = url.endsWith('.webp') ? 'webp' : 'png';
+      return `data:image/${ext};base64,` + btoa(binary);
+    } catch {
+      continue;
     }
-    return 'data:image/png;base64,' + btoa(binary);
-  } catch {
-    return null;
   }
+  return null;
 }
 
 async function generateQuotePdf(
@@ -405,10 +413,14 @@ function generateQuoteEmailHtml(
 
           <!-- Header -->
           <tr>
-            <td style="background-color: #ffffff; padding: 36px 36px 28px 36px; border-bottom: 2px solid #E5E7EB;">
-              ${logoBase64 ? `<img src="${logoBase64}" alt="Green Funding" height="44" style="display: block; margin-bottom: 20px;" />` : `<span style="font-size: 22px; font-weight: 700; color: #3A475B; font-family: Arial, sans-serif;">Green Funding</span>`}
-              <p style="color: #3A475B; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Your Financing Quote is Ready</p>
-              <p style="color: #6B7280; font-size: 15px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
+            <td style="background: linear-gradient(135deg, #1a7a32 0%, #28AA48 60%, #AFD235 100%); padding: 36px 36px 32px 36px;">
+              ${logoBase64
+                ? `<img src="${logoBase64}" alt="Green Funding" height="48" style="display: block; margin-bottom: 24px; filter: brightness(0) invert(1);" />`
+                : `<span style="font-size: 26px; font-weight: 700; color: #ffffff; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Green Funding</span>`
+              }
+              <p style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; font-family: Arial, sans-serif;">Financing Quote</p>
+              <p style="color: #ffffff; font-size: 26px; font-weight: 700; margin: 0 0 10px 0; font-family: Arial, sans-serif; line-height: 1.2;">Your Quote is Ready</p>
+              <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
             </td>
           </tr>
 
@@ -573,8 +585,11 @@ function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null, pr
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
-            <td style="background-color: #ffffff; padding: 36px 36px 20px 36px; border-bottom: 2px solid #E5E7EB;">
-              ${logoBase64 ? `<img src="${logoBase64}" alt="Green Funding" height="44" style="display: block;" />` : `<span style="font-size: 22px; font-weight: 700; color: #3A475B; font-family: Arial, sans-serif;">Green Funding</span>`}
+            <td style="background: linear-gradient(135deg, #1a7a32 0%, #28AA48 60%, #AFD235 100%); padding: 32px 36px;">
+              ${logoBase64
+                ? `<img src="${logoBase64}" alt="Green Funding" height="48" style="display: block; filter: brightness(0) invert(1);" />`
+                : `<span style="font-size: 26px; font-weight: 700; color: #ffffff; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Green Funding</span>`
+              }
             </td>
           </tr>
           <tr>
