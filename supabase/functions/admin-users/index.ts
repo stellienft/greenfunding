@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "update") {
-      const { userId, fullName, companyName, email, userType, firstName, lastName, phone } = await req.json();
+      const { userId, fullName, companyName, email, userType, firstName, lastName, phone, allowedCalculators } = await req.json();
 
       if (!userId || !email) {
         return new Response(
@@ -109,13 +109,19 @@ Deno.serve(async (req: Request) => {
           );
         }
 
+        const installerUpdateData: any = {
+          full_name: fullName,
+          company_name: companyName,
+          email: email,
+        };
+
+        if (allowedCalculators !== undefined) {
+          installerUpdateData.allowed_calculators = allowedCalculators;
+        }
+
         const { error: updateError } = await supabase
           .from("installer_users")
-          .update({
-            full_name: fullName,
-            company_name: companyName,
-            email: email,
-          })
+          .update(installerUpdateData)
           .eq("id", userId);
 
         if (updateError) throw updateError;

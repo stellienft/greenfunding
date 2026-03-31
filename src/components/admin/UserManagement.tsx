@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, CreditCard as Edit2, RotateCcw } from 'lucide-react';
+import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, Pencil, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const ALL_CALCULATORS = [
@@ -231,6 +231,7 @@ export function UserManagement() {
       } else {
         bodyData.fullName = formData.fullName;
         bodyData.companyName = formData.companyName;
+        bodyData.allowedCalculators = allowedCalcs;
       }
 
       const response = await fetch(apiUrl, {
@@ -241,13 +242,6 @@ export function UserManagement() {
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to update user');
-
-      if (!isAdmin) {
-        await supabase
-          .from('installer_users')
-          .update({ allowed_calculators: allowedCalcs })
-          .eq('id', editingUser!.id);
-      }
 
       setSuccess('User updated successfully!');
       setFormData({ fullName: '', companyName: '', email: '', firstName: '', lastName: '', phone: '' });
@@ -666,7 +660,7 @@ export function UserManagement() {
                             className="text-blue-600 hover:text-blue-800 transition-colors"
                             title="Edit user"
                           >
-                            <Edit2 className="w-5 h-5" />
+                            <Pencil className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleResetPassword(user.id, user.user_type)}
