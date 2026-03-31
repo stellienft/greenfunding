@@ -12,9 +12,10 @@ import { PreviewTool } from '../components/admin/PreviewTool';
 import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail } from 'lucide-react';
+import { AdminAccount } from '../components/admin/AdminAccount';
+import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle } from 'lucide-react';
 
-type Tab = 'config' | 'assets' | 'documents' | 'applications' | 'preview' | 'users' | 'site' | 'email';
+type Tab = 'config' | 'assets' | 'documents' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ export function AdminDashboard() {
     { id: 'site' as Tab, label: 'Site Settings', icon: Globe },
     { id: 'email' as Tab, label: 'Email Templates', icon: Mail },
     { id: 'preview' as Tab, label: 'Preview Tool', icon: Eye },
+    { id: 'account' as Tab, label: 'My Account', icon: UserCircle },
   ];
 
   if (!admin) {
@@ -134,6 +136,7 @@ export function AdminDashboard() {
                   {activeTab === 'preview' && config && (
                     <PreviewTool config={config} />
                   )}
+                  {activeTab === 'account' && <AdminAccount />}
                 </>
               )}
             </div>

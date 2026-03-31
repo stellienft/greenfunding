@@ -88,9 +88,11 @@ Deno.serve(async (req: Request) => {
         .eq('id', admin.id);
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          admin: { id: admin.id, email: admin.email } 
+        JSON.stringify({
+          success: true,
+          admin: { id: admin.id, email: admin.email, needs_password_reset: admin.needs_password_reset },
+          requires2fa: admin.totp_enabled === true,
+          totp_setup_prompted: admin.totp_setup_prompted === true,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

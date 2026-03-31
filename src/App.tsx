@@ -16,12 +16,14 @@ import { Submissions } from './pages/Submissions';
 import { Contacts } from './pages/Contacts';
 import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
+import { Setup2FA } from './pages/Setup2FA';
+import { Verify2FA } from './pages/Verify2FA';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Analytics } from './components/Analytics';
 import { useEffect } from 'react';
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { admin, loading } = useAdmin();
+  const { admin, loading, totpVerified } = useAdmin();
 
   if (loading) {
     return (
@@ -32,6 +34,10 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!admin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  if (!totpVerified) {
     return <Navigate to="/admin/login" replace />;
   }
 
@@ -75,6 +81,8 @@ function App() {
               <Route path="/login" element={<InstallerLogin />} />
               <Route path="/installer-login" element={<InstallerLogin />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/setup-2fa" element={<Setup2FA />} />
+              <Route path="/verify-2fa" element={<Verify2FA />} />
               <Route
                 path="/dashboard"
                 element={

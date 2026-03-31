@@ -1,10 +1,11 @@
 import React from 'react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
+import { TwoFactorManager } from '../components/TwoFactorManager';
 import { User, Building2, Mail, Phone, Calendar } from 'lucide-react';
 
 export function MyAccount() {
-  const { installerProfile } = useAuth();
+  const { installerProfile, refreshProfile } = useAuth();
 
   if (!installerProfile) {
     return (
@@ -115,6 +116,18 @@ export function MyAccount() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-bold text-[#3A475B] mb-4">Security</h3>
+                <TwoFactorManager
+                  userId={installerProfile.id}
+                  userType="installer"
+                  email={installerProfile.email}
+                  totpEnabled={installerProfile.totp_enabled}
+                  onStatusChange={refreshProfile}
+                  accentColor="#6EAE3C"
+                />
               </div>
 
               <div className="border-t border-gray-200 pt-6">

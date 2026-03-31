@@ -6,7 +6,7 @@ import { Layout } from '../components/Layout';
 
 export function InstallerLogin() {
   const navigate = useNavigate();
-  const { user, installerProfile, loading, signIn } = useAuth();
+  const { user, installerProfile, loading, signIn, totpVerified } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,11 +16,15 @@ export function InstallerLogin() {
     if (!loading && user && installerProfile) {
       if (installerProfile.needs_password_reset) {
         navigate('/reset-password', { replace: true });
+      } else if (installerProfile.totp_enabled && !totpVerified) {
+        navigate('/verify-2fa', { replace: true });
+      } else if (!installerProfile.totp_setup_prompted) {
+        navigate('/setup-2fa', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, installerProfile, loading, navigate]);
+  }, [user, installerProfile, loading, totpVerified, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

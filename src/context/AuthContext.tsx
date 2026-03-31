@@ -11,16 +11,21 @@ interface InstallerUser {
   quote_count: number;
   application_count: number;
   allowed_calculators?: string[];
+  totp_enabled: boolean;
+  totp_setup_prompted: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   installerProfile: InstallerUser | null;
   loading: boolean;
+  totpVerified: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  completeTotpVerification: () => void;
+  markTotpSetupPrompted: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [installerProfile, setInstallerProfile] = useState<InstallerUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [totpVerified, setTotpVerified] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -36,9 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        loadInstallerProfile(session.user.id);
+        (async () => {
+          await loadInstallerProfile(session.user.id);
+        })();
       } else {
         setInstallerProfile(null);
+        setTotpVerified(false);
       }
     });
 
@@ -82,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
     if (data.user) {
+      setTotpVerified(false);
       await loadInstallerProfile(data.user.id);
     }
   }
@@ -90,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setUser(null);
       setInstallerProfile(null);
+      setTotpVerified(false);
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         console.error('Sign out error:', error);
@@ -124,16 +135,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  function completeTotpVerification() {
+    setTotpVerified(true);
+  }
+
+  async function markTotpSetupPrompted() {
+    if (!user) return;
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/totp/mark-prompted`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id, userType: 'installer' }),
+      });
+      await loadInstallerProfile(user.id);
+    } catch (error) {
+      console.error('Error marking totp setup prompted:', error);
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
         user,
         installerProfile,
         loading,
+        totpVerified,
         signIn,
         signOut,
         updatePassword,
         refreshProfile,
+        completeTotpVerification,
+        markTotpSetupPrompted,
       }}
     >
       {children}

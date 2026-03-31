@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const { user, installerProfile, loading } = useAuth();
+  const { user, installerProfile, loading, totpVerified } = useAuth();
 
   useEffect(() => {
     if (!loading) {
@@ -12,9 +12,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         navigate('/login');
       } else if (installerProfile?.needs_password_reset) {
         navigate('/reset-password');
+      } else if (installerProfile?.totp_enabled && !totpVerified) {
+        navigate('/verify-2fa');
+      } else if (installerProfile && !installerProfile.totp_setup_prompted) {
+        navigate('/setup-2fa');
       }
     }
-  }, [user, installerProfile, loading, navigate]);
+  }, [user, installerProfile, loading, totpVerified, navigate]);
 
   if (loading) {
     return (
@@ -24,7 +28,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || installerProfile?.needs_password_reset) {
+  if (
+    !user ||
+    installerProfile?.needs_password_reset ||
+    (installerProfile?.totp_enabled && !totpVerified) ||
+    (installerProfile && !installerProfile.totp_setup_prompted)
+  ) {
     return null;
   }
 
