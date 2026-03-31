@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, CreditCard as Edit2, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
+const ALL_CALCULATORS = [
+  { key: 'rental', label: 'Rental' },
+  { key: 'progress_payment_rental', label: 'Progress Payment Rental' },
+  { key: 'serviced_rental', label: 'Serviced Rental' },
+];
+
 interface InstallerUser {
   id: string;
   full_name: string;
@@ -15,6 +21,7 @@ interface InstallerUser {
   first_name?: string;
   last_name?: string;
   phone?: string;
+  allowed_calculators?: string[];
 }
 
 export function UserManagement() {
@@ -31,6 +38,7 @@ export function UserManagement() {
     lastName: '',
     phone: '',
   });
+  const [allowedCalcs, setAllowedCalcs] = useState<string[]>(ALL_CALCULATORS.map(c => c.key));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -129,8 +137,14 @@ export function UserManagement() {
         return;
       }
 
+      await supabase
+        .from('installer_users')
+        .update({ allowed_calculators: allowedCalcs })
+        .eq('id', authData.user.id);
+
       setSuccess(`User created successfully! Welcome email sent to ${formData.email}`);
       setFormData({ fullName: '', companyName: '', email: '', firstName: '', lastName: '', phone: '' });
+      setAllowedCalcs(ALL_CALCULATORS.map(c => c.key));
       setShowAddForm(false);
       loadUsers();
     } catch (error: any) {
@@ -181,6 +195,11 @@ export function UserManagement() {
       lastName: isAdmin ? (user.last_name || '') : '',
       phone: isAdmin ? (user.phone || '') : '',
     });
+    if (!isAdmin) {
+      setAllowedCalcs(user.allowed_calculators && user.allowed_calculators.length > 0
+        ? user.allowed_calculators
+        : ALL_CALCULATORS.map(c => c.key));
+    }
     setShowAddForm(true);
   }
 
@@ -223,8 +242,16 @@ export function UserManagement() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to update user');
 
+      if (!isAdmin) {
+        await supabase
+          .from('installer_users')
+          .update({ allowed_calculators: allowedCalcs })
+          .eq('id', editingUser!.id);
+      }
+
       setSuccess('User updated successfully!');
       setFormData({ fullName: '', companyName: '', email: '', firstName: '', lastName: '', phone: '' });
+      setAllowedCalcs(ALL_CALCULATORS.map(c => c.key));
       setShowAddForm(false);
       setEditingUser(null);
       loadUsers();
@@ -472,6 +499,33 @@ export function UserManagement() {
               </>
             )}
 
+            {!editingUser?.user_type || editingUser.user_type === 'installer' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Calculator Access
+                </label>
+                <div className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                  {ALL_CALCULATORS.map(calc => (
+                    <label key={calc.key} className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={allowedCalcs.includes(calc.key)}
+                        onChange={e => {
+                          setAllowedCalcs(prev =>
+                            e.target.checked
+                              ? [...prev, calc.key]
+                              : prev.filter(k => k !== calc.key)
+                          );
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm text-gray-700">{calc.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {!editingUser && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
@@ -495,6 +549,7 @@ export function UserManagement() {
                   setShowAddForm(false);
                   setEditingUser(null);
                   setFormData({ fullName: '', companyName: '', email: '', firstName: '', lastName: '', phone: '' });
+                  setAllowedCalcs(ALL_CALCULATORS.map(c => c.key));
                   setError(null);
                 }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"

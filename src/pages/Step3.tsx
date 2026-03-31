@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
-import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck } from 'lucide-react';
+import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, Download, FileText } from 'lucide-react';
 
 interface LoanTermOption {
   years: number;
@@ -34,13 +34,20 @@ export function Step3() {
     ]
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quoteName, setQuoteName] = useState(state.recipientName || '');
+  const [quoteCompany, setQuoteCompany] = useState(state.recipientCompany || '');
+  const [siteAddressInput, setSiteAddressInput] = useState(state.siteAddress || '');
+  const [systemSizeInput, setSystemSizeInput] = useState(state.systemSize || '');
+  const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfGenerated, setPdfGenerated] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [generatedQuoteNumber, setGeneratedQuoteNumber] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailTo, setEmailTo] = useState(state.recipientEmail || '');
   const [emailName, setEmailName] = useState(state.recipientName || '');
   const [emailCompany, setEmailCompany] = useState(state.recipientCompany || '');
-  const [siteAddressInput, setSiteAddressInput] = useState(state.siteAddress || '');
-  const [systemSizeInput, setSystemSizeInput] = useState(state.systemSize || '');
-  const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -303,6 +310,66 @@ export function Step3() {
     } catch {
       // fallback: select text manually
     }
+  };
+
+  const handleGenerateQuote = async () => {
+    if (selectedQuoteTerms.length === 0) {
+      setQuoteError('Please select at least one loan term to include.');
+      return;
+    }
+    setGeneratingPdf(true);
+    setQuoteError(null);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const allTerms = [...termOptions, ...additionalTermOptions];
+      const filteredTerms = allTerms.filter(t => selectedQuoteTerms.includes(t.years));
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-quote-email?mode=generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+          'Apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          recipientName: quoteName.trim() || undefined,
+          recipientCompany: quoteCompany.trim() || undefined,
+          siteAddress: siteAddressInput.trim() || undefined,
+          systemSize: systemSizeInput.trim() || undefined,
+          projectCost: state.projectCost,
+          selectedAssetIds: state.selectedAssetIds,
+          termOptions: filteredTerms.map(t => ({
+            years: t.years,
+            monthlyPayment: t.monthlyPayment,
+            interestRate: t.interestRate,
+            totalFinanced: t.totalFinanced,
+          })),
+          paymentTiming: state.paymentTiming,
+          calculatorType: state.calculatorType,
+          installerId: user?.id,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || 'Failed to generate quote');
+      const link = document.createElement('a');
+      link.href = `data:application/pdf;base64,${result.pdfBase64}`;
+      link.download = result.filename || `GreenFunding-Quote-${result.quoteNumber}.pdf`;
+      link.click();
+      setGeneratedQuoteNumber(result.quoteNumber);
+      setPdfGenerated(true);
+    } catch (err: any) {
+      setQuoteError(err.message || 'Failed to generate quote. Please try again.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const handleCloseQuoteModal = () => {
+    setShowQuoteModal(false);
+    setPdfGenerated(false);
+    setQuoteError(null);
+    setGeneratedQuoteNumber(null);
   };
 
   const handleContinue = () => {
@@ -778,15 +845,15 @@ export function Step3() {
               <button
                 onClick={() => {
                   setSelectedQuoteTerms(selectedTerm !== null ? [selectedTerm] : []);
-                  setEmailSent(false);
-                  setEmailError(null);
-                  setSentQuoteNumber(null);
-                  setShowEmailModal(true);
+                  setPdfGenerated(false);
+                  setQuoteError(null);
+                  setGeneratedQuoteNumber(null);
+                  setShowQuoteModal(true);
                 }}
                 className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white border-2 border-[#28AA48] text-[#28AA48] font-semibold rounded-xl hover:bg-[#28AA48]/5 transition-all touch-manipulation order-2 sm:order-2"
               >
-                <Mail className="w-5 h-5" />
-                Email Quote
+                <FileText className="w-5 h-5" />
+                Generate Quote
               </button>
               <button
                 onClick={handleContinue}
@@ -799,6 +866,161 @@ export function Step3() {
           </div>
         </div>
       </div>
+
+      {showQuoteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full relative flex flex-col max-h-[90vh]">
+            <button onClick={handleCloseQuoteModal} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10">
+              <X className="w-6 h-6" />
+            </button>
+
+            {pdfGenerated ? (
+              <div className="text-center py-10 px-8">
+                <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mx-auto mb-4">
+                  <CheckCircle className="w-10 h-10 text-[#28AA48]" />
+                </div>
+                <h3 className="text-2xl font-bold text-[#3A475B] mb-2">Quote Generated!</h3>
+                {generatedQuoteNumber && (
+                  <p className="text-[#28AA48] font-bold text-lg mb-3">{generatedQuoteNumber}</p>
+                )}
+                <p className="text-gray-500 text-sm mb-6">Your PDF has been downloaded. You can share it directly with your client.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setPdfGenerated(false); setQuoteError(null); }}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                  >
+                    Generate Another
+                  </button>
+                  <button
+                    onClick={handleCloseQuoteModal}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-[#28AA48]/10 rounded-xl flex-shrink-0">
+                      <FileText className="w-5 h-5 text-[#28AA48]" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-[#3A475B]">Generate Quote</h3>
+                      <p className="text-sm text-gray-500">Download a PDF quote to share with your client</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Client Name</label>
+                    <input
+                      type="text"
+                      value={quoteName}
+                      onChange={e => setQuoteName(e.target.value)}
+                      placeholder="e.g. John Smith"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Company Name</label>
+                    <input
+                      type="text"
+                      value={quoteCompany}
+                      onChange={e => setQuoteCompany(e.target.value)}
+                      placeholder="e.g. Acme Pty Ltd"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Site Address</label>
+                    <input
+                      type="text"
+                      value={siteAddressInput}
+                      onChange={e => setSiteAddressInput(e.target.value)}
+                      placeholder="e.g. 123 Main St, Brisbane QLD"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">System Size</label>
+                    <input
+                      type="text"
+                      value={systemSizeInput}
+                      onChange={e => setSystemSizeInput(e.target.value)}
+                      placeholder="e.g. 99.75 kW"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                      Loan Terms to Include <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[...termOptions, ...additionalTermOptions].map(t => {
+                        const checked = selectedQuoteTerms.includes(t.years);
+                        return (
+                          <button
+                            key={t.years}
+                            type="button"
+                            onClick={() => setSelectedQuoteTerms(prev =>
+                              checked ? prev.filter(y => y !== t.years) : [...prev, t.years]
+                            )}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                              checked
+                                ? 'bg-[#28AA48]/10 border-[#28AA48] text-[#28AA48]'
+                                : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
+                            }`}
+                          >
+                            {checked && <Check className="w-3.5 h-3.5" />}
+                            {t.years} yr — {formatCurrency(t.monthlyPayment)}/mo
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedQuoteTerms.length === 0 && (
+                      <p className="text-xs text-red-500 mt-1.5">Select at least one term.</p>
+                    )}
+                  </div>
+
+                  {quoteError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-red-700">{quoteError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-1">
+                    <button onClick={handleCloseQuoteModal} className="flex-1 px-4 py-2.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleGenerateQuote}
+                      disabled={generatingPdf}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {generatingPdf ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          Download PDF
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {showEmailModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">

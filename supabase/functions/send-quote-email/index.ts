@@ -325,6 +325,229 @@ async function generateQuotePdf(
         color: '#4B5563',
         lineHeight: 1.6,
       },
+
+      { text: '', pageBreak: 'before' },
+
+      {
+        columns: [
+          {
+            stack: logoBase64
+              ? [{ image: logoBase64, fit: [160, 48], margin: [0, 0, 0, 0] }]
+              : [{ text: 'Green Funding', fontSize: 20, bold: true, color: DARK }],
+          },
+          {
+            stack: [
+              { text: 'Next Steps', fontSize: 20, bold: true, color: DARK, alignment: 'right' },
+              { text: 'Requirements to Proceed', fontSize: 10, color: GRAY, alignment: 'right', margin: [0, 2, 0, 0] },
+            ],
+          },
+        ],
+        margin: [0, 0, 0, 20],
+      },
+
+      {
+        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: BORDER_COLOR }],
+        margin: [0, 0, 0, 24],
+      },
+
+      ...(projectCost <= 250000 ? [
+        { text: 'Low Doc Requirements', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
+        {
+          text: `Your project cost of ${formatCurrency(projectCost)} qualifies for our Low Doc finance pathway. This is a streamlined process requiring minimal documentation.`,
+          fontSize: 10,
+          color: '#4B5563',
+          lineHeight: 1.6,
+          margin: [0, 0, 0, 16],
+        },
+        {
+          table: {
+            widths: [20, '*'],
+            body: [
+              [
+                { text: '1', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Completed Finance Application', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Signed application form with all borrower details completed in full.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '2', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: '6 Months Business Bank Statements', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Most recent 6 months of business bank statements for the primary trading account.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '3', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Installer\'s Quote / Invoice', bold: true, fontSize: 11, color: DARK },
+                    { text: 'A formal quote or invoice from the installer detailing the scope of works and total project cost.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '4', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Privacy Consent & Acknowledgement', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Signed Privacy Consent & Acknowledgement form from all applicants/guarantors.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+            ],
+          },
+          layout: {
+            hLineWidth: () => 1,
+            vLineWidth: () => 0,
+            hLineColor: () => BORDER_COLOR,
+            paddingLeft: () => 0,
+            paddingRight: () => 0,
+          },
+          margin: [0, 0, 0, 24],
+        },
+      ] : [
+        { text: 'Full Doc Requirements', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
+        {
+          text: `Your project cost of ${formatCurrency(projectCost)} requires our Full Doc finance pathway. This ensures we can structure the best possible facility for your needs.`,
+          fontSize: 10,
+          color: '#4B5563',
+          lineHeight: 1.6,
+          margin: [0, 0, 0, 16],
+        },
+        {
+          table: {
+            widths: [20, '*'],
+            body: [
+              [
+                { text: '1', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Completed Finance Application', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Signed application form with all borrower and guarantor details completed in full.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '2', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: '2 Years Financial Statements', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Most recent 2 years of full financial statements (Profit & Loss and Balance Sheet) prepared by an accountant.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '3', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: '2 Years Tax Returns', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Most recent 2 years of business (and individual if applicable) tax returns lodged with the ATO.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '4', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: '6 Months Business Bank Statements', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Most recent 6 months of business bank statements for the primary trading account.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '5', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Installer\'s Quote / Invoice', bold: true, fontSize: 11, color: DARK },
+                    { text: 'A formal quote or invoice from the installer detailing the scope of works and total project cost.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+              [
+                { text: '6', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
+                {
+                  stack: [
+                    { text: 'Privacy Consent & Acknowledgement', bold: true, fontSize: 11, color: DARK },
+                    { text: 'Signed Privacy Consent & Acknowledgement form from all applicants/guarantors.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
+                  ],
+                  margin: [10, 4, 8, 4],
+                },
+              ],
+            ],
+          },
+          layout: {
+            hLineWidth: () => 1,
+            vLineWidth: () => 0,
+            hLineColor: () => BORDER_COLOR,
+            paddingLeft: () => 0,
+            paddingRight: () => 0,
+          },
+          margin: [0, 0, 0, 24],
+        },
+      ]),
+
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                stack: [
+                  { text: 'Ready to Proceed?', bold: true, fontSize: 13, color: GREEN, margin: [0, 0, 0, 6] },
+                  {
+                    text: 'To progress this quote and begin your application, please contact our team:',
+                    fontSize: 10,
+                    color: DARK,
+                    lineHeight: 1.6,
+                    margin: [0, 0, 0, 10],
+                  },
+                  {
+                    columns: [
+                      {
+                        stack: [
+                          { text: 'Email', fontSize: 9, bold: true, color: GRAY, characterSpacing: 0.5, margin: [0, 0, 0, 3] },
+                          { text: 'solutions@greenfunding.com.au', fontSize: 11, bold: true, color: GREEN },
+                        ],
+                      },
+                      {
+                        stack: [
+                          { text: 'Phone', fontSize: 9, bold: true, color: GRAY, characterSpacing: 0.5, margin: [0, 0, 0, 3] },
+                          { text: '1300 403 100', fontSize: 11, bold: true, color: DARK },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+                fillColor: GREEN_LIGHT,
+                margin: [20, 16, 20, 16],
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0,
+          vLineWidth: () => 0,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+        },
+        margin: [0, 0, 0, 0],
+      },
     ],
 
     footer: () => ({
@@ -686,6 +909,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const url = new URL(req.url);
+    const mode = url.searchParams.get('mode');
+
     const payload: QuotePayload = await req.json();
 
     const {
@@ -703,13 +929,6 @@ Deno.serve(async (req: Request) => {
       introEmailSubject,
       introEmailBody,
     } = payload;
-
-    if (!recipientEmail) {
-      return new Response(
-        JSON.stringify({ error: 'recipientEmail is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     if (!termOptions || termOptions.length === 0) {
       return new Response(
@@ -730,7 +949,6 @@ Deno.serve(async (req: Request) => {
         .from('assets')
         .select('id, name')
         .in('id', assetIds);
-
       if (assets) {
         assetNames = assets.map((a: { id: string; name: string }) => a.name);
       }
@@ -744,7 +962,6 @@ Deno.serve(async (req: Request) => {
         .select('full_name, company_name')
         .eq('id', installerId)
         .maybeSingle();
-
       if (installer) {
         installerName = installer.full_name;
         installerCompany = installer.company_name;
@@ -755,7 +972,7 @@ Deno.serve(async (req: Request) => {
       .from('sent_quotes')
       .insert({
         installer_id: installerId || null,
-        recipient_email: recipientEmail,
+        recipient_email: recipientEmail || null,
         recipient_name: recipientName || null,
         recipient_company: recipientCompany || null,
         site_address: siteAddress || null,
@@ -780,40 +997,52 @@ Deno.serve(async (req: Request) => {
 
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);
     const quoteDate = formatDate(new Date(quoteRecord.created_at));
-
     const logoBase64 = await fetchLogoBase64();
 
-    const [pdfBytes, quoteEmailHtml] = await Promise.all([
-      generateQuotePdf(
-        quoteNumber,
-        quoteDate,
-        recipientName,
-        recipientCompany,
-        siteAddress,
-        systemSize,
-        projectCost,
-        assetNames,
-        termOptions,
-        installerName,
-        installerCompany,
-        logoBase64
-      ),
-      Promise.resolve(generateQuoteEmailHtml(
-        quoteNumber,
-        quoteDate,
-        recipientName,
-        recipientCompany,
-        siteAddress,
-        systemSize,
-        projectCost,
-        assetNames,
-        termOptions,
-        installerName,
-        logoBase64
-      )),
-    ]);
+    const pdfBytes = await generateQuotePdf(
+      quoteNumber,
+      quoteDate,
+      recipientName,
+      recipientCompany,
+      siteAddress,
+      systemSize,
+      projectCost,
+      assetNames,
+      termOptions,
+      installerName,
+      installerCompany,
+      logoBase64
+    );
 
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);
+
+    if (mode === 'generate') {
+      return new Response(
+        JSON.stringify({ success: true, quoteNumber, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf` }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!recipientEmail) {
+      return new Response(
+        JSON.stringify({ error: 'recipientEmail is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const quoteEmailHtml = generateQuoteEmailHtml(
+      quoteNumber,
+      quoteDate,
+      recipientName,
+      recipientCompany,
+      siteAddress,
+      systemSize,
+      projectCost,
+      assetNames,
+      termOptions,
+      installerName,
+      logoBase64
+    );
 
     const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
 

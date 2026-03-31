@@ -4,10 +4,12 @@ import { Calculator, TrendingUp, Users } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 export function CalculatorDashboard() {
   const navigate = useNavigate();
   const { updateState, resetState } = useApp();
+  const { installerProfile } = useAuth();
   const [calculatorStates, setCalculatorStates] = useState<Record<string, boolean>>({
     rental: true,
     serviced_rental: false,
@@ -47,13 +49,18 @@ export function CalculatorDashboard() {
     navigate(path);
   };
 
+  const allowedCalcs = installerProfile?.allowed_calculators;
+
+  const isAllowed = (key: string) =>
+    !allowedCalcs || allowedCalcs.length === 0 || allowedCalcs.includes(key);
+
   const calculators = [
     {
       id: 'rental',
       title: 'Rental',
       description: 'Calculate financing options for a range of different renewable services.',
       icon: Calculator,
-      available: calculatorStates.rental,
+      available: calculatorStates.rental && isAllowed('rental'),
       calcType: 'rental' as const,
       path: '/calculator/step1'
     },
@@ -62,7 +69,7 @@ export function CalculatorDashboard() {
       title: 'Serviced Rental',
       description: 'Includes full service and maintenance packages with your rental agreement.',
       icon: TrendingUp,
-      available: calculatorStates.serviced_rental,
+      available: calculatorStates.serviced_rental && isAllowed('serviced_rental'),
       calcType: 'serviced_rental' as const,
       path: '/calculator/serviced-rental-step1'
     },
@@ -71,11 +78,11 @@ export function CalculatorDashboard() {
       title: 'Progress Payment Rental',
       description: 'Flexible payment structure tied to project milestones and completion stages.',
       icon: Users,
-      available: calculatorStates.progress_payment_rental,
+      available: calculatorStates.progress_payment_rental && isAllowed('progress_payment_rental'),
       calcType: 'progress_payment_rental' as const,
       path: '/calculator/step1'
     }
-  ];
+  ].filter(c => isAllowed(c.id));
 
   return (
     <Layout>

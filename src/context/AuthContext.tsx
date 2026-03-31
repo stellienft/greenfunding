@@ -10,6 +10,7 @@ interface InstallerUser {
   needs_password_reset: boolean;
   quote_count: number;
   application_count: number;
+  allowed_calculators?: string[];
 }
 
 interface AuthContextType {
