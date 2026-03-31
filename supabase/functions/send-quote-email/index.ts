@@ -775,6 +775,7 @@ Deno.serve(async (req: Request) => {
         recipient_company: recipientCompany || null,
         site_address: siteAddress || null,
         system_size: systemSize || null,
+        client_phone: clientPhone || null,
         project_cost: projectCost,
         selected_asset_ids: assetIds,
         asset_names: assetNames,

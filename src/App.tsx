@@ -14,6 +14,8 @@ import { CalculatorDashboard } from './pages/CalculatorDashboard';
 import { MyAccount } from './pages/MyAccount';
 import { Submissions } from './pages/Submissions';
 import { Contacts } from './pages/Contacts';
+import { MyQuotes } from './pages/MyQuotes';
+import { QuoteDetail } from './pages/QuoteDetail';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Analytics } from './components/Analytics';
 import { useEffect } from 'react';
@@ -134,6 +136,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Step4 />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quotes"
+                element={
+                  <ProtectedRoute>
+                    <MyQuotes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quotes/:id"
+                element={
+                  <ProtectedRoute>
+                    <QuoteDetail />
                   </ProtectedRoute>
                 }
               />

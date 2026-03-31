@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, FileCheck, Calculator, Home, Send } from 'lucide-react';
+import { LogOut, User, FileCheck, Calculator, Home, Send, FileText } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -94,6 +94,17 @@ export function Layout({ children, showHeader = true }: LayoutProps) {
                     >
                       <FileCheck className="w-4 h-4" />
                       <span className="hidden sm:inline">Submissions</span>
+                    </button>
+                    <button
+                      onClick={() => navigate('/quotes')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        isActivePath('/quotes')
+                          ? 'bg-white text-[#6EAE3C] shadow-sm'
+                          : 'text-gray-700 hover:bg-white/50'
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="hidden sm:inline">My Quotes</span>
                     </button>
                     <button
                       onClick={() => navigate('/contacts')}
