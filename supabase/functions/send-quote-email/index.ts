@@ -26,6 +26,8 @@ interface QuotePayload {
   paymentTiming?: string;
   calculatorType?: string;
   installerId?: string;
+  introEmailSubject?: string;
+  introEmailBody?: string;
 }
 
 const formatCurrency = (amount: number): string => {
@@ -470,8 +472,6 @@ function generateQuoteEmailHtml(
                 </tr>
               </table>
 
-              <!-- Disclaimer -->
-
               <!-- Valid Box -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
                 <tr>
@@ -520,6 +520,70 @@ function generateQuoteEmailHtml(
 </html>`;
 }
 
+function generateIntroEmailHtml(bodyText: string): string {
+  const paragraphs = bodyText
+    .split('\n')
+    .map(line => line.trim())
+    .reduce((acc: string[], line) => {
+      if (line === '') {
+        acc.push('');
+      } else {
+        acc.push(line);
+      }
+      return acc;
+    }, []);
+
+  const htmlParagraphs = paragraphs
+    .join('\n')
+    .split(/\n\n+/)
+    .map(block => {
+      const lines = block.split('\n').filter(l => l.trim());
+      if (lines.length === 0) return '';
+      return `<p style="font-size: 15px; color: #4B5563; margin: 0 0 16px 0; line-height: 1.7; font-family: Arial, sans-serif;">${lines.join('<br/>')}</p>`;
+    })
+    .filter(p => p !== '')
+    .join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body style="margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif; color: #3A475B;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+          <tr>
+            <td style="background-color: #ffffff; padding: 36px 36px 20px 36px; border-bottom: 2px solid #E5E7EB;">
+              <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" height="44" style="display: block;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 36px;">
+              ${htmlParagraphs}
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 2px solid #E5E7EB; padding: 24px 36px; text-align: center;">
+              <p style="font-size: 13px; font-weight: 700; color: #3A475B; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Green Funding</p>
+              <p style="font-size: 12px; color: #9CA3AF; line-height: 1.8; margin: 0; font-family: Arial, sans-serif;">
+                Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
+                <a href="tel:1300403100" style="color: #28AA48; text-decoration: none;">1300 403 100</a> &bull;
+                <a href="mailto:solutions@greenfunding.com.au" style="color: #28AA48; text-decoration: none;">solutions@greenfunding.com.au</a> &bull;
+                <a href="https://greenfunding.com.au" style="color: #28AA48; text-decoration: none;">greenfunding.com.au</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   let binary = '';
   const chunkSize = 8192;
@@ -528,6 +592,43 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
     binary += String.fromCharCode(...chunk);
   }
   return btoa(binary);
+}
+
+async function sendEmail(
+  apiKey: string,
+  to: string,
+  subject: string,
+  htmlBody: string,
+  attachment?: { content: string; name: string }
+): Promise<Response> {
+  const body: Record<string, unknown> = {
+    Recipients: [{ Email: to }],
+    Content: {
+      From: 'noreply@portal.greenfunding.com.au',
+      ReplyTo: 'solutions@greenfunding.com.au',
+      Subject: subject,
+      Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: htmlBody }],
+    },
+  };
+
+  if (attachment) {
+    (body.Content as Record<string, unknown>).Attachments = [
+      {
+        BinaryContent: attachment.content,
+        Name: attachment.name,
+        ContentType: 'application/pdf',
+      },
+    ];
+  }
+
+  return fetch('https://api.elasticemail.com/v4/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-ElasticEmail-ApiKey': apiKey,
+    },
+    body: JSON.stringify(body),
+  });
 }
 
 Deno.serve(async (req: Request) => {
@@ -550,6 +651,8 @@ Deno.serve(async (req: Request) => {
       paymentTiming,
       calculatorType,
       installerId,
+      introEmailSubject,
+      introEmailBody,
     } = payload;
 
     if (!recipientEmail) {
@@ -629,7 +732,7 @@ Deno.serve(async (req: Request) => {
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);
     const quoteDate = formatDate(new Date(quoteRecord.created_at));
 
-    const [pdfBytes, emailHtml] = await Promise.all([
+    const [pdfBytes, quoteEmailHtml] = await Promise.all([
       generateQuotePdf(
         quoteNumber,
         quoteDate,
@@ -669,47 +772,42 @@ Deno.serve(async (req: Request) => {
     }
 
     const preparedFor = recipientCompany || recipientName || 'Valued Customer';
-    const subjectLine = `Your Green Funding Quote ${quoteNumber} - ${preparedFor}`;
+    const quoteSubjectLine = `Your Green Funding Quote ${quoteNumber} - ${preparedFor}`;
 
-    const emailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-ElasticEmail-ApiKey': elasticEmailApiKey,
-      },
-      body: JSON.stringify({
-        Recipients: [{ Email: recipientEmail }],
-        Content: {
-          From: 'noreply@portal.greenfunding.com.au',
-          ReplyTo: 'solutions@greenfunding.com.au',
-          Subject: subjectLine,
-          Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: emailHtml }],
-          Attachments: [
-            {
-              BinaryContent: pdfBase64,
-              Name: `GreenFunding-Quote-${quoteNumber}.pdf`,
-              ContentType: 'application/pdf',
-            },
-          ],
-        },
-      }),
-    });
+    const emailPromises: Promise<Response>[] = [];
 
-    const emailResult = await emailResponse.json();
+    if (introEmailBody && introEmailBody.trim()) {
+      const introSubject = introEmailSubject?.trim() || 'Introduction to Green Funding – Solar Finance Options';
+      const introHtml = generateIntroEmailHtml(introEmailBody);
+      emailPromises.push(sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml));
+    }
 
-    if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== '')) {
-      console.error('Elastic Email API error:', emailResult);
+    emailPromises.push(
+      sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
+        content: pdfBase64,
+        name: `GreenFunding-Quote-${quoteNumber}.pdf`,
+      })
+    );
+
+    const emailResponses = await Promise.all(emailPromises);
+    const emailResults = await Promise.all(emailResponses.map(r => r.json()));
+
+    const failedIndex = emailResponses.findIndex(r => !r.ok);
+    if (failedIndex !== -1) {
+      console.error('Email API error:', emailResults[failedIndex]);
       return new Response(
-        JSON.stringify({ error: 'Failed to send email', details: emailResult }),
+        JSON.stringify({ error: 'Failed to send email', details: emailResults[failedIndex] }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const quoteResult = emailResults[emailResults.length - 1];
 
     return new Response(
       JSON.stringify({
         success: true,
         quoteNumber,
-        emailId: emailResult.TransactionID || 'sent',
+        emailId: quoteResult.TransactionID || 'sent',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
