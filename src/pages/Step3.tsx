@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
 import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, FileText } from 'lucide-react';
-import { QuoteModal } from '../components/QuoteModal';
+import { QuoteSection } from '../components/QuoteSection';
 
 interface LoanTermOption {
   years: number;
@@ -35,7 +35,6 @@ export function Step3() {
     ]
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
@@ -137,6 +136,7 @@ export function Step3() {
     });
 
     setTermOptions(options);
+    setSelectedQuoteTerms(prev => prev.length === 0 ? options.map(o => o.years) : prev);
 
     const additionalTerms = [2, 3, 4, 6, 8, 9].filter(year => year <= maxAllowedTerm);
 
@@ -356,12 +356,6 @@ export function Step3() {
     }
   };
 
-  const handleCloseQuoteModal = () => {
-    setShowQuoteModal(false);
-    setPdfGenerated(false);
-    setQuoteError(null);
-    setGeneratedQuoteNumber(null);
-  };
 
   const handleContinue = () => {
     if (selectedTerm === null) {
@@ -765,6 +759,21 @@ export function Step3() {
               </p>
             </div>
 
+            <QuoteSection
+              selectedQuoteTerms={selectedQuoteTerms}
+              setSelectedQuoteTerms={setSelectedQuoteTerms}
+              allTerms={[...termOptions, ...additionalTermOptions]}
+              projectCost={state.projectCost}
+              installerName={installerProfile?.full_name || user?.user_metadata?.full_name || ''}
+              installerCompany={installerProfile?.company_name || user?.user_metadata?.company_name || ''}
+              generatingPdf={generatingPdf}
+              pdfGenerated={pdfGenerated}
+              quoteError={quoteError}
+              generatedQuoteNumber={generatedQuoteNumber}
+              onGenerate={handleGenerateQuote}
+              onReset={() => { setPdfGenerated(false); setQuoteError(null); setGeneratedQuoteNumber(null); }}
+              formatCurrency={formatCurrency}
+            />
 
             <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
               <button
@@ -772,19 +781,6 @@ export function Step3() {
                 className="px-6 sm:px-8 py-3 sm:py-3.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors touch-manipulation order-3 sm:order-1"
               >
                 Back
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedQuoteTerms(selectedTerm !== null ? [selectedTerm] : []);
-                  setPdfGenerated(false);
-                  setQuoteError(null);
-                  setGeneratedQuoteNumber(null);
-                  setShowQuoteModal(true);
-                }}
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white border-2 border-[#28AA48] text-[#28AA48] font-semibold rounded-xl hover:bg-[#28AA48]/5 transition-all touch-manipulation order-2 sm:order-2"
-              >
-                <FileText className="w-5 h-5" />
-                Generate Quote
               </button>
               <button
                 onClick={handleContinue}
@@ -798,25 +794,6 @@ export function Step3() {
         </div>
       </div>
 
-      {showQuoteModal && (
-        <QuoteModal
-          pdfGenerated={pdfGenerated}
-          generatedQuoteNumber={generatedQuoteNumber}
-          generatingPdf={generatingPdf}
-          quoteError={quoteError}
-          selectedQuoteTerms={selectedQuoteTerms}
-          setSelectedQuoteTerms={setSelectedQuoteTerms}
-          allTerms={[...termOptions, ...additionalTermOptions]}
-          projectCost={state.projectCost}
-          installerName={installerProfile?.full_name || user?.user_metadata?.full_name || ''}
-          installerCompany={installerProfile?.company_name || user?.user_metadata?.company_name || ''}
-          introEmailTemplate={introEmailTemplate}
-          onGenerate={handleGenerateQuote}
-          onClose={handleCloseQuoteModal}
-          onReset={() => { setPdfGenerated(false); setQuoteError(null); }}
-          formatCurrency={formatCurrency}
-        />
-      )}
 
       {showEmailModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
