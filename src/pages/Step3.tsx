@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
-import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck } from 'lucide-react';
+import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, FileText } from 'lucide-react';
 import { QuoteModal } from '../components/QuoteModal';
 
 interface LoanTermOption {
