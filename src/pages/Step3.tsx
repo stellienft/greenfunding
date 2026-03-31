@@ -6,7 +6,8 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
-import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, Download, FileText } from 'lucide-react';
+import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck } from 'lucide-react';
+import { QuoteModal } from '../components/QuoteModal';
 
 interface LoanTermOption {
   years: number;
@@ -21,7 +22,7 @@ interface LoanTermOption {
 export function Step3() {
   const navigate = useNavigate();
   const { state, updateState, config, assets, introEmailTemplate } = useApp();
-  const { user, refreshProfile } = useAuth();
+  const { user, installerProfile, refreshProfile } = useAuth();
   const [selectedTerm, setSelectedTerm] = useState<number | null>(null);
   const [termOptions, setTermOptions] = useState<LoanTermOption[]>([]);
   const [showMoreTerms, setShowMoreTerms] = useState(false);
@@ -35,10 +36,6 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [quoteName, setQuoteName] = useState(state.recipientName || '');
-  const [quoteCompany, setQuoteCompany] = useState(state.recipientCompany || '');
-  const [siteAddressInput, setSiteAddressInput] = useState(state.siteAddress || '');
-  const [systemSizeInput, setSystemSizeInput] = useState(state.systemSize || '');
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
@@ -248,8 +245,6 @@ export function Step3() {
           recipientEmail: emailTo.trim(),
           recipientName: emailName.trim() || undefined,
           recipientCompany: emailCompany.trim() || undefined,
-          siteAddress: siteAddressInput.trim() || undefined,
-          systemSize: systemSizeInput.trim() || undefined,
           projectCost: state.projectCost,
           selectedAssetIds: state.selectedAssetIds,
           termOptions: filteredTerms.map(t => ({
@@ -333,10 +328,6 @@ export function Step3() {
           'Apikey': supabaseAnonKey,
         },
         body: JSON.stringify({
-          recipientName: quoteName.trim() || undefined,
-          recipientCompany: quoteCompany.trim() || undefined,
-          siteAddress: siteAddressInput.trim() || undefined,
-          systemSize: systemSizeInput.trim() || undefined,
           projectCost: state.projectCost,
           selectedAssetIds: state.selectedAssetIds,
           termOptions: filteredTerms.map(t => ({
@@ -774,66 +765,6 @@ export function Step3() {
               </p>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-base font-semibold text-[#3A475B] mb-1">
-                Quote Recipient <span className="text-sm font-normal text-gray-500">(Optional)</span>
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Enter who this quote is for — click "Email Quote" to send it to them directly.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Recipient Name</label>
-                  <input
-                    type="text"
-                    value={emailName}
-                    onChange={e => setEmailName(e.target.value)}
-                    placeholder="e.g. John Smith"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Company Name</label>
-                  <input
-                    type="text"
-                    value={emailCompany}
-                    onChange={e => setEmailCompany(e.target.value)}
-                    placeholder="e.g. Acme Pty Ltd"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    value={emailTo}
-                    onChange={e => setEmailTo(e.target.value)}
-                    placeholder="e.g. john@company.com.au"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">Site Address</label>
-                  <input
-                    type="text"
-                    value={siteAddressInput}
-                    onChange={e => setSiteAddressInput(e.target.value)}
-                    placeholder="e.g. 42 Example St, Brisbane QLD"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[#3A475B] mb-1">System Size</label>
-                  <input
-                    type="text"
-                    value={systemSizeInput}
-                    onChange={e => setSystemSizeInput(e.target.value)}
-                    placeholder="e.g. 100kW"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
 
             <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
               <button
@@ -868,158 +799,23 @@ export function Step3() {
       </div>
 
       {showQuoteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full relative flex flex-col max-h-[90vh]">
-            <button onClick={handleCloseQuoteModal} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10">
-              <X className="w-6 h-6" />
-            </button>
-
-            {pdfGenerated ? (
-              <div className="text-center py-10 px-8">
-                <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mx-auto mb-4">
-                  <CheckCircle className="w-10 h-10 text-[#28AA48]" />
-                </div>
-                <h3 className="text-2xl font-bold text-[#3A475B] mb-2">Quote Generated!</h3>
-                {generatedQuoteNumber && (
-                  <p className="text-[#28AA48] font-bold text-lg mb-3">{generatedQuoteNumber}</p>
-                )}
-                <p className="text-gray-500 text-sm mb-6">Your PDF has been downloaded. You can share it directly with your client.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setPdfGenerated(false); setQuoteError(null); }}
-                    className="flex-1 px-4 py-2.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                  >
-                    Generate Another
-                  </button>
-                  <button
-                    onClick={handleCloseQuoteModal}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-[#28AA48]/10 rounded-xl flex-shrink-0">
-                      <FileText className="w-5 h-5 text-[#28AA48]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-[#3A475B]">Generate Quote</h3>
-                      <p className="text-sm text-gray-500">Download a PDF quote to share with your client</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Client Name</label>
-                    <input
-                      type="text"
-                      value={quoteName}
-                      onChange={e => setQuoteName(e.target.value)}
-                      placeholder="e.g. John Smith"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Company Name</label>
-                    <input
-                      type="text"
-                      value={quoteCompany}
-                      onChange={e => setQuoteCompany(e.target.value)}
-                      placeholder="e.g. Acme Pty Ltd"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Site Address</label>
-                    <input
-                      type="text"
-                      value={siteAddressInput}
-                      onChange={e => setSiteAddressInput(e.target.value)}
-                      placeholder="e.g. 123 Main St, Brisbane QLD"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">System Size</label>
-                    <input
-                      type="text"
-                      value={systemSizeInput}
-                      onChange={e => setSystemSizeInput(e.target.value)}
-                      placeholder="e.g. 99.75 kW"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48] focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                      Loan Terms to Include <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {[...termOptions, ...additionalTermOptions].map(t => {
-                        const checked = selectedQuoteTerms.includes(t.years);
-                        return (
-                          <button
-                            key={t.years}
-                            type="button"
-                            onClick={() => setSelectedQuoteTerms(prev =>
-                              checked ? prev.filter(y => y !== t.years) : [...prev, t.years]
-                            )}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                              checked
-                                ? 'bg-[#28AA48]/10 border-[#28AA48] text-[#28AA48]'
-                                : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
-                            }`}
-                          >
-                            {checked && <Check className="w-3.5 h-3.5" />}
-                            {t.years} yr — {formatCurrency(t.monthlyPayment)}/mo
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {selectedQuoteTerms.length === 0 && (
-                      <p className="text-xs text-red-500 mt-1.5">Select at least one term.</p>
-                    )}
-                  </div>
-
-                  {quoteError && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-red-700">{quoteError}</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 pt-1">
-                    <button onClick={handleCloseQuoteModal} className="flex-1 px-4 py-2.5 bg-gray-100 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleGenerateQuote}
-                      disabled={generatingPdf}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {generatingPdf ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          Download PDF
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <QuoteModal
+          pdfGenerated={pdfGenerated}
+          generatedQuoteNumber={generatedQuoteNumber}
+          generatingPdf={generatingPdf}
+          quoteError={quoteError}
+          selectedQuoteTerms={selectedQuoteTerms}
+          setSelectedQuoteTerms={setSelectedQuoteTerms}
+          allTerms={[...termOptions, ...additionalTermOptions]}
+          projectCost={state.projectCost}
+          installerName={installerProfile?.full_name || user?.user_metadata?.full_name || ''}
+          installerCompany={installerProfile?.company_name || user?.user_metadata?.company_name || ''}
+          introEmailTemplate={introEmailTemplate}
+          onGenerate={handleGenerateQuote}
+          onClose={handleCloseQuoteModal}
+          onReset={() => { setPdfGenerated(false); setQuoteError(null); }}
+          formatCurrency={formatCurrency}
+        />
       )}
 
       {showEmailModal && (
