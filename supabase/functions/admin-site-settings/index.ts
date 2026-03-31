@@ -25,7 +25,9 @@ Deno.serve(async (req: Request) => {
       serviced_rental_enabled,
       serviced_rental_management_fee_percent,
       serviced_rental_name,
-      serviced_rental_description
+      serviced_rental_description,
+      intro_email_subject,
+      intro_email_body,
     } = await req.json();
 
     const { data: settings, error: fetchError } = await supabase
@@ -35,15 +37,18 @@ Deno.serve(async (req: Request) => {
 
     if (fetchError) throw fetchError;
 
-    const updateData = {
-      google_analytics_code,
-      google_analytics_enabled,
-      serviced_rental_enabled,
-      serviced_rental_management_fee_percent,
-      serviced_rental_name,
-      serviced_rental_description,
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
+
+    if (google_analytics_code !== undefined) updateData.google_analytics_code = google_analytics_code;
+    if (google_analytics_enabled !== undefined) updateData.google_analytics_enabled = google_analytics_enabled;
+    if (serviced_rental_enabled !== undefined) updateData.serviced_rental_enabled = serviced_rental_enabled;
+    if (serviced_rental_management_fee_percent !== undefined) updateData.serviced_rental_management_fee_percent = serviced_rental_management_fee_percent;
+    if (serviced_rental_name !== undefined) updateData.serviced_rental_name = serviced_rental_name;
+    if (serviced_rental_description !== undefined) updateData.serviced_rental_description = serviced_rental_description;
+    if (intro_email_subject !== undefined) updateData.intro_email_subject = intro_email_subject;
+    if (intro_email_body !== undefined) updateData.intro_email_body = intro_email_body;
 
     if (settings) {
       const { error: updateError } = await supabase
@@ -60,12 +65,14 @@ Deno.serve(async (req: Request) => {
       if (insertError) throw insertError;
     }
 
-    const { error: calcConfigError } = await supabase
-      .from('calculator_config')
-      .update({ enabled: serviced_rental_enabled })
-      .eq('calculator_type', 'serviced_rental');
+    if (serviced_rental_enabled !== undefined) {
+      const { error: calcConfigError } = await supabase
+        .from('calculator_config')
+        .update({ enabled: serviced_rental_enabled })
+        .eq('calculator_type', 'serviced_rental');
 
-    if (calcConfigError) throw calcConfigError;
+      if (calcConfigError) throw calcConfigError;
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: 'Settings updated successfully' }),

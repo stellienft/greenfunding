@@ -11,9 +11,10 @@ import { ApplicationsList } from '../components/admin/ApplicationsList';
 import { PreviewTool } from '../components/admin/PreviewTool';
 import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe } from 'lucide-react';
+import { EmailTemplates } from '../components/admin/EmailTemplates';
+import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail } from 'lucide-react';
 
-type Tab = 'config' | 'assets' | 'documents' | 'applications' | 'preview' | 'users' | 'site';
+type Tab = 'config' | 'assets' | 'documents' | 'applications' | 'preview' | 'users' | 'site' | 'email';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export function AdminDashboard() {
     { id: 'applications' as Tab, label: 'Applications', icon: Inbox },
     { id: 'users' as Tab, label: 'User Management', icon: Users },
     { id: 'site' as Tab, label: 'Site Settings', icon: Globe },
+    { id: 'email' as Tab, label: 'Email Templates', icon: Mail },
     { id: 'preview' as Tab, label: 'Preview Tool', icon: Eye },
   ];
 
@@ -128,6 +130,7 @@ export function AdminDashboard() {
                   {activeTab === 'applications' && <ApplicationsList />}
                   {activeTab === 'users' && <UserManagement />}
                   {activeTab === 'site' && <SiteSettings />}
+                  {activeTab === 'email' && <EmailTemplates />}
                   {activeTab === 'preview' && config && (
                     <PreviewTool config={config} />
                   )}

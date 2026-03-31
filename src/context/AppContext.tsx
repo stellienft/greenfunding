@@ -22,6 +22,11 @@ interface AppState {
   systemSize?: string;
 }
 
+interface IntroEmailTemplate {
+  subject: string;
+  body: string;
+}
+
 interface AppContextType {
   state: AppState;
   updateState: (updates: Partial<AppState>) => void;
@@ -30,6 +35,7 @@ interface AppContextType {
   assets: Asset[];
   documents: RequiredDocument[];
   loadingConfig: boolean;
+  introEmailTemplate: IntroEmailTemplate | null;
   refreshConfig: () => Promise<void>;
   refreshAssets: () => Promise<void>;
   refreshDocuments: () => Promise<void>;
@@ -50,6 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [documents, setDocuments] = useState<RequiredDocument[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [introEmailTemplate, setIntroEmailTemplate] = useState<IntroEmailTemplate | null>(null);
 
   const loadConfig = async () => {
     setLoadingConfig(true);
@@ -67,7 +74,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         const { data: siteSettings } = await supabase
           .from('site_settings')
-          .select('application_fee, ppsr_fee')
+          .select('application_fee, ppsr_fee, intro_email_subject, intro_email_body')
           .maybeSingle();
 
         const mergedConfig = {
@@ -77,6 +84,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
 
         setConfig(mergedConfig);
+
+        if (siteSettings?.intro_email_subject || siteSettings?.intro_email_body) {
+          setIntroEmailTemplate({
+            subject: siteSettings.intro_email_subject || '',
+            body: siteSettings.intro_email_body || '',
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading config:', error);
@@ -144,6 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         assets,
         documents,
         loadingConfig,
+        introEmailTemplate,
         refreshConfig: loadConfig,
         refreshAssets: loadAssets,
         refreshDocuments: loadDocuments
