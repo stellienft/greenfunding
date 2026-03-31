@@ -79,12 +79,11 @@ async function generateQuotePdf(
   assetNames: string[],
   termOptions: TermOption[],
   installerName?: string,
-  installerCompany?: string
+  installerCompany?: string,
+  logoBase64?: string | null
 ): Promise<Uint8Array> {
   const netCapex = projectCost / 1.1;
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
-
-  const logoBase64 = await fetchLogoBase64();
 
   const fonts = {
     Helvetica: {
@@ -368,7 +367,8 @@ function generateQuoteEmailHtml(
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
-  installerName?: string
+  installerName?: string,
+  logoBase64?: string | null
 ): string {
   const netCapex = projectCost / 1.1;
   const displayName = recipientName || recipientCompany || 'there';
@@ -406,7 +406,7 @@ function generateQuoteEmailHtml(
           <!-- Header -->
           <tr>
             <td style="background-color: #ffffff; padding: 36px 36px 28px 36px; border-bottom: 2px solid #E5E7EB;">
-              <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" height="44" style="display: block; margin-bottom: 20px;" />
+              ${logoBase64 ? `<img src="${logoBase64}" alt="Green Funding" height="44" style="display: block; margin-bottom: 20px;" />` : `<span style="font-size: 22px; font-weight: 700; color: #3A475B; font-family: Arial, sans-serif;">Green Funding</span>`}
               <p style="color: #3A475B; font-size: 22px; font-weight: 700; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Your Financing Quote is Ready</p>
               <p style="color: #6B7280; font-size: 15px; margin: 0; font-family: Arial, sans-serif;">Quote ${quoteNumber} &bull; ${quoteDate}</p>
             </td>
@@ -520,7 +520,7 @@ function generateQuoteEmailHtml(
 </html>`;
 }
 
-function generateIntroEmailHtml(bodyText: string): string {
+function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null): string {
   const paragraphs = bodyText
     .split('\n')
     .map(line => line.trim())
@@ -557,7 +557,7 @@ function generateIntroEmailHtml(bodyText: string): string {
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
             <td style="background-color: #ffffff; padding: 36px 36px 20px 36px; border-bottom: 2px solid #E5E7EB;">
-              <img src="https://portal.greenfunding.com.au/image.png" alt="Green Funding" height="44" style="display: block;" />
+              ${logoBase64 ? `<img src="${logoBase64}" alt="Green Funding" height="44" style="display: block;" />` : `<span style="font-size: 22px; font-weight: 700; color: #3A475B; font-family: Arial, sans-serif;">Green Funding</span>`}
             </td>
           </tr>
           <tr>
@@ -732,6 +732,8 @@ Deno.serve(async (req: Request) => {
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);
     const quoteDate = formatDate(new Date(quoteRecord.created_at));
 
+    const logoBase64 = await fetchLogoBase64();
+
     const [pdfBytes, quoteEmailHtml] = await Promise.all([
       generateQuotePdf(
         quoteNumber,
@@ -744,7 +746,8 @@ Deno.serve(async (req: Request) => {
         assetNames,
         termOptions,
         installerName,
-        installerCompany
+        installerCompany,
+        logoBase64
       ),
       Promise.resolve(generateQuoteEmailHtml(
         quoteNumber,
@@ -756,7 +759,8 @@ Deno.serve(async (req: Request) => {
         projectCost,
         assetNames,
         termOptions,
-        installerName
+        installerName,
+        logoBase64
       )),
     ]);
 
@@ -778,7 +782,7 @@ Deno.serve(async (req: Request) => {
 
     if (introEmailBody && introEmailBody.trim()) {
       const introSubject = introEmailSubject?.trim() || 'Introduction to Green Funding – Solar Finance Options';
-      const introHtml = generateIntroEmailHtml(introEmailBody);
+      const introHtml = generateIntroEmailHtml(introEmailBody, logoBase64);
       emailPromises.push(sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml));
     }
 
