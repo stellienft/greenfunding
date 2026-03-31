@@ -520,7 +520,7 @@ function generateQuoteEmailHtml(
 </html>`;
 }
 
-function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null): string {
+function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null, projectCost?: number): string {
   const paragraphs = bodyText
     .split('\n')
     .map(line => line.trim())
@@ -544,6 +544,23 @@ function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null): s
     .filter(p => p !== '')
     .join('');
 
+  const showBankStatementLink = typeof projectCost === 'number' && projectCost >= 150000 && projectCost <= 250000;
+
+  const bankStatementBlock = showBankStatementLink ? `
+          <tr>
+            <td style="padding: 0 36px 28px 36px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0;">
+                <tr>
+                  <td style="padding: 20px 24px;">
+                    <p style="font-size: 14px; font-weight: 700; color: #166534; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Submit Your Bank Statements Instantly</p>
+                    <p style="font-size: 13px; color: #15803D; margin: 0 0 14px 0; line-height: 1.6; font-family: Arial, sans-serif;">View your bank statements. Instantly. The secure, incredibly easy way to submit your bank statement data in seconds.</p>
+                    <a href="https://scv.bankstatements.com.au/HSHV" style="display: inline-block; background-color: #28AA48; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-family: Arial, sans-serif;">Submit Bank Statements &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>` : '';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -561,19 +578,36 @@ function generateIntroEmailHtml(bodyText: string, logoBase64?: string | null): s
             </td>
           </tr>
           <tr>
-            <td style="padding: 36px;">
+            <td style="padding: 36px 36px 28px 36px;">
               ${htmlParagraphs}
             </td>
           </tr>
+          ${bankStatementBlock}
           <tr>
-            <td style="border-top: 2px solid #E5E7EB; padding: 24px 36px; text-align: center;">
-              <p style="font-size: 13px; font-weight: 700; color: #3A475B; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Green Funding</p>
-              <p style="font-size: 12px; color: #9CA3AF; line-height: 1.8; margin: 0; font-family: Arial, sans-serif;">
-                Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
-                <a href="tel:1300403100" style="color: #28AA48; text-decoration: none;">1300 403 100</a> &bull;
-                <a href="mailto:solutions@greenfunding.com.au" style="color: #28AA48; text-decoration: none;">solutions@greenfunding.com.au</a> &bull;
-                <a href="https://greenfunding.com.au" style="color: #28AA48; text-decoration: none;">greenfunding.com.au</a>
-              </p>
+            <td style="border-top: 2px solid #E5E7EB; padding: 28px 36px; background-color: #F9FAFB;">
+              <p style="font-size: 13px; font-weight: 700; color: #3A475B; margin: 0 0 10px 0; font-family: Arial, sans-serif;">Green Funding</p>
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding-bottom: 6px;">
+                    <span style="font-size: 12px; color: #6B7280; font-family: Arial, sans-serif;">&#128205; Level 18, 324 Queen Street, Brisbane QLD 4000</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom: 6px;">
+                    <span style="font-size: 12px; color: #6B7280; font-family: Arial, sans-serif;">&#128222; <a href="tel:1300403100" style="color: #28AA48; text-decoration: none;">1300 403 100</a></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-bottom: 6px;">
+                    <span style="font-size: 12px; color: #6B7280; font-family: Arial, sans-serif;">&#9993; <a href="mailto:solutions@greenfunding.com.au" style="color: #28AA48; text-decoration: none;">solutions@greenfunding.com.au</a></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <span style="font-size: 12px; color: #6B7280; font-family: Arial, sans-serif;">&#127760; <a href="https://greenfunding.com.au" style="color: #28AA48; text-decoration: none;">greenfunding.com.au</a></span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
@@ -782,7 +816,7 @@ Deno.serve(async (req: Request) => {
 
     if (introEmailBody && introEmailBody.trim()) {
       const introSubject = introEmailSubject?.trim() || 'Introduction to Green Funding – Solar Finance Options';
-      const introHtml = generateIntroEmailHtml(introEmailBody, logoBase64);
+      const introHtml = generateIntroEmailHtml(introEmailBody, logoBase64, projectCost);
       emailPromises.push(sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml));
     }
 
