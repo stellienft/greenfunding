@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import PdfPrinter from 'npm:pdfmake@0.2.12';
+import { PDFDocument, StandardFonts, rgb, PageSizes } from 'npm:pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,29 +51,11 @@ const formatDate = (date: Date): string => {
   });
 };
 
-async function fetchLogoBase64(): Promise<string | null> {
-  const urls = [
-    'https://greenfunding.com.au/wp-content/uploads/2024/02/Logo1.webp',
-    'https://portal.greenfunding.com.au/image.png',
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const buffer = await res.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-      }
-      const ext = url.endsWith('.webp') ? 'webp' : 'png';
-      return `data:image/${ext};base64,` + btoa(binary);
-    } catch {
-      continue;
-    }
-  }
-  return null;
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1], 16) / 255, g: parseInt(result[2], 16) / 255, b: parseInt(result[3], 16) / 255 }
+    : { r: 0, g: 0, b: 0 };
 }
 
 async function generateQuotePdf(
@@ -81,511 +63,299 @@ async function generateQuotePdf(
   quoteDate: string,
   recipientName: string | undefined,
   recipientCompany: string | undefined,
-  siteAddress: string | undefined,
-  systemSize: string | undefined,
+  _siteAddress: string | undefined,
+  _systemSize: string | undefined,
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
   installerName?: string,
   installerCompany?: string,
-  logoBase64?: string | null
+  _logoBase64?: string | null
 ): Promise<Uint8Array> {
-  const netCapex = projectCost / 1.1;
+  const GREEN = hexToRgb('#28AA48');
+  const DARK = hexToRgb('#3A475B');
+  const GRAY = hexToRgb('#6B7280');
+  const LIGHT_BG = hexToRgb('#F8FAFB');
+  const GREEN_LIGHT = hexToRgb('#E8F5E9');
+  const BORDER = hexToRgb('#E5E7EB');
+  const WHITE = rgb(1, 1, 1);
+
+  const pdfDoc = await PDFDocument.create();
+
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = PageSizes.A4[0];
+  const pageHeight = PageSizes.A4[1];
+  const marginLeft = 40;
+  const marginRight = 40;
+  const contentWidth = pageWidth - marginLeft - marginRight;
+
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
+  const netCapex = projectCost / 1.1;
 
-  const fonts = {
-    Helvetica: {
-      normal: 'Helvetica',
-      bold: 'Helvetica-Bold',
-      italics: 'Helvetica-Oblique',
-      bolditalics: 'Helvetica-BoldOblique',
-    },
-  };
+  const validUntilDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const validUntil = validUntilDate.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  const GREEN = '#28AA48';
-  const DARK = '#3A475B';
-  const GRAY = '#6B7280';
-  const LIGHT_BG = '#F8FAFB';
-  const BORDER_COLOR = '#E5E7EB';
-  const GREEN_LIGHT = '#E8F5E9';
+  function drawPage1() {
+    const page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let y = pageHeight - 40;
 
-  const summaryRows: object[] = [];
-  if (siteAddress) {
-    summaryRows.push({
-      columns: [
-        { text: 'Location:', bold: true, fontSize: 10, color: DARK, width: 100 },
-        { text: siteAddress, fontSize: 10, color: DARK },
-      ],
-      margin: [0, 4, 0, 0],
-    });
-  }
-  if (systemSize) {
-    summaryRows.push({
-      columns: [
-        { text: 'System Size:', bold: true, fontSize: 10, color: DARK, width: 100 },
-        { text: systemSize, fontSize: 10, color: DARK },
-      ],
-      margin: [0, 4, 0, 0],
-    });
-  }
-  if (assetNames.length > 0) {
-    summaryRows.push({
-      columns: [
-        { text: 'Equipment:', bold: true, fontSize: 10, color: DARK, width: 100 },
-        { text: assetNames.join(', '), fontSize: 10, color: DARK },
-      ],
-      margin: [0, 4, 0, 0],
-    });
-  }
-  summaryRows.push({
-    columns: [
-      { text: 'Net Capex:', bold: true, fontSize: 10, color: DARK, width: 100 },
-      { text: `${formatCurrency(netCapex)} ex GST`, fontSize: 10, color: DARK },
-    ],
-    margin: [0, 4, 0, 0],
-  });
+    const drawRect = (x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) => {
+      page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
+    };
 
-  const termTableBody: object[][] = [
-    [
-      { text: 'TERM', style: 'tableHeader', alignment: 'left' },
-      { text: 'MONTHLY REPAYMENT (EX GST)', style: 'tableHeader', alignment: 'right' },
-    ],
-  ];
-  termOptions.forEach((t) => {
-    termTableBody.push([
-      { text: `${t.years} ${t.years === 1 ? 'Year' : 'Years'}`, fontSize: 12, color: DARK, margin: [0, 8, 0, 8] },
-      { text: formatCurrency(t.monthlyPayment), fontSize: 12, bold: true, color: DARK, alignment: 'right', margin: [0, 8, 0, 8] },
-    ]);
-  });
-
-  const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-AU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
-  const docDefinition = {
-    pageSize: 'A4',
-    pageMargins: [40, 40, 40, 60],
-    defaultStyle: {
-      font: 'Helvetica',
-      fontSize: 11,
-      color: DARK,
-      lineHeight: 1.4,
-    },
-    content: [
-      {
-        columns: [
-          {
-            stack: logoBase64
-              ? [{ image: logoBase64, fit: [200, 60], margin: [0, 0, 0, 0] }]
-              : [{ text: 'Green Funding', fontSize: 26, bold: true, color: DARK }],
-          },
-          {
-            stack: [
-              {
-                text: 'QUOTATION DATE',
-                fontSize: 8,
-                bold: true,
-                color: GRAY,
-                alignment: 'right',
-                characterSpacing: 1,
-              },
-              {
-                text: quoteDate,
-                fontSize: 18,
-                bold: true,
-                color: DARK,
-                alignment: 'right',
-                margin: [0, 2, 0, 8],
-              },
-              {
-                text: 'QUOTE NO',
-                fontSize: 8,
-                bold: true,
-                color: GRAY,
-                alignment: 'right',
-                characterSpacing: 1,
-              },
-              {
-                text: quoteNumber,
-                fontSize: 16,
-                bold: true,
-                color: DARK,
-                alignment: 'right',
-                margin: [0, 2, 0, 0],
-              },
-            ],
-            width: 180,
-          },
-        ],
-        margin: [0, 0, 0, 24],
-      },
-
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: BORDER_COLOR }],
-        margin: [0, 0, 0, 20],
-      },
-
-      {
-        columns: [
-          {
-            stack: [
-              { text: 'FROM', fontSize: 9, bold: true, color: GREEN, characterSpacing: 1.5, margin: [0, 0, 0, 6] },
-              { text: 'Green Funding', bold: true, fontSize: 11, color: DARK },
-              { text: 'Level 18, 324 Queen Street', fontSize: 10, color: GRAY },
-              { text: 'Brisbane QLD 4000', fontSize: 10, color: GRAY },
-              { text: '1300 403 100', fontSize: 10, color: GRAY },
-              { text: 'solutions@greenfunding.com.au', fontSize: 10, color: GREEN },
-            ],
-          },
-          {
-            stack: [
-              { text: 'PREPARED FOR', fontSize: 9, bold: true, color: GREEN, characterSpacing: 1.5, margin: [0, 0, 0, 6] },
-              { text: preparedFor, bold: true, fontSize: 18, color: DARK },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 28],
-      },
-
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: BORDER_COLOR }],
-        margin: [0, 0, 0, 20],
-      },
-
-      { text: 'Project Funding Summary', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 12] },
-
-      {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                stack: summaryRows,
-                fillColor: GREEN_LIGHT,
-                margin: [12, 12, 12, 12],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 0,
-          vLineWidth: () => 0,
-          paddingLeft: () => 0,
-          paddingRight: () => 0,
-          paddingTop: () => 0,
-          paddingBottom: () => 0,
-        },
-        margin: [0, 0, 0, 16],
-      },
-
-      {
-        table: {
-          headerRows: 1,
-          widths: ['*', '*'],
-          body: termTableBody,
-        },
-        layout: {
-          hLineWidth: (i: number, node: { table: { body: object[][] } }) => {
-            return i === 0 || i === 1 || i === node.table.body.length ? 1 : 0.5;
-          },
-          vLineWidth: () => 0,
-          hLineColor: () => BORDER_COLOR,
-          fillColor: (rowIndex: number) => (rowIndex === 0 ? LIGHT_BG : null),
-          paddingLeft: () => 12,
-          paddingRight: () => 12,
-        },
-        margin: [0, 0, 0, 8],
-      },
-
-      {
-        canvas: [{ type: 'rect', x: 0, y: 0, w: 515, h: 6, r: 3, color: GREEN }],
-        margin: [0, 0, 0, 24],
-      },
-
-
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: BORDER_COLOR }],
-        margin: [0, 0, 0, 16],
-      },
-
-      { text: 'Notes', fontSize: 12, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
-      { text: `Quote valid for 30 days (until ${validUntil})`, fontSize: 11, bold: true, color: DARK, margin: [0, 0, 0, 8] },
-      {
-        text: 'This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.',
-        fontSize: 9,
-        color: '#4B5563',
-        lineHeight: 1.6,
-        margin: [0, 0, 0, 8],
-      },
-      {
-        text: 'Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider\'s lending criteria. Fees, terms, and conditions apply.',
-        fontSize: 9,
-        color: '#4B5563',
-        lineHeight: 1.6,
-      },
-
-      { text: '', pageBreak: 'before' },
-
-      {
-        columns: [
-          {
-            stack: logoBase64
-              ? [{ image: logoBase64, fit: [160, 48], margin: [0, 0, 0, 0] }]
-              : [{ text: 'Green Funding', fontSize: 20, bold: true, color: DARK }],
-          },
-          {
-            stack: [
-              { text: 'Next Steps', fontSize: 20, bold: true, color: DARK, alignment: 'right' },
-              { text: 'Requirements to Proceed', fontSize: 10, color: GRAY, alignment: 'right', margin: [0, 2, 0, 0] },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 20],
-      },
-
-      {
-        canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, lineColor: BORDER_COLOR }],
-        margin: [0, 0, 0, 24],
-      },
-
-      ...(projectCost <= 250000 ? [
-        { text: 'Low Doc Requirements', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
-        {
-          text: `Your project cost of ${formatCurrency(projectCost)} qualifies for our Low Doc finance pathway. This is a streamlined process requiring minimal documentation.`,
-          fontSize: 10,
-          color: '#4B5563',
-          lineHeight: 1.6,
-          margin: [0, 0, 0, 16],
-        },
-        {
-          table: {
-            widths: [20, '*'],
-            body: [
-              [
-                { text: '1', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Completed Finance Application', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Signed application form with all borrower details completed in full.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '2', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: '6 Months Business Bank Statements', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Most recent 6 months of business bank statements for the primary trading account.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '3', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Installer\'s Quote / Invoice', bold: true, fontSize: 11, color: DARK },
-                    { text: 'A formal quote or invoice from the installer detailing the scope of works and total project cost.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '4', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Privacy Consent & Acknowledgement', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Signed Privacy Consent & Acknowledgement form from all applicants/guarantors.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-            ],
-          },
-          layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 0,
-            hLineColor: () => BORDER_COLOR,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-          },
-          margin: [0, 0, 0, 24],
-        },
-      ] : [
-        { text: 'Full Doc Requirements', fontSize: 14, bold: true, color: GREEN, margin: [0, 0, 0, 10] },
-        {
-          text: `Your project cost of ${formatCurrency(projectCost)} requires our Full Doc finance pathway. This ensures we can structure the best possible facility for your needs.`,
-          fontSize: 10,
-          color: '#4B5563',
-          lineHeight: 1.6,
-          margin: [0, 0, 0, 16],
-        },
-        {
-          table: {
-            widths: [20, '*'],
-            body: [
-              [
-                { text: '1', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Completed Finance Application', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Signed application form with all borrower and guarantor details completed in full.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '2', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: '2 Years Financial Statements', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Most recent 2 years of full financial statements (Profit & Loss and Balance Sheet) prepared by an accountant.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '3', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: '2 Years Tax Returns', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Most recent 2 years of business (and individual if applicable) tax returns lodged with the ATO.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '4', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: '6 Months Business Bank Statements', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Most recent 6 months of business bank statements for the primary trading account.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '5', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Installer\'s Quote / Invoice', bold: true, fontSize: 11, color: DARK },
-                    { text: 'A formal quote or invoice from the installer detailing the scope of works and total project cost.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-              [
-                { text: '6', bold: true, fontSize: 11, color: '#ffffff', fillColor: GREEN, alignment: 'center', margin: [0, 4, 0, 4] },
-                {
-                  stack: [
-                    { text: 'Privacy Consent & Acknowledgement', bold: true, fontSize: 11, color: DARK },
-                    { text: 'Signed Privacy Consent & Acknowledgement form from all applicants/guarantors.', fontSize: 10, color: GRAY, lineHeight: 1.5 },
-                  ],
-                  margin: [10, 4, 8, 4],
-                },
-              ],
-            ],
-          },
-          layout: {
-            hLineWidth: () => 1,
-            vLineWidth: () => 0,
-            hLineColor: () => BORDER_COLOR,
-            paddingLeft: () => 0,
-            paddingRight: () => 0,
-          },
-          margin: [0, 0, 0, 24],
-        },
-      ]),
-
-      {
-        table: {
-          widths: ['*'],
-          body: [
-            [
-              {
-                stack: [
-                  { text: 'Ready to Proceed?', bold: true, fontSize: 13, color: GREEN, margin: [0, 0, 0, 6] },
-                  {
-                    text: 'To progress this quote and begin your application, please contact our team:',
-                    fontSize: 10,
-                    color: DARK,
-                    lineHeight: 1.6,
-                    margin: [0, 0, 0, 10],
-                  },
-                  {
-                    columns: [
-                      {
-                        stack: [
-                          { text: 'Email', fontSize: 9, bold: true, color: GRAY, characterSpacing: 0.5, margin: [0, 0, 0, 3] },
-                          { text: 'solutions@greenfunding.com.au', fontSize: 11, bold: true, color: GREEN },
-                        ],
-                      },
-                      {
-                        stack: [
-                          { text: 'Phone', fontSize: 9, bold: true, color: GRAY, characterSpacing: 0.5, margin: [0, 0, 0, 3] },
-                          { text: '1300 403 100', fontSize: 11, bold: true, color: DARK },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-                fillColor: GREEN_LIGHT,
-                margin: [20, 16, 20, 16],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 0,
-          vLineWidth: () => 0,
-          paddingLeft: () => 0,
-          paddingRight: () => 0,
-          paddingTop: () => 0,
-          paddingBottom: () => 0,
-        },
-        margin: [0, 0, 0, 0],
-      },
-    ],
-
-    footer: () => ({
-      columns: [
-        { text: 'greenfunding.com.au', fontSize: 9, color: GRAY, alignment: 'center' },
-      ],
-      margin: [40, 0, 40, 20],
-    }),
-
-    styles: {
-      tableHeader: {
-        fontSize: 9,
-        bold: true,
-        color: GRAY,
-        characterSpacing: 0.5,
-      },
-    },
-  };
-
-  const printer = new PdfPrinter(fonts);
-  const pdfDoc = printer.createPdfKitDocument(docDefinition);
-
-  return new Promise<Uint8Array>((resolve, reject) => {
-    const chunks: Uint8Array[] = [];
-    pdfDoc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
-    pdfDoc.on('end', () => {
-      const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
-      const result = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
+    const drawText = (text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxWidth?: number) => {
+      const font = bold ? fontBold : fontRegular;
+      const safeText = String(text ?? '');
+      if (maxWidth) {
+        const words = safeText.split(' ');
+        let line = '';
+        let lineY = py;
+        for (const word of words) {
+          const testLine = line ? `${line} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, size);
+          if (testWidth > maxWidth && line) {
+            page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
+            line = word;
+            lineY -= size * 1.5;
+          } else {
+            line = testLine;
+          }
+        }
+        if (line) {
+          page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
+        }
+        return py - lineY;
       }
-      resolve(result);
+      page.drawText(safeText, { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
+      return 0;
+    };
+
+    const drawLine = (x1: number, py: number, x2: number, color: { r: number; g: number; b: number }) => {
+      page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness: 1, color: rgb(color.r, color.g, color.b) });
+    };
+
+    drawRect(marginLeft, y - 80, contentWidth, 80, GREEN);
+    drawText('Green Funding', marginLeft + 12, y - 22, 18, true, { r: 1, g: 1, b: 1 });
+    drawText('Finance Quote', pageWidth - marginRight - fontBold.widthOfTextAtSize('Finance Quote', 11), y - 22, 11, true, { r: 1, g: 1, b: 1 });
+    drawText(`Quote: ${quoteNumber}`, pageWidth - marginRight - fontRegular.widthOfTextAtSize(`Quote: ${quoteNumber}`, 10), y - 38, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
+    drawText(`Date: ${quoteDate}`, pageWidth - marginRight - fontRegular.widthOfTextAtSize(`Date: ${quoteDate}`, 10), y - 52, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
+    y -= 88;
+
+    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    y -= 20;
+
+    drawText('PREPARED FOR', marginLeft, y, 8, true, GRAY);
+    drawText('FROM', marginLeft + contentWidth / 2 + 10, y, 8, true, GRAY);
+    y -= 14;
+
+    drawText(preparedFor, marginLeft, y, 11, true, DARK);
+    drawText('Green Funding', marginLeft + contentWidth / 2 + 10, y, 11, true, DARK);
+    y -= 14;
+
+    if (recipientName && recipientCompany) {
+      drawText(recipientName, marginLeft, y, 10, false, GRAY);
+      y -= 13;
+    }
+
+    drawText('solutions@greenfunding.com.au', marginLeft + contentWidth / 2 + 10, y, 9, false, GRAY);
+    y -= 13;
+    drawText('1300 403 100', marginLeft + contentWidth / 2 + 10, y, 9, false, GRAY);
+    y -= 20;
+
+    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    y -= 20;
+
+    drawText('PROJECT FUNDING SUMMARY', marginLeft, y, 9, true, GRAY);
+    y -= 14;
+
+    const summaryBoxHeight = 16 + (assetNames.length > 0 ? 14 : 0) + 14;
+    drawRect(marginLeft, y - summaryBoxHeight, contentWidth, summaryBoxHeight + 4, GREEN_LIGHT);
+
+    drawText('Net Capex (ex GST):', marginLeft + 8, y - 4, 10, true, DARK);
+    drawText(formatCurrency(netCapex), marginLeft + 8 + 130, y - 4, 10, false, DARK);
+    y -= 16;
+
+    if (assetNames.length > 0) {
+      drawText('Equipment:', marginLeft + 8, y - 2, 10, true, DARK);
+      drawText(assetNames.join(', '), marginLeft + 8 + 130, y - 2, 10, false, DARK, contentWidth - 150);
+      y -= 14;
+    }
+
+    drawText(`Total Project Cost (inc GST): ${formatCurrency(projectCost)}`, marginLeft + 8, y - 2, 10, false, GRAY);
+    y -= summaryBoxHeight - 16 + 20;
+
+    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    y -= 20;
+
+    drawText('FINANCING OPTIONS', marginLeft, y, 9, true, GRAY);
+    y -= 14;
+
+    const headerHeight = 24;
+    drawRect(marginLeft, y - headerHeight, contentWidth, headerHeight, DARK);
+    drawText('LOAN TERM', marginLeft + 12, y - 16, 9, true, { r: 1, g: 1, b: 1 });
+    drawText('MONTHLY REPAYMENT (EX GST)', marginLeft + contentWidth - 12 - fontBold.widthOfTextAtSize('MONTHLY REPAYMENT (EX GST)', 9), y - 16, 9, true, { r: 1, g: 1, b: 1 });
+    y -= headerHeight;
+
+    termOptions.forEach((t, i) => {
+      const rowHeight = 28;
+      if (i % 2 === 0) {
+        drawRect(marginLeft, y - rowHeight, contentWidth, rowHeight, LIGHT_BG);
+      } else {
+        page.drawRectangle({ x: marginLeft, y: y - rowHeight, width: contentWidth, height: rowHeight, color: WHITE });
+      }
+      drawText(`${t.years} ${t.years === 1 ? 'Year' : 'Years'}`, marginLeft + 12, y - 18, 11, false, DARK);
+      const amountText = formatCurrency(t.monthlyPayment);
+      drawText(amountText, marginLeft + contentWidth - 12 - fontBold.widthOfTextAtSize(amountText, 12), y - 18, 12, true, DARK);
+      y -= rowHeight;
     });
-    pdfDoc.on('error', reject);
-    pdfDoc.end();
-  });
+
+    y -= 16;
+
+    const greenBarH = 6;
+    drawRect(marginLeft, y - greenBarH, contentWidth, greenBarH, GREEN);
+    y -= greenBarH + 20;
+
+    drawText('Notes', marginLeft, y, 12, true, GREEN);
+    y -= 16;
+    drawText(`Quote valid for 30 days (until ${validUntil})`, marginLeft, y, 10, true, DARK);
+    y -= 14;
+
+    const disclaimer1 = 'This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.';
+    const disclaimer2 = 'Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider\'s lending criteria. Fees, terms, and conditions apply.';
+
+    drawText(disclaimer1, marginLeft, y, 8, false, GRAY, contentWidth);
+    y -= 40;
+    drawText(disclaimer2, marginLeft, y, 8, false, GRAY, contentWidth);
+
+    page.drawText('greenfunding.com.au', {
+      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 9) / 2,
+      y: 20,
+      size: 9,
+      font: fontRegular,
+      color: rgb(GRAY.r, GRAY.g, GRAY.b),
+    });
+  }
+
+  function drawPage2() {
+    const page = pdfDoc.addPage([pageWidth, pageHeight]);
+    let y = pageHeight - 40;
+
+    const drawRect = (x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) => {
+      page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
+    };
+
+    const drawText = (text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxWidth?: number) => {
+      const font = bold ? fontBold : fontRegular;
+      const safeText = String(text ?? '');
+      if (maxWidth) {
+        const words = safeText.split(' ');
+        let line = '';
+        let lineY = py;
+        for (const word of words) {
+          const testLine = line ? `${line} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, size);
+          if (testWidth > maxWidth && line) {
+            page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
+            line = word;
+            lineY -= size * 1.5;
+          } else {
+            line = testLine;
+          }
+        }
+        if (line) {
+          page.drawText(line, { x, y: lineY, size, font, color: rgb(color.r, color.g, color.b) });
+        }
+        return py - lineY;
+      }
+      page.drawText(safeText, { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
+      return 0;
+    };
+
+    const drawLine = (x1: number, py: number, x2: number, color: { r: number; g: number; b: number }) => {
+      page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness: 1, color: rgb(color.r, color.g, color.b) });
+    };
+
+    drawRect(marginLeft, y - 80, contentWidth, 80, GREEN);
+    drawText('Green Funding', marginLeft + 12, y - 22, 18, true, { r: 1, g: 1, b: 1 });
+    drawText('Next Steps', pageWidth - marginRight - fontBold.widthOfTextAtSize('Next Steps', 14), y - 22, 14, true, { r: 1, g: 1, b: 1 });
+    drawText('Requirements to Proceed', pageWidth - marginRight - fontRegular.widthOfTextAtSize('Requirements to Proceed', 10), y - 40, 10, false, { r: 0.9, g: 0.9, b: 0.9 });
+    y -= 96;
+
+    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    y -= 24;
+
+    const isLowDoc = projectCost <= 250000;
+    const docTitle = isLowDoc ? 'Low Doc Requirements' : 'Full Doc Requirements';
+    drawText(docTitle, marginLeft, y, 14, true, GREEN);
+    y -= 18;
+
+    const descText = isLowDoc
+      ? `Your project cost of ${formatCurrency(projectCost)} qualifies for our Low Doc finance pathway. This is a streamlined process requiring minimal documentation.`
+      : `Your project cost of ${formatCurrency(projectCost)} requires our Full Doc finance pathway. Please prepare the documentation listed below.`;
+    drawText(descText, marginLeft, y, 10, false, GRAY, contentWidth);
+    y -= 30;
+
+    const lowDocItems = [
+      'Completed Finance Application',
+      '6 months business bank statements',
+      'Installer\'s quote / invoice',
+      'Signed Privacy Consent & Acknowledgement',
+    ];
+
+    const fullDocItems = [
+      'Completed Finance Application',
+      '2 years financial statements (P&L and Balance Sheet)',
+      '2 years tax returns (business and individual)',
+      '6 months business bank statements',
+      'Installer\'s quote / invoice',
+      'Signed Privacy Consent & Acknowledgement',
+    ];
+
+    const items = isLowDoc ? lowDocItems : fullDocItems;
+
+    items.forEach((item, i) => {
+      const rowH = 32;
+      drawRect(marginLeft, y - rowH, contentWidth, rowH, i % 2 === 0 ? LIGHT_BG : { r: 1, g: 1, b: 1 });
+      drawRect(marginLeft + 10, y - rowH / 2 - 8, 22, 22, GREEN);
+      drawText(String(i + 1), marginLeft + 18 - fontBold.widthOfTextAtSize(String(i + 1), 10) / 2, y - rowH / 2 - 2, 10, true, { r: 1, g: 1, b: 1 });
+      drawText(item, marginLeft + 42, y - rowH / 2 - 1, 10, false, DARK, contentWidth - 50);
+      y -= rowH;
+    });
+
+    y -= 24;
+    drawLine(marginLeft, y, marginLeft + contentWidth, BORDER);
+    y -= 20;
+
+    drawText('Ready to Proceed?', marginLeft, y, 14, true, DARK);
+    y -= 16;
+    drawText('Contact our team to get started with your application.', marginLeft, y, 10, false, GRAY);
+    y -= 20;
+
+    drawRect(marginLeft, y - 60, contentWidth, 60, LIGHT_BG);
+    drawText('solutions@greenfunding.com.au', marginLeft + 16, y - 18, 11, false, GREEN);
+    drawText('1300 403 100', marginLeft + 16, y - 34, 11, false, GREEN);
+
+    const contactRight = installerName || installerCompany
+      ? (installerName ? installerName : '') + (installerCompany ? (installerName ? ' | ' + installerCompany : installerCompany) : '')
+      : 'greenfunding.com.au';
+    drawText(contactRight, marginLeft + contentWidth - 16 - fontRegular.widthOfTextAtSize(contactRight, 10), y - 18, 10, false, DARK);
+
+    page.drawText('greenfunding.com.au', {
+      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 9) / 2,
+      y: 20,
+      size: 9,
+      font: fontRegular,
+      color: rgb(GRAY.r, GRAY.g, GRAY.b),
+    });
+  }
+
+  drawPage1();
+  drawPage2();
+
+  const pdfBytes = await pdfDoc.save();
+  return pdfBytes;
 }
 
 function generateQuoteEmailHtml(
@@ -997,7 +767,6 @@ Deno.serve(async (req: Request) => {
 
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);
     const quoteDate = formatDate(new Date(quoteRecord.created_at));
-    const logoBase64 = await fetchLogoBase64();
 
     const pdfBytes = await generateQuotePdf(
       quoteNumber,
@@ -1011,7 +780,7 @@ Deno.serve(async (req: Request) => {
       termOptions,
       installerName,
       installerCompany,
-      logoBase64
+      null
     );
 
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);
@@ -1029,6 +798,8 @@ Deno.serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const logoBase64 = null;
 
     const quoteEmailHtml = generateQuoteEmailHtml(
       quoteNumber,
