@@ -374,7 +374,7 @@ export function ApplicationsList() {
                 </div>
               )}
 
-              {((selectedApp.uploaded_documents && Array.isArray(selectedApp.uploaded_documents) && selectedApp.uploaded_documents.length > 0) || selectedApp.privacy_consent_file) && (
+              {((selectedApp.uploaded_documents && Array.isArray(selectedApp.uploaded_documents) && selectedApp.uploaded_documents.length > 0) || selectedApp.privacy_consent_file || selectedApp.directors_id_file || selectedApp.asset_liability_file) && (
                 <div>
                   <h4 className="text-lg font-bold text-[#3A475B] mb-3">Uploaded Documents</h4>
                   <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -394,6 +394,54 @@ export function ApplicationsList() {
                         </div>
                         <a
                           href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/application-documents/${selectedApp.privacy_consent_file.path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 text-sm bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white rounded hover:bg-[#28AA48] transition-colors"
+                        >
+                          View
+                        </a>
+                      </div>
+                    )}
+                    {selectedApp.directors_id_file && (
+                      <div className="flex items-center justify-between bg-white border-2 border-[#3A475B]/30 rounded-lg p-3">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-[#3A475B]" />
+                          <div>
+                            <p className="text-sm font-semibold text-[#3A475B]">
+                              {selectedApp.directors_id_file.name}
+                              <span className="ml-2 text-xs bg-[#3A475B] text-white px-2 py-0.5 rounded">Directors ID</span>
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {selectedApp.directors_id_file.size ? `${(selectedApp.directors_id_file.size / 1024).toFixed(1)} KB` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/application-documents/${selectedApp.directors_id_file.path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 text-sm bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white rounded hover:bg-[#28AA48] transition-colors"
+                        >
+                          View
+                        </a>
+                      </div>
+                    )}
+                    {selectedApp.asset_liability_file && (
+                      <div className="flex items-center justify-between bg-white border-2 border-[#3A475B]/30 rounded-lg p-3">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-[#3A475B]" />
+                          <div>
+                            <p className="text-sm font-semibold text-[#3A475B]">
+                              {selectedApp.asset_liability_file.name}
+                              <span className="ml-2 text-xs bg-[#3A475B] text-white px-2 py-0.5 rounded">Asset & Liability</span>
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {selectedApp.asset_liability_file.size ? `${(selectedApp.asset_liability_file.size / 1024).toFixed(1)} KB` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/application-documents/${selectedApp.asset_liability_file.path}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1 text-sm bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white rounded hover:bg-[#28AA48] transition-colors"

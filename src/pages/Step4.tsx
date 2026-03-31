@@ -32,6 +32,8 @@ export function Step4() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [privacyConsentFile, setPrivacyConsentFile] = useState<UploadedFile | null>(null);
+  const [directorsIdFile, setDirectorsIdFile] = useState<UploadedFile | null>(null);
+  const [assetLiabilityFile, setAssetLiabilityFile] = useState<UploadedFile | null>(null);
 
   const projectCost = state.projectCost || 0;
 
@@ -132,6 +134,66 @@ export function Step4() {
     }
   };
 
+  const handleDirectorsIdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `directors-id-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('application-documents').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      setDirectorsIdFile({ name: file.name, path: fileName, size: file.size });
+    } catch (error: any) {
+      console.error('Error uploading directors ID:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeDirectorsId = async () => {
+    if (!directorsIdFile) return;
+    try {
+      const { error } = await supabase.storage.from('application-documents').remove([directorsIdFile.path]);
+      if (error) throw error;
+      setDirectorsIdFile(null);
+    } catch (error: any) {
+      console.error('Error removing directors ID:', error);
+      alert('Failed to remove file. Please try again.');
+    }
+  };
+
+  const handleAssetLiabilityUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `asset-liability-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('application-documents').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      setAssetLiabilityFile({ name: file.name, path: fileName, size: file.size });
+    } catch (error: any) {
+      console.error('Error uploading asset & liability statement:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAssetLiability = async () => {
+    if (!assetLiabilityFile) return;
+    try {
+      const { error } = await supabase.storage.from('application-documents').remove([assetLiabilityFile.path]);
+      if (error) throw error;
+      setAssetLiabilityFile(null);
+    } catch (error: any) {
+      console.error('Error removing asset & liability statement:', error);
+      alert('Failed to remove file. Please try again.');
+    }
+  };
+
   const removeFile = async (filePath: string) => {
     try {
       const { error } = await supabase.storage
@@ -159,6 +221,17 @@ export function Step4() {
     if (!privacyConsentFile) {
       alert('Please upload the signed Privacy Consent Form to proceed');
       return;
+    }
+
+    if (projectCost < 250000) {
+      if (!directorsIdFile) {
+        alert('Please upload the Directors Drivers Licence & Medicare card to proceed');
+        return;
+      }
+      if (!assetLiabilityFile) {
+        alert('Please upload the Directors Asset & Liability Statement to proceed');
+        return;
+      }
     }
 
     if (!fullName || !email || !businessDescription) {
@@ -215,6 +288,8 @@ export function Step4() {
         notes,
         special_pricing_requested: state.specialPricingRequested || false,
         privacy_consent_file: privacyConsentFile,
+        directors_id_file: directorsIdFile,
+        asset_liability_file: assetLiabilityFile,
         config_snapshot: config,
         uploaded_documents: uploadedFiles,
         installer_id: user?.id || null,
@@ -259,13 +334,15 @@ export function Step4() {
     }
   };
 
+  const isLowDoc = projectCost < 250000;
+
   const renderRequirements = () => {
-    if (projectCost < 150000) {
+    if (isLowDoc) {
       return (
         <div className="bg-gray-50 rounded-lg p-6">
           <h4 className="text-lg font-bold text-[#3A475B] mb-4">Low Doc Requirements</h4>
           <p className="text-sm text-gray-600 mb-4">
-            For projects under $150,000, you'll need:
+            For projects up to $250,000, you'll need:
           </p>
           <ul className="space-y-3">
             <li className="flex items-start gap-3">
@@ -276,20 +353,9 @@ export function Step4() {
               <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
               <span className="text-sm text-[#3A475B]">Directors Asset & Liability Statement</span>
             </li>
-          </ul>
-        </div>
-      );
-    } else if (projectCost >= 150000 && projectCost < 250000) {
-      return (
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h4 className="text-lg font-bold text-[#3A475B] mb-4">Standard Requirements</h4>
-          <p className="text-sm text-gray-600 mb-4">
-            For projects between $150,000 and $250,000, you'll need:
-          </p>
-          <ul className="space-y-3">
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-[#3A475B]">6 months bank statements</span>
+              <span className="text-sm text-[#3A475B]">Privacy Consent Form (signed)</span>
             </li>
           </ul>
         </div>
@@ -514,6 +580,102 @@ export function Step4() {
                   placeholder="Any additional information you'd like to share..."
                 />
               </div>
+
+              {isLowDoc && (
+                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                  <h4 className="text-base font-bold text-[#3A475B] mb-3">
+                    Directors Drivers Licence & Medicare Card *
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                    Upload a copy of the Directors Drivers Licence and Medicare card. Required for Low Doc applications up to $250,000.
+                  </p>
+                  {!directorsIdFile ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                      <input
+                        type="file"
+                        id="directors-id-upload"
+                        onChange={handleDirectorsIdUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      />
+                      <label htmlFor="directors-id-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
+                        <span className="text-xs sm:text-sm font-semibold text-[#3A475B]">
+                          {uploading ? 'Uploading...' : 'Upload Drivers Licence & Medicare Card'}
+                        </span>
+                        <span className="text-xs text-gray-600 mt-1">PDF, DOC, DOCX, JPG, PNG (max 10MB)</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#3A475B] truncate">{directorsIdFile.name}</p>
+                          <p className="text-xs text-gray-600">{formatFileSize(directorsIdFile.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeDirectorsId}
+                        className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove file"
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isLowDoc && (
+                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                  <h4 className="text-base font-bold text-[#3A475B] mb-3">
+                    Directors Asset & Liability Statement *
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                    Upload the Directors Asset & Liability Statement. Required for Low Doc applications up to $250,000.
+                  </p>
+                  {!assetLiabilityFile ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                      <input
+                        type="file"
+                        id="asset-liability-upload"
+                        onChange={handleAssetLiabilityUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      />
+                      <label htmlFor="asset-liability-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
+                        <span className="text-xs sm:text-sm font-semibold text-[#3A475B]">
+                          {uploading ? 'Uploading...' : 'Upload Asset & Liability Statement'}
+                        </span>
+                        <span className="text-xs text-gray-600 mt-1">PDF, DOC, DOCX, JPG, PNG (max 10MB)</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#3A475B] truncate">{assetLiabilityFile.name}</p>
+                          <p className="text-xs text-gray-600">{formatFileSize(assetLiabilityFile.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeAssetLiability}
+                        className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove file"
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="border-2 border-[#28AA48] rounded-lg p-4 sm:p-6 bg-[#28AA48]/5">
                 <h4 className="text-base font-bold text-[#3A475B] mb-3">
