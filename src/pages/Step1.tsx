@@ -113,6 +113,7 @@ export function Step1() {
     });
 
     navigate('/step-3');
+    window.scrollTo(0, 0);
   };
 
   const handleModalClose = () => {
@@ -136,6 +137,7 @@ export function Step1() {
       });
 
       navigate('/step-4');
+      window.scrollTo(0, 0);
     } else {
       setShowSpecialPricingModal(false);
     }

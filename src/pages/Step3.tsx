@@ -383,6 +383,7 @@ export function Step3() {
     });
 
     navigate('/step-4');
+    window.scrollTo(0, 0);
   };
 
   const handleBack = () => {
