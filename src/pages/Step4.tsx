@@ -32,6 +32,7 @@ export function Step4() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [privacyConsentFile, setPrivacyConsentFile] = useState<UploadedFile | null>(null);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [directorsIdFile, setDirectorsIdFile] = useState<UploadedFile | null>(null);
   const [medicareCardFile, setMedicareCardFile] = useState<UploadedFile | null>(null);
   const [assetLiabilityFile, setAssetLiabilityFile] = useState<UploadedFile | null>(null);
@@ -282,6 +283,11 @@ export function Step4() {
 
     if (!privacyConsentFile) {
       alert('Please upload the signed Privacy Consent Form to proceed');
+      return;
+    }
+
+    if (!privacyAcknowledged) {
+      alert('Please confirm you have downloaded, signed and uploaded the Privacy Consent Form to proceed');
       return;
     }
 
@@ -864,6 +870,27 @@ export function Step4() {
                     </button>
                   </div>
                 )}
+
+                <label className="flex items-start gap-3 mt-4 cursor-pointer group">
+                  <div className="relative flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={privacyAcknowledged}
+                      onChange={e => setPrivacyAcknowledged(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${privacyAcknowledged ? 'bg-[#28AA48] border-[#28AA48]' : 'border-gray-300 group-hover:border-[#28AA48]'}`}>
+                      {privacyAcknowledged && (
+                        <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs sm:text-sm text-gray-700 leading-snug">
+                    I confirm that I have downloaded, signed and uploaded the Privacy Consent Form and agree to the terms and conditions outlined by <span className="font-semibold text-[#3A475B]">Green Funding</span>.
+                  </span>
+                </label>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4">
