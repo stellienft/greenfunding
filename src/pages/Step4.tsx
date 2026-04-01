@@ -34,6 +34,7 @@ export function Step4() {
   const [privacyConsentFile, setPrivacyConsentFile] = useState<UploadedFile | null>(null);
   const [directorsIdFile, setDirectorsIdFile] = useState<UploadedFile | null>(null);
   const [assetLiabilityFile, setAssetLiabilityFile] = useState<UploadedFile | null>(null);
+  const [bankStatementsFile, setBankStatementsFile] = useState<UploadedFile | null>(null);
 
   const projectCost = state.projectCost || 0;
 
@@ -194,6 +195,36 @@ export function Step4() {
     }
   };
 
+  const handleBankStatementsUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `bank-statements-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('application-documents').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      setBankStatementsFile({ name: file.name, path: fileName, size: file.size });
+    } catch (error: any) {
+      console.error('Error uploading bank statements:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeBankStatements = async () => {
+    if (!bankStatementsFile) return;
+    try {
+      const { error } = await supabase.storage.from('application-documents').remove([bankStatementsFile.path]);
+      if (error) throw error;
+      setBankStatementsFile(null);
+    } catch (error: any) {
+      console.error('Error removing bank statements:', error);
+      alert('Failed to remove file. Please try again.');
+    }
+  };
+
   const removeFile = async (filePath: string) => {
     try {
       const { error } = await supabase.storage
@@ -230,6 +261,10 @@ export function Step4() {
       }
       if (!assetLiabilityFile) {
         alert('Please upload the Directors Asset & Liability Statement to proceed');
+        return;
+      }
+      if (!bankStatementsFile) {
+        alert('Please upload the last 6 months bank statements to proceed');
         return;
       }
     }
@@ -352,6 +387,10 @@ export function Step4() {
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
               <span className="text-sm text-[#3A475B]">Directors Asset & Liability Statement</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-[#3A475B]">Last 6 months bank statements</span>
             </li>
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
@@ -619,6 +658,63 @@ export function Step4() {
                       <button
                         type="button"
                         onClick={removeDirectorsId}
+                        className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove file"
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isLowDoc && (
+                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                  <h4 className="text-base font-bold text-[#3A475B] mb-3">
+                    Last 6 Months Bank Statements *
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                    Please download your last 6 months bank statements and upload them here. Required for Low Doc applications up to $250,000.
+                  </p>
+                  <a
+                    href="https://scv.bankstatements.com.au/HSHV"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#28AA48] hover:text-[#1e8a38] underline underline-offset-2 mb-4 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    Download Bank Statements via Secure Portal
+                  </a>
+                  {!bankStatementsFile ? (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                      <input
+                        type="file"
+                        id="bank-statements-upload"
+                        onChange={handleBankStatementsUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip"
+                      />
+                      <label htmlFor="bank-statements-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
+                        <span className="text-xs sm:text-sm font-semibold text-[#3A475B]">
+                          {uploading ? 'Uploading...' : 'Upload Bank Statements'}
+                        </span>
+                        <span className="text-xs text-gray-600 mt-1">PDF, DOC, DOCX, JPG, PNG, ZIP (max 10MB)</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#3A475B] truncate">{bankStatementsFile.name}</p>
+                          <p className="text-xs text-gray-600">{formatFileSize(bankStatementsFile.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeBankStatements}
                         className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
                         aria-label="Remove file"
                       >
