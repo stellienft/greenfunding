@@ -754,17 +754,6 @@ export function Step3() {
               </div>
             )}
 
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-900 font-semibold mb-2">Next Steps:</p>
-              <p className="text-sm text-green-900">
-                Intro Green Funding via email{' '}
-                <a href="mailto:solutions@greenfunding.com.au" className="text-[#28AA48] hover:underline font-medium">
-                  solutions@greenfunding.com.au
-                </a>
-                {' '}or Continue to Application
-              </p>
-            </div>
-
             <QuoteSection
               selectedQuoteTerms={selectedQuoteTerms}
               setSelectedQuoteTerms={setSelectedQuoteTerms}
