@@ -365,7 +365,7 @@ export function QuoteDetail() {
 
             <div className="px-6 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 border-b border-gray-100">
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">Project Cost</p>
+                <p className="text-xs text-gray-400 mb-0.5">Project Cost (Inc GST)</p>
                 <p className="font-bold text-[#3A475B] text-sm">{formatCurrency(quote.project_cost)}</p>
               </div>
               <div>
@@ -438,7 +438,6 @@ export function QuoteDetail() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-[#28AA48]">{formatCurrency(t.monthlyPayment)}<span className="text-xs font-normal text-gray-400">/mo</span></p>
-                        {t.totalFinanced && <p className="text-xs text-gray-400">Total: {formatCurrency(t.totalFinanced)}</p>}
                       </div>
                     </div>
                   ))}
