@@ -165,7 +165,9 @@ export function QuoteDetail() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [privacyConsentFile, setPrivacyConsentFile] = useState<UploadedFile | null>(null);
   const [directorsIdFile, setDirectorsIdFile] = useState<UploadedFile | null>(null);
+  const [medicareCardFile, setMedicareCardFile] = useState<UploadedFile | null>(null);
   const [assetLiabilityFile, setAssetLiabilityFile] = useState<UploadedFile | null>(null);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -230,6 +232,14 @@ export function QuoteDetail() {
     finally { setUploading(false); }
   };
 
+  const handleMedicareCardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploading(true);
+    try { setMedicareCardFile(await uploadFile(file, 'medicare-card')); }
+    catch { alert('Failed to upload file.'); }
+    finally { setUploading(false); }
+  };
+
   const handleAssetLiabilityUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     setUploading(true);
@@ -243,7 +253,9 @@ export function QuoteDetail() {
     if (!quote || !config || selectedTerm === null) { alert('Please select a loan term'); return; }
     if (!fullName || !email || !businessDescription) { alert('Please complete all required fields'); return; }
     if (!privacyConsentFile) { alert('Please upload the signed Privacy Consent Form'); return; }
-    if (isLowDoc && !directorsIdFile) { alert('Please upload the Directors Drivers Licence & Medicare card'); return; }
+    if (!privacyAcknowledged) { alert('Please confirm the privacy consent acknowledgement'); return; }
+    if (isLowDoc && !directorsIdFile) { alert('Please upload the Directors Drivers Licence'); return; }
+    if (isLowDoc && !medicareCardFile) { alert('Please upload the Directors Medicare Card'); return; }
     if (isLowDoc && !assetLiabilityFile) { alert('Please upload the Directors Asset & Liability Statement'); return; }
 
     setSubmitting(true);
@@ -282,6 +294,7 @@ export function QuoteDetail() {
         special_pricing_requested: false,
         privacy_consent_file: privacyConsentFile,
         directors_id_file: directorsIdFile,
+        medicare_card_file: medicareCardFile,
         asset_liability_file: assetLiabilityFile,
         config_snapshot: config,
         uploaded_documents: uploadedFiles,
@@ -653,23 +666,61 @@ export function QuoteDetail() {
                     </p>
 
                     <div className="space-y-4">
-                      <FileUploadField
-                        label="Privacy Consent Form *"
-                        hint="Upload the signed Privacy Consent & Acknowledgement form"
-                        file={privacyConsentFile}
-                        uploading={uploading}
-                        onUpload={handlePrivacyUpload}
-                        onRemove={async () => { if (privacyConsentFile) { await removeStorageFile(privacyConsentFile.path); setPrivacyConsentFile(null); } }}
-                      />
+                      <div>
+                        <FileUploadField
+                          label="Privacy Consent Form *"
+                          hint="Upload the signed Privacy Consent & Acknowledgement form"
+                          file={privacyConsentFile}
+                          uploading={uploading}
+                          onUpload={handlePrivacyUpload}
+                          onRemove={async () => { if (privacyConsentFile) { await removeStorageFile(privacyConsentFile.path); setPrivacyConsentFile(null); } }}
+                        />
+                        <a
+                          href="https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#28AA48] hover:text-[#1e8a38] underline underline-offset-2 mt-2 transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                          Download Privacy Consent Form
+                        </a>
+                        <label className="flex items-start gap-3 mt-3 cursor-pointer group">
+                          <div className="relative flex-shrink-0 mt-0.5">
+                            <input
+                              type="checkbox"
+                              checked={privacyAcknowledged}
+                              onChange={e => setPrivacyAcknowledged(e.target.checked)}
+                              className="sr-only"
+                            />
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${privacyAcknowledged ? 'bg-[#28AA48] border-[#28AA48]' : 'border-gray-300 group-hover:border-[#28AA48]'}`}>
+                              {privacyAcknowledged && (
+                                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-gray-700 leading-snug">
+                            I confirm the client has downloaded, signed and the Privacy Consent Form has been uploaded above.
+                          </span>
+                        </label>
+                      </div>
 
                       {isLowDoc && (
                         <>
                           <FileUploadField
-                            label="Directors Drivers Licence & Medicare Card *"
+                            label="Directors Drivers Licence *"
                             file={directorsIdFile}
                             uploading={uploading}
                             onUpload={handleDirectorsIdUpload}
                             onRemove={async () => { if (directorsIdFile) { await removeStorageFile(directorsIdFile.path); setDirectorsIdFile(null); } }}
+                          />
+                          <FileUploadField
+                            label="Directors Medicare Card *"
+                            file={medicareCardFile}
+                            uploading={uploading}
+                            onUpload={handleMedicareCardUpload}
+                            onRemove={async () => { if (medicareCardFile) { await removeStorageFile(medicareCardFile.path); setMedicareCardFile(null); } }}
                           />
                           <FileUploadField
                             label="Directors Asset & Liability Statement *"
