@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Download, CheckCircle, AlertCircle, Copy, ClipboardCheck, ChevronDown, ChevronUp, Mail, RefreshCw, User } from 'lucide-react';
+import { Check, Download, CheckCircle, AlertCircle, RefreshCw, User, Send } from 'lucide-react';
 
 interface TermOption {
   years: number;
@@ -33,50 +33,10 @@ interface QuoteSectionProps {
   formatCurrency: (n: number) => string;
 }
 
-function buildEmailTemplate(projectCost: number, installerName: string, installerCompany: string, clientName: string): string {
-  const isLowDoc = projectCost <= 250000;
-  const costStr = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(projectCost);
-  const docType = isLowDoc ? 'Low Doc' : 'Full Doc';
-  const greeting = clientName.trim() ? clientName.trim() : '[Client Name]';
-
-  const lowDocItems = `To progress this to the next stage we will need the following documents:
-
-1. Completed Finance Application
-2. 6 months business bank statements
-3. Installer's quote / invoice
-4. Signed Privacy Consent & Acknowledgement`;
-
-  const fullDocItems = `To progress this to the next stage we will need the following documents:
-
-1. Completed Finance Application
-2. 2 years financial statements (P&L and Balance Sheet)
-3. 2 years tax returns (business and individual)
-4. 6 months business bank statements
-5. Installer's quote / invoice
-6. Signed Privacy Consent & Acknowledgement`;
-
-  return `Hi ${greeting},
-
-I hope this email finds you well. I wanted to follow up on our recent conversation regarding your renewable energy project.
-
-I've put together a finance quote for your consideration, which you will find attached. This quote outlines the ${docType} finance options available for your project valued at ${costStr}.
-
-${isLowDoc ? lowDocItems : fullDocItems}
-
-Please don't hesitate to reach out if you have any questions about the quote or the application process. Our team at Green Funding is ready to help you take the next step.
-
-Kind regards,
-
-${installerName || '[Your Name]'}${installerCompany ? `\n${installerCompany}` : ''}`;
-}
-
 export function QuoteSection({
   selectedQuoteTerms,
   setSelectedQuoteTerms,
   allTerms,
-  projectCost,
-  installerName,
-  installerCompany,
   generatingPdf,
   pdfGenerated,
   quoteError,
@@ -87,20 +47,18 @@ export function QuoteSection({
   onReset,
   formatCurrency,
 }: QuoteSectionProps) {
-  const [showEmailTemplate, setShowEmailTemplate] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [touched, setTouched] = useState(false);
 
-  const emailTemplate = buildEmailTemplate(projectCost, installerName, installerCompany, clientFields.clientName);
-  const isLowDoc = projectCost <= 250000;
+  const missingClientFields =
+    !clientFields.clientName.trim() ||
+    !clientFields.clientEmail.trim() ||
+    !clientFields.clientAddress.trim();
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(emailTemplate);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // no-op
-    }
+  const canSubmit = !missingClientFields && selectedQuoteTerms.length > 0;
+
+  const handleSubmitClick = () => {
+    setTouched(true);
+    if (canSubmit) onGenerate();
   };
 
   return (
@@ -110,8 +68,8 @@ export function QuoteSection({
           <Download className="w-4 h-4 text-[#28AA48]" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[#3A475B]">Generate Quote PDF</h3>
-          <p className="text-xs text-gray-500">Select loan terms to include and download a PDF to share with your client</p>
+          <h3 className="text-sm font-bold text-[#3A475B]">Generate Quote</h3>
+          <p className="text-xs text-gray-500">Enter client details and select loan terms to submit a quote</p>
         </div>
       </div>
 
@@ -121,7 +79,7 @@ export function QuoteSection({
             <div className="flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-[#28AA48] flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-[#28AA48]">Quote downloaded successfully</p>
+                <p className="text-sm font-semibold text-[#28AA48]">Quote submitted successfully</p>
                 {generatedQuoteNumber && (
                   <p className="text-xs text-gray-500 mt-0.5">{generatedQuoteNumber}</p>
                 )}
@@ -132,7 +90,7 @@ export function QuoteSection({
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#3A475B] bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              Generate Another
+              Submit Another
             </button>
           </div>
         ) : (
@@ -140,38 +98,55 @@ export function QuoteSection({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <User className="w-4 h-4 text-[#28AA48]" />
-                <span className="text-sm font-semibold text-[#3A475B]">Client Details <span className="text-xs font-normal text-gray-400">(optional)</span></span>
+                <span className="text-sm font-semibold text-[#3A475B]">
+                  Client Details <span className="text-red-500 text-xs">*</span>
+                </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Name</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Client Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={clientFields.clientName}
                     onChange={e => onClientFieldChange('clientName', e.target.value)}
-                    placeholder="e.g. Hallet Group"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                    placeholder="e.g. Smith Enterprises"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientName.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   />
+                  {touched && !clientFields.clientName.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Required</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Email</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Client Email <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="email"
                     value={clientFields.clientEmail}
                     onChange={e => onClientFieldChange('clientEmail', e.target.value)}
-                    placeholder="e.g. info@halletgroup.com"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                    placeholder="e.g. contact@business.com.au"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientEmail.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   />
+                  {touched && !clientFields.clientEmail.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Required</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Address</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Client Address <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     value={clientFields.clientAddress}
                     onChange={e => onClientFieldChange('clientAddress', e.target.value)}
-                    placeholder="e.g. 42 Northern Power Station Road"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                    placeholder="e.g. 12 Main Street, Adelaide SA"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientAddress.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   />
+                  {touched && !clientFields.clientAddress.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Required</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Client Phone</label>
@@ -212,8 +187,11 @@ export function QuoteSection({
                   );
                 })}
               </div>
-              {selectedQuoteTerms.length === 0 && (
+              {touched && selectedQuoteTerms.length === 0 && (
                 <p className="text-xs text-red-500 mt-1.5">Select at least one term.</p>
+              )}
+              {!touched && selectedQuoteTerms.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1.5">Select at least one term to include in the quote.</p>
               )}
             </div>
 
@@ -225,68 +203,24 @@ export function QuoteSection({
             )}
 
             <button
-              onClick={onGenerate}
-              disabled={generatingPdf || selectedQuoteTerms.length === 0}
+              onClick={handleSubmitClick}
+              disabled={generatingPdf}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed text-sm"
             >
               {generatingPdf ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                  Generating PDF...
+                  Submitting Quote...
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4" />
-                  Download PDF Quote
+                  <Send className="w-4 h-4" />
+                  Submit Quote
                 </>
               )}
             </button>
           </>
         )}
-
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowEmailTemplate(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-[#3A475B]"
-          >
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#28AA48]" />
-              Email Template
-              <span className={`text-xs font-normal px-2 py-0.5 rounded-full ${isLowDoc ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                {isLowDoc ? 'Low Doc' : 'Full Doc'}
-              </span>
-            </div>
-            {showEmailTemplate ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-          </button>
-
-          {showEmailTemplate && (
-            <div className="px-4 pb-4 pt-3 space-y-3">
-              <p className="text-xs text-gray-500">
-                Copy and paste this into your email client, then attach the PDF quote.
-              </p>
-              <pre className="whitespace-pre-wrap font-sans text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-56 overflow-y-auto leading-relaxed">
-                {emailTemplate}
-              </pre>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-50 transition-colors text-sm w-full justify-center"
-              >
-                {copied ? (
-                  <>
-                    <ClipboardCheck className="w-4 h-4 text-[#28AA48]" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy Template
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

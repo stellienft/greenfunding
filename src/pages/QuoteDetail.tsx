@@ -7,7 +7,8 @@ import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment } from '../calculator';
 import {
   ArrowLeft, FileText, MapPin, Calendar, DollarSign, Tag, CheckCircle2,
-  Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock
+  Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock,
+  Mail, Copy, ClipboardCheck
 } from 'lucide-react';
 
 interface SentQuote {
@@ -49,6 +50,43 @@ function calcTypeLabel(t: string) {
     case 'serviced_rental': return 'Serviced Rental';
     default: return 'Rental';
   }
+}
+
+function buildEmailTemplate(projectCost: number, installerName: string, installerCompany: string, clientName: string): string {
+  const isLowDoc = projectCost <= 250000;
+  const costStr = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(projectCost);
+  const docType = isLowDoc ? 'Low Doc' : 'Full Doc';
+  const greeting = clientName.trim() ? clientName.trim() : '[Client Name]';
+
+  const lowDocItems = `To progress this to the next stage we will need the following documents:
+
+1. Completed Finance Application
+2. 6 months business bank statements
+3. Installer's quote / invoice
+4. Signed Privacy Consent & Acknowledgement`;
+
+  const fullDocItems = `To progress this to the next stage we will need the following documents:
+
+1. Completed Finance Application
+2. 2 years financial statements (P&L and Balance Sheet)
+3. 2 years tax returns (business and individual)
+4. 6 months business bank statements
+5. Installer's quote / invoice
+6. Signed Privacy Consent & Acknowledgement`;
+
+  return `Hi ${greeting},
+
+I hope this email finds you well. I wanted to follow up on our recent conversation regarding your renewable energy project.
+
+I've put together a finance quote for your consideration, which you will find attached. This quote outlines the ${docType} finance options available for your project valued at ${costStr}.
+
+${isLowDoc ? lowDocItems : fullDocItems}
+
+Please don't hesitate to reach out if you have any questions about the quote or the application process. Our team at Green Funding is ready to help you take the next step.
+
+Kind regards,
+
+${installerName || '[Your Name]'}${installerCompany ? `\n${installerCompany}` : ''}`;
 }
 
 async function uploadFile(file: File, prefix: string): Promise<UploadedFile> {
@@ -131,6 +169,8 @@ export function QuoteDetail() {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showEmailTemplate, setShowEmailTemplate] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   useEffect(() => {
     if (installerProfile && id) loadQuote();
@@ -442,6 +482,66 @@ export function QuoteDetail() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailTemplate(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-semibold text-[#3A475B]"
+                >
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#28AA48]" />
+                    Email Template
+                    <span className={`text-xs font-normal px-2 py-0.5 rounded-full ${(quote.project_cost ?? 0) <= 250000 ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {(quote.project_cost ?? 0) <= 250000 ? 'Low Doc' : 'Full Doc'}
+                    </span>
+                  </div>
+                  {showEmailTemplate ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+
+                {showEmailTemplate && (() => {
+                  const emailTemplate = buildEmailTemplate(
+                    quote.project_cost,
+                    installerProfile?.full_name || user?.user_metadata?.full_name || '',
+                    installerProfile?.company_name || user?.user_metadata?.company_name || '',
+                    quote.recipient_name || quote.recipient_company || ''
+                  );
+                  const handleCopy = async () => {
+                    try {
+                      await navigator.clipboard.writeText(emailTemplate);
+                      setCopiedEmail(true);
+                      setTimeout(() => setCopiedEmail(false), 2500);
+                    } catch { /* no-op */ }
+                  };
+                  return (
+                    <div className="px-4 pb-4 pt-3 space-y-3">
+                      <p className="text-xs text-gray-500">
+                        Copy and paste this into your email client, then attach the PDF quote.
+                      </p>
+                      <pre className="whitespace-pre-wrap font-sans text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-56 overflow-y-auto leading-relaxed">
+                        {emailTemplate}
+                      </pre>
+                      <button
+                        type="button"
+                        onClick={handleCopy}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-[#3A475B] font-semibold rounded-lg hover:bg-gray-50 transition-colors text-sm w-full justify-center"
+                      >
+                        {copiedEmail ? (
+                          <>
+                            <ClipboardCheck className="w-4 h-4 text-[#28AA48]" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            Copy Template
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
