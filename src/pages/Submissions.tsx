@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { FileCheck, Calendar, DollarSign, Loader } from 'lucide-react';
+import { FileCheck, Calendar, DollarSign, Loader, ChevronRight } from 'lucide-react';
 
 interface Application {
   id: string;
@@ -18,6 +19,7 @@ interface Application {
 
 export function Submissions() {
   const { installerProfile } = useAuth();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +75,12 @@ export function Submissions() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4">
               {applications.map((app) => (
-                <div
+                <button
                   key={app.id}
-                  className="bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-all"
+                  onClick={() => navigate(`/submissions/${app.id}`)}
+                  className="w-full text-left bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-lg hover:border-[#28AA48]/30 transition-all group"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -95,12 +98,15 @@ export function Submissions() {
                           )}
                         </div>
                       </div>
-                      <span className="px-4 py-2 rounded-full text-sm font-semibold border bg-green-100 text-green-800 border-green-200">
-                        Submitted
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="px-4 py-2 rounded-full text-sm font-semibold border bg-green-100 text-green-800 border-green-200">
+                          Submitted
+                        </span>
+                        <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#28AA48] transition-colors" />
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                         <DollarSign className="w-5 h-5 text-[#6EAE3C]" />
                         <div>
@@ -146,7 +152,7 @@ export function Submissions() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

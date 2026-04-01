@@ -13,6 +13,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import { CalculatorDashboard } from './pages/CalculatorDashboard';
 import { MyAccount } from './pages/MyAccount';
 import { Submissions } from './pages/Submissions';
+import { SubmissionDetail } from './pages/SubmissionDetail';
 import { Contacts } from './pages/Contacts';
 import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
@@ -104,6 +105,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Submissions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/submissions/:id"
+                element={
+                  <ProtectedRoute>
+                    <SubmissionDetail />
                   </ProtectedRoute>
                 }
               />
