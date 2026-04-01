@@ -33,6 +33,7 @@ export function Step4() {
   const [uploading, setUploading] = useState(false);
   const [privacyConsentFile, setPrivacyConsentFile] = useState<UploadedFile | null>(null);
   const [directorsIdFile, setDirectorsIdFile] = useState<UploadedFile | null>(null);
+  const [medicareCardFile, setMedicareCardFile] = useState<UploadedFile | null>(null);
   const [assetLiabilityFile, setAssetLiabilityFile] = useState<UploadedFile | null>(null);
   const [bankStatementsFile, setBankStatementsFile] = useState<UploadedFile | null>(null);
 
@@ -165,6 +166,36 @@ export function Step4() {
     }
   };
 
+  const handleMedicareCardUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `medicare-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('application-documents').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      setMedicareCardFile({ name: file.name, path: fileName, size: file.size });
+    } catch (error: any) {
+      console.error('Error uploading Medicare card:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeMedicareCard = async () => {
+    if (!medicareCardFile) return;
+    try {
+      const { error } = await supabase.storage.from('application-documents').remove([medicareCardFile.path]);
+      if (error) throw error;
+      setMedicareCardFile(null);
+    } catch (error: any) {
+      console.error('Error removing Medicare card:', error);
+      alert('Failed to remove file. Please try again.');
+    }
+  };
+
   const handleAssetLiabilityUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -256,7 +287,11 @@ export function Step4() {
 
     if (projectCost < 250000) {
       if (!directorsIdFile) {
-        alert('Please upload the Directors Drivers Licence & Medicare card to proceed');
+        alert('Please upload the Directors Drivers Licence to proceed');
+        return;
+      }
+      if (!medicareCardFile) {
+        alert('Please upload the Directors Medicare Card to proceed');
         return;
       }
       if (!assetLiabilityFile) {
@@ -324,6 +359,7 @@ export function Step4() {
         special_pricing_requested: state.specialPricingRequested || false,
         privacy_consent_file: privacyConsentFile,
         directors_id_file: directorsIdFile,
+        medicare_card_file: medicareCardFile,
         asset_liability_file: assetLiabilityFile,
         config_snapshot: config,
         uploaded_documents: uploadedFiles,
@@ -565,15 +601,15 @@ export function Step4() {
               </div>
 
               {isLowDoc && (
-                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div className="p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
-                    Directors Drivers Licence & Medicare Card *
+                    Directors Drivers Licence *
                   </h4>
                   <p className="text-xs sm:text-sm text-gray-600 mb-4">
-                    Upload a copy of the Directors Drivers Licence and Medicare card. Required for Low Doc applications up to $250,000.
+                    Upload a copy of the Directors Drivers Licence. Required for Low Doc applications up to $250,000.
                   </p>
                   {!directorsIdFile ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                    <div className="p-4 text-center border border-gray-200 rounded-lg hover:border-[#3A475B] transition-colors cursor-pointer">
                       <input
                         type="file"
                         id="directors-id-upload"
@@ -585,13 +621,13 @@ export function Step4() {
                       <label htmlFor="directors-id-upload" className="cursor-pointer flex flex-col items-center">
                         <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
                         <span className="text-xs sm:text-sm font-semibold text-[#3A475B]">
-                          {uploading ? 'Uploading...' : 'Upload Drivers Licence & Medicare Card'}
+                          {uploading ? 'Uploading...' : 'Upload Drivers Licence'}
                         </span>
                         <span className="text-xs text-gray-600 mt-1">PDF, DOC, DOCX, JPG, PNG (max 10MB)</span>
                       </label>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3 gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -613,7 +649,55 @@ export function Step4() {
               )}
 
               {isLowDoc && (
-                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div className="p-4 sm:p-6">
+                  <h4 className="text-base font-bold text-[#3A475B] mb-3">
+                    Directors Medicare Card *
+                  </h4>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                    Upload a copy of the Directors Medicare card. Required for Low Doc applications up to $250,000.
+                  </p>
+                  {!medicareCardFile ? (
+                    <div className="p-4 text-center border border-gray-200 rounded-lg hover:border-[#3A475B] transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        id="medicare-card-upload"
+                        onChange={handleMedicareCardUpload}
+                        disabled={uploading}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      />
+                      <label htmlFor="medicare-card-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
+                        <span className="text-xs sm:text-sm font-semibold text-[#3A475B]">
+                          {uploading ? 'Uploading...' : 'Upload Medicare Card'}
+                        </span>
+                        <span className="text-xs text-gray-600 mt-1">PDF, DOC, DOCX, JPG, PNG (max 10MB)</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#3A475B] truncate">{medicareCardFile.name}</p>
+                          <p className="text-xs text-gray-600">{formatFileSize(medicareCardFile.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeMedicareCard}
+                        className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
+                        aria-label="Remove file"
+                      >
+                        <X className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isLowDoc && (
+                <div className="p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
                     Last 6 Months Bank Statements *
                   </h4>
@@ -630,7 +714,7 @@ export function Step4() {
                     Download Bank Statements via Secure Portal
                   </a>
                   {!bankStatementsFile ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                    <div className="p-4 text-center border border-gray-200 rounded-lg hover:border-[#3A475B] transition-colors cursor-pointer">
                       <input
                         type="file"
                         id="bank-statements-upload"
@@ -648,7 +732,7 @@ export function Step4() {
                       </label>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3 gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -670,7 +754,7 @@ export function Step4() {
               )}
 
               {isLowDoc && (
-                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div className="p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
                     Directors Asset & Liability Statement *
                   </h4>
@@ -678,7 +762,7 @@ export function Step4() {
                     Upload the Directors Asset & Liability Statement. Required for Low Doc applications up to $250,000.
                   </p>
                   {!assetLiabilityFile ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#3A475B] transition-colors">
+                    <div className="p-4 text-center border border-gray-200 rounded-lg hover:border-[#3A475B] transition-colors cursor-pointer">
                       <input
                         type="file"
                         id="asset-liability-upload"
@@ -696,7 +780,7 @@ export function Step4() {
                       </label>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between bg-white border-2 border-[#3A475B] rounded-lg p-3 gap-2">
+                    <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3 gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <FileText className="w-5 h-5 text-[#3A475B] flex-shrink-0" />
                         <div className="min-w-0 flex-1">
@@ -717,7 +801,7 @@ export function Step4() {
                 </div>
               )}
 
-              <div className="border-2 border-[#28AA48] rounded-lg p-4 sm:p-6 bg-[#28AA48]/5">
+              <div className="p-4 sm:p-6">
                 <h4 className="text-base font-bold text-[#3A475B] mb-3">
                   Privacy Consent Form *
                 </h4>
@@ -735,7 +819,7 @@ export function Step4() {
                 </a>
 
                 {!privacyConsentFile ? (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#28AA48] transition-colors">
+                  <div className="p-4 text-center border border-gray-200 rounded-lg hover:border-[#28AA48] transition-colors cursor-pointer">
                     <input
                       type="file"
                       id="privacy-consent-upload"
@@ -758,7 +842,7 @@ export function Step4() {
                     </label>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between bg-white border-2 border-[#28AA48] rounded-lg p-3 gap-2">
+                  <div className="flex items-center justify-between border border-gray-200 rounded-lg p-3 gap-2">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <FileText className="w-5 h-5 text-[#28AA48] flex-shrink-0" />
                       <div className="min-w-0 flex-1">
