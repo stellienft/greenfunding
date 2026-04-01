@@ -158,7 +158,7 @@ export function MyQuotes() {
 
                         <div className="flex items-center gap-6 flex-shrink-0">
                           <div className="hidden sm:block text-right">
-                            <p className="text-xs text-gray-400">Project Cost (Inc GST)</p>
+                            <p className="text-xs text-gray-400">Project Cost (Inc. GST)</p>
                             <p className="font-bold text-[#3A475B] text-sm">{formatCurrency(q.project_cost)}</p>
                           </div>
                           {lowestTerm && (

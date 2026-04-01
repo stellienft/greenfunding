@@ -201,7 +201,7 @@ export function SubmissionDetail() {
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
                   <div className="flex items-center gap-2 mb-1.5">
                     <DollarSign className="w-4 h-4 text-[#28AA48]" />
-                    <p className="text-xs text-gray-400">Project Cost</p>
+                    <p className="text-xs text-gray-400">Project Cost (Inc. GST)</p>
                   </div>
                   <p className="font-bold text-[#3A475B] text-sm">{formatCurrency(application.project_cost)}</p>
                 </div>

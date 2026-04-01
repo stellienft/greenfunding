@@ -365,7 +365,7 @@ export function QuoteDetail() {
 
             <div className="px-6 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 border-b border-gray-100">
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">Project Cost (Inc GST)</p>
+                <p className="text-xs text-gray-400 mb-0.5">Project Cost (Inc. GST)</p>
                 <p className="font-bold text-[#3A475B] text-sm">{formatCurrency(quote.project_cost)}</p>
               </div>
               <div>
