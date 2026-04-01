@@ -465,62 +465,6 @@ export function Step4() {
               </h3>
               {renderRequirements()}
 
-              <div className="mt-6">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center hover:border-[#28AA48] transition-colors touch-manipulation">
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <Upload className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mb-2 sm:mb-3" />
-                    <span className="text-xs sm:text-sm font-semibold text-[#3A475B] mb-1">
-                      {uploading ? 'Uploading...' : 'Click to upload documents'}
-                    </span>
-                    <span className="text-xs text-gray-600">
-                      PDF, DOC, DOCX, JPG, PNG (max 10MB)
-                    </span>
-                  </label>
-                </div>
-
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {uploadedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-2 sm:p-3 gap-2"
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#28AA48] flex-shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs sm:text-sm font-semibold text-[#3A475B] truncate">
-                              {file.name}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {formatFileSize(file.size)}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file.path)}
-                          className="p-2 hover:bg-red-50 rounded transition-colors touch-manipulation flex-shrink-0"
-                          aria-label="Remove file"
-                        >
-                          <X className="w-4 h-4 text-red-600" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -621,7 +565,7 @@ export function Step4() {
               </div>
 
               {isLowDoc && (
-                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
                     Directors Drivers Licence & Medicare Card *
                   </h4>
@@ -669,7 +613,7 @@ export function Step4() {
               )}
 
               {isLowDoc && (
-                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
                     Last 6 Months Bank Statements *
                   </h4>
@@ -726,7 +670,7 @@ export function Step4() {
               )}
 
               {isLowDoc && (
-                <div className="border-2 border-[#3A475B] rounded-lg p-4 sm:p-6 bg-[#3A475B]/5">
+                <div className="border border-gray-200 rounded-lg p-4 sm:p-6">
                   <h4 className="text-base font-bold text-[#3A475B] mb-3">
                     Directors Asset & Liability Statement *
                   </h4>
