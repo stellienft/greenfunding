@@ -32,6 +32,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (stored) {
       try {
         setAdmin(JSON.parse(stored));
+        setTotpVerified(true);
       } catch (e) {
         localStorage.removeItem('admin');
       }
