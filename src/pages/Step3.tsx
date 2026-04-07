@@ -912,7 +912,7 @@ export function Step3() {
                         Loan Terms to Include <span className="text-red-500">*</span>
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        {[...termOptions, ...additionalTermOptions].map(t => {
+                        {[...termOptions, ...additionalTermOptions].sort((a, b) => a.years - b.years).map(t => {
                           const checked = selectedQuoteTerms.includes(t.years);
                           return (
                             <button

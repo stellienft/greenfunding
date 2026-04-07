@@ -166,7 +166,7 @@ export function QuoteSection({
                 Loan Terms to Include <span className="text-red-500">*</span>
               </label>
               <div className="flex flex-wrap gap-2">
-                {allTerms.map(t => {
+                {[...allTerms].sort((a, b) => a.years - b.years).map(t => {
                   const checked = selectedQuoteTerms.includes(t.years);
                   return (
                     <button
