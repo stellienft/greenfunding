@@ -94,7 +94,7 @@ function buildOtpAuthUrl(secret: string, email: string, issuer: string): string 
     digits: '6',
     period: '30',
   });
-  return `otpauth://totp/${label}?${params.toString()}`;
+  return `otpauth://totp/${label}?${params.toString().replace(/\+/g, '%20')}`;
 }
 
 function buildQrCodeUrl(otpauthUrl: string): string {
