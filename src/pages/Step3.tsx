@@ -36,7 +36,7 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
-  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', systemSize: '', contribution: '' });
+  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: '', contribution: '' });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -345,7 +345,7 @@ export function Step3() {
           recipientName: quoteClientFields.clientName.trim() || undefined,
           recipientEmail: quoteClientFields.clientEmail.trim() || undefined,
           siteAddress: quoteClientFields.clientAddress.trim() || undefined,
-          clientPhone: quoteClientFields.clientPhone.trim() || undefined,
+          clientPhone: quoteClientFields.companyPhone.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
           contribution: quoteClientFields.contribution.trim() || undefined,
         }),

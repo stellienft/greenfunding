@@ -13,6 +13,8 @@ export interface QuoteClientFields {
   clientEmail: string;
   clientAddress: string;
   clientPhone: string;
+  companyAddress: string;
+  companyPhone: string;
   systemSize: string;
   contribution: string;
 }
@@ -51,7 +53,7 @@ export function QuoteSection({
 }: QuoteSectionProps) {
   const [touched, setTouched] = useState(false);
 
-  const canSubmit = selectedQuoteTerms.length > 0;
+  const canSubmit = selectedQuoteTerms.length > 0 && clientFields.clientName.trim() !== '' && clientFields.clientAddress.trim() !== '';
 
   const handleSubmitClick = () => {
     setTouched(true);
@@ -95,27 +97,41 @@ export function QuoteSection({
             <div className="space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <User className="w-4 h-4 text-[#28AA48]" />
-                <span className="text-sm font-semibold text-[#3A475B]">
-                  Client Details
-                </span>
+                <span className="text-sm font-semibold text-[#3A475B]">Client Details</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Name
+                    Company Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={clientFields.clientName}
                     onChange={e => onClientFieldChange('clientName', e.target.value)}
                     placeholder="e.g. Smith Enterprises"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientName.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   />
+                  {touched && !clientFields.clientName.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Company name is required</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Email
+                    Site Address <span className="text-red-500">*</span>
                   </label>
+                  <input
+                    type="text"
+                    value={clientFields.clientAddress}
+                    onChange={e => onClientFieldChange('clientAddress', e.target.value)}
+                    placeholder="e.g. 12 Main Street, Adelaide SA"
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientAddress.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {touched && !clientFields.clientAddress.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Site address is required</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Email</label>
                   <input
                     type="email"
                     value={clientFields.clientEmail}
@@ -124,24 +140,28 @@ export function QuoteSection({
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Optional Details</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Address
-                  </label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Address</label>
                   <input
                     type="text"
-                    value={clientFields.clientAddress}
-                    onChange={e => onClientFieldChange('clientAddress', e.target.value)}
-                    placeholder="e.g. 12 Main Street, Adelaide SA"
+                    value={clientFields.companyAddress}
+                    onChange={e => onClientFieldChange('companyAddress', e.target.value)}
+                    placeholder="e.g. Level 2, 100 King St, Sydney NSW"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Phone</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Phone</label>
                   <input
                     type="tel"
-                    value={clientFields.clientPhone}
-                    onChange={e => onClientFieldChange('clientPhone', e.target.value)}
+                    value={clientFields.companyPhone}
+                    onChange={e => onClientFieldChange('companyPhone', e.target.value)}
                     placeholder="e.g. 0400 000 000"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
