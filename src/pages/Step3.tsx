@@ -36,7 +36,7 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
-  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '' });
+  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', systemSize: '', contribution: '' });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -257,6 +257,8 @@ export function Step3() {
           paymentTiming: state.paymentTiming,
           calculatorType: state.calculatorType,
           installerId: user?.id,
+          systemSize: quoteClientFields.systemSize.trim() || undefined,
+          contribution: quoteClientFields.contribution.trim() || undefined,
           introEmailSubject: introEmailTemplate?.subject || undefined,
           introEmailBody: introBodyEdited !== null ? introBodyEdited : (introEmailTemplate ? buildIntroBody() : undefined),
         }),
@@ -344,6 +346,8 @@ export function Step3() {
           recipientEmail: quoteClientFields.clientEmail.trim() || undefined,
           siteAddress: quoteClientFields.clientAddress.trim() || undefined,
           clientPhone: quoteClientFields.clientPhone.trim() || undefined,
+          systemSize: quoteClientFields.systemSize.trim() || undefined,
+          contribution: quoteClientFields.contribution.trim() || undefined,
         }),
       });
       const result = await response.json();

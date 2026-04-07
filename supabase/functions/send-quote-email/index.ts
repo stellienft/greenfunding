@@ -20,6 +20,7 @@ interface QuotePayload {
   recipientCompany?: string;
   siteAddress?: string;
   systemSize?: string;
+  contribution?: string;
   clientPhone?: string;
   projectCost: number;
   selectedAssetIds: string[];
@@ -66,6 +67,7 @@ async function generateQuotePdf(
   recipientCompany: string | undefined,
   siteAddress: string | undefined,
   systemSize: string | undefined,
+  contribution: string | undefined,
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
@@ -223,22 +225,24 @@ async function generateQuotePdf(
     drawT(page, 'Project Funding Summary', ML, y, 12, true, DARK);
     y -= 22;
 
+    // === WATERMARK CIRCLES (decorative, light green) ===
+    const WATERMARK = { r: 0.16, g: 0.67, b: 0.28 };
+    page.drawCircle({ x: pageWidth - 30, y: pageHeight * 0.42, size: 130, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.07 });
+    page.drawCircle({ x: pageWidth + 20, y: pageHeight * 0.38, size: 90, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.05 });
+    page.drawCircle({ x: pageWidth - 60, y: pageHeight * 0.28, size: 60, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.06 });
+
     // === GREEN SUMMARY BOX ===
     const summaryLines: string[] = [];
-    if (siteAddress) summaryLines.push(`Location: ${siteAddress}`);
-    if (systemSize) summaryLines.push(`System Size: ${systemSize}`);
-    summaryLines.push(`Net Capex: ${formatCurrency(netCapex)} ex GST`);
+    if (systemSize) summaryLines.push(`System: ${systemSize}`);
+    if (contribution) summaryLines.push(`Contribution: ${contribution}`);
+    summaryLines.push(`Net Capex: $ ${netCapex.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ex. GST)`);
 
-    const summaryLineH = 16;
-    const summaryPadV = 12;
+    const summaryLineH = 18;
+    const summaryPadV = 14;
     const summaryH = summaryLines.length * summaryLineH + summaryPadV * 2 - 4;
 
-    // gradient-like: draw two overlapping rects
     drawRect(page, ML, y - summaryH, CW, summaryH, GREEN_BOX_BG);
     drawRect(page, ML + CW * 0.5, y - summaryH, CW * 0.5, summaryH, GREEN_BOX_BG2);
-    // re-draw left to blend
-    page.drawRectangle({ x: ML, y: y - summaryH, width: CW, height: summaryH,
-      color: rgb(GREEN_BOX_BG.r, GREEN_BOX_BG.g, GREEN_BOX_BG.b), opacity: 0 });
 
     let sy = y - summaryPadV - 2;
     for (const line of summaryLines) {
@@ -246,56 +250,61 @@ async function generateQuotePdf(
       if (colonIdx > -1) {
         const label = line.substring(0, colonIdx + 1);
         const val = line.substring(colonIdx + 1);
-        drawT(page, label, ML + 10, sy, 10, true, { r: 1, g: 1, b: 1 });
-        drawT(page, val, ML + 10 + textW(label, true, 10) + 3, sy, 10, false, { r: 1, g: 1, b: 1 });
+        drawT(page, label, ML + 12, sy, 10, true, { r: 1, g: 1, b: 1 });
+        drawT(page, val, ML + 12 + textW(label, true, 10) + 3, sy, 10, false, { r: 1, g: 1, b: 1 });
       } else {
-        drawT(page, line, ML + 10, sy, 10, false, { r: 1, g: 1, b: 1 });
+        drawT(page, line, ML + 12, sy, 10, false, { r: 1, g: 1, b: 1 });
       }
       sy -= summaryLineH;
     }
-    y -= summaryH + 16;
+    y -= summaryH + 18;
 
     // === TERM TABLE ===
     const sortedTermOptions = [...termOptions].sort((a, b) => a.years - b.years);
-    // header row: term years on left, payment timing on right
-    const paymentLabel = sortedTermOptions.length === 1
-      ? `${sortedTermOptions[0].years} Year${sortedTermOptions[0].years !== 1 ? 's' : ''}`
-      : `${sortedTermOptions[0].years}–${sortedTermOptions[sortedTermOptions.length - 1].years} Years`;
 
     const termHeaderH = 28;
-    drawT(page, paymentLabel, ML + 6, y - 18, 10, false, DARK);
-    drawT(page, 'Monthly (ex GST)', pageWidth - MR - textW('Monthly (ex GST)', false, 10) - 6, y - 18, 10, false, GRAY);
+    const termHeaderLabel = 'Term';
+    const repaymentHeaderLabel = 'Monthly Repayment (ex GST)';
+    drawT(page, termHeaderLabel, ML + 8, y - 16, 9, false, GRAY);
+    drawT(page, repaymentHeaderLabel, pageWidth - MR - textW(repaymentHeaderLabel, false, 9) - 8, y - 16, 9, false, GRAY);
     y -= termHeaderH;
 
     drawLine(page, ML, y, ML + CW, BORDER_COLOR);
-    y -= 6;
+    y -= 8;
 
     sortedTermOptions.forEach((t, i) => {
-      const rowH = 22;
-      if (i % 2 === 0) {
-        drawRect(page, ML, y - rowH + 4, CW, rowH, ROW_ALT);
+      const rowH = 28;
+      if (i % 2 !== 0) {
+        drawRect(page, ML, y - rowH + 6, CW, rowH, ROW_ALT);
       }
+      drawLine(page, ML, y + 6, ML + CW, BORDER_COLOR, 0.5);
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      drawT(page, termLabel, ML + 6, y - 14, 10, false, DARK);
-      const amtText = formatCurrency(t.monthlyPayment);
-      drawT(page, amtText, pageWidth - MR - textW(amtText, false, 10) - 6, y - 14, 10, false, DARK);
+      drawT(page, termLabel, ML + 8, y - 10, 11, false, DARK);
+      const amtFormatted = '$ ' + t.monthlyPayment.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      drawT(page, amtFormatted, pageWidth - MR - textW(amtFormatted, true, 11) - 8, y - 10, 11, true, DARK);
       y -= rowH;
     });
 
-    y -= 20;
+    y -= 24;
 
     // === NOTES SECTION ===
     drawT(page, 'Notes', ML, y, 13, false, GREEN);
-    y -= 20;
-    drawT(page, 'Quote valid for 30 days', ML, y, 13, true, DARK);
+    drawLine(page, ML, y - 4, ML + 38, GREEN, 1);
+    y -= 22;
+    drawT(page, 'Quote valid for 30 days', ML, y, 12, true, DARK);
     y -= 18;
 
     const d1 = `This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.`;
     const d1H = drawTextWrapped(page, d1, ML, y, 9, false, hexToRgb('#374151'), CW, 14);
-    y -= d1H + 12;
+    y -= d1H + 14;
 
     const d2 = `Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.`;
-    drawTextWrapped(page, d2, ML, y, 8.5, false, LIGHT_GRAY, CW, 13);
+    drawTextWrapped(page, d2, ML, y, 8, false, LIGHT_GRAY, CW, 13);
+
+    // === GREEN FOOTER BAR ===
+    const footerH = 18;
+    drawRect(page, ML, 28, CW, footerH, GREEN_BOX_BG);
+    drawRect(page, ML + CW * 0.5, 28, CW * 0.5, footerH, GREEN_BOX_BG2);
   }
 
   function drawPage2() {
@@ -381,6 +390,7 @@ function generateQuoteEmailHtml(
   recipientCompany: string | undefined,
   siteAddress: string | undefined,
   systemSize: string | undefined,
+  contribution: string | undefined,
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
@@ -397,16 +407,17 @@ function generateQuoteEmailHtml(
       (t) => `
       <tr>
         <td style="padding: 14px 20px; font-size: 15px; color: #3A475B; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">${t.years} ${t.years === 1 ? 'Year' : 'Years'}</td>
-        <td style="padding: 14px 20px; font-size: 15px; font-weight: 700; color: #3A475B; text-align: right; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">${formatCurrency(t.monthlyPayment)}</td>
+        <td style="padding: 14px 20px; font-size: 15px; font-weight: 700; color: #3A475B; text-align: right; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif;">$ ${t.monthlyPayment.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>`
     )
     .join('');
 
   const summaryRows = [
+    systemSize ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>System:</strong> ${systemSize}</td></tr>` : '',
+    contribution ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Contribution:</strong> ${contribution}</td></tr>` : '',
     siteAddress ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Location:</strong> ${siteAddress}</td></tr>` : '',
-    systemSize ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>System Size:</strong> ${systemSize}</td></tr>` : '',
     assetNames.length > 0 ? `<tr><td style="padding: 8px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Equipment:</strong> ${assetNames.join(', ')}</td></tr>` : '',
-    `<tr><td style="padding: 8px 20px 16px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Net Capex:</strong> ${formatCurrency(netCapex)} ex GST</td></tr>`,
+    `<tr><td style="padding: 8px 20px 16px 20px; font-size: 14px; color: #1F2937; font-family: Arial, sans-serif;"><strong>Net Capex:</strong> $ ${netCapex.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ex. GST)</td></tr>`,
   ].join('');
 
   return `<!DOCTYPE html>
@@ -707,6 +718,7 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
+      contribution,
       clientPhone,
       projectCost,
       selectedAssetIds,
@@ -794,6 +806,7 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
+      contribution,
       projectCost,
       assetNames,
       termOptions,
@@ -838,6 +851,7 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
+      contribution,
       projectCost,
       assetNames,
       termOptions,
