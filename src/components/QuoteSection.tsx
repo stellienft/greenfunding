@@ -49,12 +49,7 @@ export function QuoteSection({
 }: QuoteSectionProps) {
   const [touched, setTouched] = useState(false);
 
-  const missingClientFields =
-    !clientFields.clientName.trim() ||
-    !clientFields.clientEmail.trim() ||
-    !clientFields.clientAddress.trim();
-
-  const canSubmit = !missingClientFields && selectedQuoteTerms.length > 0;
+  const canSubmit = selectedQuoteTerms.length > 0;
 
   const handleSubmitClick = () => {
     setTouched(true);
@@ -99,54 +94,45 @@ export function QuoteSection({
               <div className="flex items-center gap-2 mb-1">
                 <User className="w-4 h-4 text-[#28AA48]" />
                 <span className="text-sm font-semibold text-[#3A475B]">
-                  Client Details <span className="text-red-500 text-xs">*</span>
+                  Client Details
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Name <span className="text-red-500">*</span>
+                    Client Name
                   </label>
                   <input
                     type="text"
                     value={clientFields.clientName}
                     onChange={e => onClientFieldChange('clientName', e.target.value)}
                     placeholder="e.g. Smith Enterprises"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientName.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
-                  {touched && !clientFields.clientName.trim() && (
-                    <p className="text-xs text-red-500 mt-1">Required</p>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Email <span className="text-red-500">*</span>
+                    Client Email
                   </label>
                   <input
                     type="email"
                     value={clientFields.clientEmail}
                     onChange={e => onClientFieldChange('clientEmail', e.target.value)}
                     placeholder="e.g. contact@business.com.au"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientEmail.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
-                  {touched && !clientFields.clientEmail.trim() && (
-                    <p className="text-xs text-red-500 mt-1">Required</p>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Client Address <span className="text-red-500">*</span>
+                    Client Address
                   </label>
                   <input
                     type="text"
                     value={clientFields.clientAddress}
                     onChange={e => onClientFieldChange('clientAddress', e.target.value)}
                     placeholder="e.g. 12 Main Street, Adelaide SA"
-                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${touched && !clientFields.clientAddress.trim() ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
-                  {touched && !clientFields.clientAddress.trim() && (
-                    <p className="text-xs text-red-500 mt-1">Required</p>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Client Phone</label>
