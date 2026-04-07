@@ -283,18 +283,6 @@ async function generateQuotePdf(
 
     y -= 20;
 
-    // === GREEN NOTE BOX ===
-    const noteText = 'Discounted payout available after 12 months; the payout would include the present value of the remaining capital recovery and only 15% of the present value of the remaining interest.';
-    const noteLines = wrapText(noteText, fontRegular, 8.5, CW - 20);
-    const noteH = noteLines.length * 13 + 16;
-    drawRect(page, ML, y - noteH, CW, noteH, NOTE_BG);
-    let ny = y - 10;
-    for (const nl of noteLines) {
-      drawT(page, nl, ML + 10, ny, 8.5, false, { r: 1, g: 1, b: 1 });
-      ny -= 13;
-    }
-    y -= noteH + 20;
-
     // === NOTES SECTION ===
     drawT(page, 'Notes', ML, y, 13, false, GREEN);
     y -= 20;
