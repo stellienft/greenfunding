@@ -8,14 +8,15 @@ import { ConfigEditor } from '../components/admin/ConfigEditor';
 import { AssetsManager } from '../components/admin/AssetsManager';
 import { DocumentsManager } from '../components/admin/DocumentsManager';
 import { ApplicationsList } from '../components/admin/ApplicationsList';
+import { AdminQuotesList } from '../components/admin/AdminQuotesList';
 import { PreviewTool } from '../components/admin/PreviewTool';
 import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send } from 'lucide-react';
 
-type Tab = 'config' | 'assets' | 'documents' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account';
+type Tab = 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
@@ -59,6 +60,7 @@ export function AdminDashboard() {
     { id: 'config' as Tab, label: 'Calculator Config', icon: Settings },
     { id: 'assets' as Tab, label: 'Assets', icon: Package },
     { id: 'documents' as Tab, label: 'Documents', icon: FileText },
+    { id: 'quotes' as Tab, label: 'Quotes', icon: Send },
     { id: 'applications' as Tab, label: 'Applications', icon: Inbox },
     { id: 'users' as Tab, label: 'User Management', icon: Users },
     { id: 'site' as Tab, label: 'Site Settings', icon: Globe },
@@ -129,6 +131,7 @@ export function AdminDashboard() {
                   )}
                   {activeTab === 'assets' && <AssetsManager />}
                   {activeTab === 'documents' && <DocumentsManager />}
+                  {activeTab === 'quotes' && <AdminQuotesList />}
                   {activeTab === 'applications' && <ApplicationsList />}
                   {activeTab === 'users' && <UserManagement />}
                   {activeTab === 'site' && <SiteSettings />}
