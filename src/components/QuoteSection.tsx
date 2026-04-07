@@ -16,7 +16,6 @@ export interface QuoteClientFields {
   companyAddress: string;
   companyPhone: string;
   systemSize: string;
-  contribution: string;
 }
 
 interface QuoteSectionProps {
@@ -173,16 +172,6 @@ export function QuoteSection({
                     value={clientFields.systemSize}
                     onChange={e => onClientFieldChange('systemSize', e.target.value)}
                     placeholder="e.g. 20 kW"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Contribution %</label>
-                  <input
-                    type="text"
-                    value={clientFields.contribution}
-                    onChange={e => onClientFieldChange('contribution', e.target.value)}
-                    placeholder="e.g. 38.92%"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
                 </div>
