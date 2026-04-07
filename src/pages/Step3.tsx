@@ -59,7 +59,7 @@ export function Step3() {
     return solarAsset && state.selectedAssetIds.includes(solarAsset.id);
   };
 
-  const showCostPerKwh = isSolarOnlyProject() && state.annualSolarGenerationKwh;
+  const showCostPerKwh = !!state.annualSolarGenerationKwh;
 
   useEffect(() => {
     if (!config || !state.projectCost || state.selectedAssetIds.length === 0) {
