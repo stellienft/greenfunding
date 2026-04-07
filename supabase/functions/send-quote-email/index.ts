@@ -256,10 +256,11 @@ async function generateQuotePdf(
     y -= summaryH + 16;
 
     // === TERM TABLE ===
+    const sortedTermOptions = [...termOptions].sort((a, b) => a.years - b.years);
     // header row: term years on left, payment timing on right
-    const paymentLabel = termOptions.length === 1
-      ? `${termOptions[0].years} Year${termOptions[0].years !== 1 ? 's' : ''}`
-      : `${termOptions[0].years}–${termOptions[termOptions.length - 1].years} Years`;
+    const paymentLabel = sortedTermOptions.length === 1
+      ? `${sortedTermOptions[0].years} Year${sortedTermOptions[0].years !== 1 ? 's' : ''}`
+      : `${sortedTermOptions[0].years}–${sortedTermOptions[sortedTermOptions.length - 1].years} Years`;
 
     const termHeaderH = 28;
     drawT(page, paymentLabel, ML + 6, y - 18, 10, false, DARK);
@@ -269,7 +270,7 @@ async function generateQuotePdf(
     drawLine(page, ML, y, ML + CW, BORDER_COLOR);
     y -= 6;
 
-    termOptions.forEach((t, i) => {
+    sortedTermOptions.forEach((t, i) => {
       const rowH = 22;
       if (i % 2 === 0) {
         drawRect(page, ML, y - rowH + 4, CW, rowH, ROW_ALT);
@@ -390,7 +391,8 @@ function generateQuoteEmailHtml(
   const displayName = recipientName || recipientCompany || 'there';
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
 
-  const termRows = termOptions
+  const termRows = [...termOptions]
+    .sort((a, b) => a.years - b.years)
     .map(
       (t) => `
       <tr>
