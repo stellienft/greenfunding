@@ -337,53 +337,19 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
 
               {(config.interestRateTiers || []).length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
-                  <div className="rounded-lg border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Loan Amount</th>
-                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Rate</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {[...(config.interestRateTiers || [])].reverse().map((tier, index, arr) => (
-                          <tr key={index} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 font-medium text-[#3A475B]">
-                              {tier.maxAmount === null
-                                ? `$${tier.minAmount.toLocaleString()}+`
-                                : `$${tier.minAmount.toLocaleString()} – $${tier.maxAmount.toLocaleString()}`
-                              }
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
-                                {(tier.rate * 100).toFixed(2)}%
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {config.rateUsedStrategy === 'amount_based' && (
-                <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-semibold text-[#3A475B]">Edit Tiers</h4>
+                    <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
                     <button
                       type="button"
                       onClick={() => {
-                        const newTiers = [...(config.interestRateTiers || [])];
-                        const lastTier = newTiers[newTiers.length - 1];
-                        const newMinAmount = lastTier?.maxAmount ? lastTier.maxAmount + 1 : 100001;
-                        newTiers.push({
-                          minAmount: newMinAmount,
+                        const tiers = [...(config.interestRateTiers || [])];
+                        const last = tiers[tiers.length - 1];
+                        tiers.push({
+                          minAmount: last?.maxAmount ? last.maxAmount + 1 : 100001,
                           maxAmount: null,
                           rate: 0.0799
                         });
-                        updateConfig({ interestRateTiers: newTiers });
+                        updateConfig({ interestRateTiers: tiers });
                       }}
                       className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
                     >
@@ -391,72 +357,77 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
                       Add Tier
                     </button>
                   </div>
-
-                  <div className="space-y-3">
-                    {(config.interestRateTiers || []).map((tier, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-3 items-end p-3 bg-gray-50 rounded-lg">
-                        <div className="col-span-4">
-                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                            Min Amount ($)
-                          </label>
-                          <input
-                            type="number"
-                            value={tier.minAmount}
-                            onChange={e => {
-                              const newTiers = [...(config.interestRateTiers || [])];
-                              newTiers[index].minAmount = Number(e.target.value);
-                              updateConfig({ interestRateTiers: newTiers });
-                            }}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div className="col-span-4">
-                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                            Max Amount ($) {index === (config.interestRateTiers || []).length - 1 && '(null = unlimited)'}
-                          </label>
-                          <input
-                            type="number"
-                            value={tier.maxAmount || ''}
-                            onChange={e => {
-                              const newTiers = [...(config.interestRateTiers || [])];
-                              newTiers[index].maxAmount = e.target.value ? Number(e.target.value) : null;
-                              updateConfig({ interestRateTiers: newTiers });
-                            }}
-                            placeholder="Unlimited"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div className="col-span-3">
-                          <label className="block text-xs font-semibold text-[#3A475B] mb-1">
-                            Rate (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={(tier.rate * 100).toFixed(2)}
-                            onChange={e => {
-                              const newTiers = [...(config.interestRateTiers || [])];
-                              newTiers[index].rate = Number(e.target.value) / 100;
-                              updateConfig({ interestRateTiers: newTiers });
-                            }}
-                            step="0.01"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newTiers = (config.interestRateTiers || []).filter((_, i) => i !== index);
-                              updateConfig({ interestRateTiers: newTiers });
-                            }}
-                            className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                            disabled={(config.interestRateTiers || []).length === 1}
-                          >
-                            <Trash2 className="w-4 h-4 mx-auto" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Min ($)</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Max ($)</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rate (%)</th>
+                          <th className="px-4 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {[...(config.interestRateTiers || [])].reverse().map((tier, revIndex, revArr) => {
+                          const realIndex = (config.interestRateTiers || []).length - 1 - revIndex;
+                          return (
+                            <tr key={realIndex} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  value={tier.minAmount}
+                                  onChange={e => {
+                                    const newTiers = [...(config.interestRateTiers || [])];
+                                    newTiers[realIndex] = { ...newTiers[realIndex], minAmount: Number(e.target.value) };
+                                    updateConfig({ interestRateTiers: newTiers });
+                                  }}
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  value={tier.maxAmount ?? ''}
+                                  onChange={e => {
+                                    const newTiers = [...(config.interestRateTiers || [])];
+                                    newTiers[realIndex] = { ...newTiers[realIndex], maxAmount: e.target.value ? Number(e.target.value) : null };
+                                    updateConfig({ interestRateTiers: newTiers });
+                                  }}
+                                  placeholder="Unlimited"
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  value={(tier.rate * 100).toFixed(2)}
+                                  onChange={e => {
+                                    const newTiers = [...(config.interestRateTiers || [])];
+                                    newTiers[realIndex] = { ...newTiers[realIndex], rate: Number(e.target.value) / 100 };
+                                    updateConfig({ interestRateTiers: newTiers });
+                                  }}
+                                  step="0.01"
+                                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newTiers = (config.interestRateTiers || []).filter((_, i) => i !== realIndex);
+                                    updateConfig({ interestRateTiers: newTiers });
+                                  }}
+                                  disabled={(config.interestRateTiers || []).length === 1}
+                                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-30"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
