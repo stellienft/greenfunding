@@ -40,24 +40,23 @@ export function AnalyticsDashboard() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [quotesRes, appsRes, installersRes] = await Promise.all([
-        supabase
-          .from('sent_quotes')
-          .select('id, quote_number, created_at, installer_id, project_cost, term_options, asset_names, calculator_type, payment_timing, status')
-          .order('created_at', { ascending: false }),
+      const [quotesJson, appsRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes`, {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }).then(r => r.json()),
         supabase
           .from('applications')
           .select('id, created_at, installer_id, project_cost, loan_term_years, full_name, email')
           .order('created_at', { ascending: false }),
-        supabase
-          .from('installer_users')
-          .select('id, full_name, company_name, email, created_at, quote_count, application_count, user_type'),
       ]);
 
-      const installers = (installersRes.data ?? []) as InstallerUser[];
-      const installerMap = new Map(installers.map(i => [i.id, i]));
+      const installers = (quotesJson.installers ?? []) as InstallerUser[];
+      const installerMap = new Map(installers.map((i: InstallerUser) => [i.id, i]));
 
-      const rawQuotes = (quotesRes.data ?? []) as Array<Omit<Quote, 'installer'>& { installer_id: string | null }>;
+      const rawQuotes = (quotesJson.quotes ?? []) as Array<Omit<Quote, 'installer'> & { installer_id: string | null }>;
       const quotesWithInstaller: Quote[] = rawQuotes.map(q => ({
         ...q,
         installer: q.installer_id ? (installerMap.get(q.installer_id) ?? null) as Quote['installer'] : null,

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import {
   FileText, Calendar, DollarSign, User, Building2, MapPin, Tag, Download,
   ChevronDown, ChevronUp, Search, X, Loader
@@ -182,22 +181,31 @@ export function AdminQuotesList() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
-        .from('sent_quotes')
-        .select(`
-          id, quote_number, created_at, installer_id,
-          recipient_name, recipient_company, recipient_email,
-          site_address, system_size, project_cost,
-          term_options, asset_names, calculator_type,
-          payment_timing, status, client_phone,
-          installer:installer_users!installer_id (
-            full_name, company_name, email
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to load quotes');
 
-      if (error) throw error;
-      setQuotes((data as unknown as AdminQuote[]) || []);
+      const installerMap = new Map<string, AdminQuote['installer']>(
+        (json.installers ?? []).map((i: NonNullable<AdminQuote['installer']> & { id: string }) => [
+          i.id,
+          { full_name: i.full_name, company_name: i.company_name, email: i.email },
+        ])
+      );
+
+      const withInstallers: AdminQuote[] = (json.quotes ?? []).map((q: AdminQuote & { installer_id: string | null }) => ({
+        ...q,
+        installer: q.installer_id ? (installerMap.get(q.installer_id) ?? null) : null,
+      }));
+
+      setQuotes(withInstallers);
     } catch (err: any) {
       setError('Failed to load quotes. ' + (err.message || ''));
     } finally {
