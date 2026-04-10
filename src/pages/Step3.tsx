@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
 import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, FileText } from 'lucide-react';
 import { QuoteSection, QuoteClientFields } from '../components/QuoteSection';
+import { SavingsChart } from '../components/SavingsChart';
 
 interface LoanTermOption {
   years: number;
@@ -752,6 +753,16 @@ export function Step3() {
             {config.disclaimerText && (
               <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-900">{config.disclaimerText}</p>
+              </div>
+            )}
+
+            {state.energySavings && state.energySavings > 0 && (
+              <div className="mt-6">
+                <SavingsChart
+                  annualSavings={state.energySavings}
+                  selectedTermYears={selectedTerm}
+                  monthlyPayment={selectedTerm ? termOptions.find(t => t.years === selectedTerm)?.monthlyPayment || additionalTermOptions.find(t => t.years === selectedTerm)?.monthlyPayment : undefined}
+                />
               </div>
             )}
 

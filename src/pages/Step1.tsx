@@ -15,6 +15,7 @@ export function Step1() {
   const [inputValue, setInputValue] = useState('');
   const [isEditingInput, setIsEditingInput] = useState(false);
   const [annualSolarGeneration, setAnnualSolarGeneration] = useState<number | undefined>(state.annualSolarGenerationKwh);
+  const [energySavings, setEnergySavings] = useState<number | undefined>(state.energySavings);
   const [showSpecialPricingModal, setShowSpecialPricingModal] = useState(false);
   const [specialPricingRequested, setSpecialPricingRequested] = useState(state.specialPricingRequested || false);
   const [hasShownModal, setHasShownModal] = useState(false);
@@ -107,6 +108,7 @@ export function Step1() {
       projectCost,
       selectedAssetIds: selectedAssets,
       annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
+      energySavings: energySavings || undefined,
       specialPricingRequested,
       residualPercentage: isCarOnlyProject() ? residualPercentage : undefined,
       paymentTiming,
@@ -339,6 +341,34 @@ export function Step1() {
                   </div>
                 </div>
               )}
+
+              <div>
+                <label className="block text-lg font-semibold text-[#3A475B] mb-2">
+                  Energy Savings <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                </label>
+                <p className="text-sm text-gray-600 mb-4">
+                  Enter the estimated annual energy savings. This will be used to show a 25-year savings projection on the next page.
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 font-medium">$</span>
+                  <input
+                    type="text"
+                    value={energySavings ? energySavings.toLocaleString('en-US') : ''}
+                    onChange={e => {
+                      const value = e.target.value.replace(/,/g, '');
+                      const numValue = Number(value);
+                      if (value === '') {
+                        setEnergySavings(undefined);
+                      } else if (!isNaN(numValue) && numValue >= 0) {
+                        setEnergySavings(numValue);
+                      }
+                    }}
+                    placeholder="e.g., 10,000"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
+                  />
+                  <span className="text-sm text-gray-600 font-medium">per year</span>
+                </div>
+              </div>
 
               {isCarOnlyProject() && (
                 <div>

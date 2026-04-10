@@ -15,6 +15,7 @@ interface AppState {
   progressPayments?: Array<{ percentage: number; daysAfterStart: number }>;
   annualMaintenanceFee?: number;
   annualMaintenanceCost?: number;
+  energySavings?: number;
   recipientEmail?: string;
   recipientName?: string;
   recipientCompany?: string;
