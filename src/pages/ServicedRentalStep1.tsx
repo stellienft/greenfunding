@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
 import * as Icons from 'lucide-react';
@@ -166,11 +166,11 @@ export function ServicedRentalStep1() {
 
   if (loadingConfig || !config) {
     return (
-      <Layout>
+      <InstallerLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-gray-600">Loading...</div>
         </div>
-      </Layout>
+      </InstallerLayout>
     );
   }
 
@@ -179,7 +179,7 @@ export function ServicedRentalStep1() {
   const step = config.costSliderStep || 5000;
 
   return (
-    <Layout>
+    <InstallerLayout>
       <Stepper currentStep={1} />
 
       <div className="container mx-auto px-4 pb-4">
@@ -484,6 +484,6 @@ export function ServicedRentalStep1() {
           </div>
         </div>
       )}
-    </Layout>
+    </InstallerLayout>
   );
 }

@@ -241,55 +241,26 @@ export function InstallerDashboard() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] rounded-lg flex items-center justify-center">
-              <Calculator className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-[#3A475B]">
-                {calculators.length === 1 ? calculators[0].title + ' Calculator' : 'Generate a Quote'}
-              </h3>
-              <p className="text-xs text-gray-400">
-                {calculators.length === 1
-                  ? calculators[0].description
-                  : 'Select a calculator to generate a finance quote'}
-              </p>
-            </div>
-          </div>
-          <div className={`p-5 grid gap-4 ${calculators.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-3'}`}>
-            {calculators.map(calc => {
-              const Icon = calc.icon;
-              return (
-                <button
-                  key={calc.id}
-                  disabled={!calc.available}
-                  onClick={() => calc.available && handleCalculatorClick(calc.calcType, calc.path)}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
-                    calc.available
-                      ? 'border-gray-200 hover:border-[#6EAE3C] hover:shadow-sm cursor-pointer bg-white'
-                      : 'border-gray-100 opacity-50 cursor-not-allowed bg-gray-50'
-                  } ${calculators.length === 1 ? 'sm:max-w-sm' : ''}`}
-                >
-                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    calc.available ? 'bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F]' : 'bg-gray-200'
-                  }`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-[#3A475B]">{calc.title}</div>
-                    <div className="text-xs text-gray-500 mt-0.5 truncate">{calc.description}</div>
-                    {!calc.available && (
-                      <div className="text-[10px] font-semibold text-gray-400 mt-1">Coming Soon</div>
-                    )}
-                  </div>
-                  {calc.available && (
-                    <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          {calculators.map(calc => {
+            const Icon = calc.icon;
+            return (
+              <button
+                key={calc.id}
+                disabled={!calc.available}
+                onClick={() => calc.available && handleCalculatorClick(calc.calcType, calc.path)}
+                className={`flex items-center gap-3 px-5 py-3 rounded-xl border font-medium text-sm transition-all ${
+                  calc.available
+                    ? 'bg-[#6EAE3C] border-[#6EAE3C] text-white hover:bg-[#5d9432] hover:border-[#5d9432] shadow-sm'
+                    : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span>New {calc.title} Quote</span>
+                {!calc.available && <span className="text-[10px] font-normal ml-1">(Coming Soon)</span>}
+              </button>
+            );
+          })}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
