@@ -780,13 +780,6 @@ export function Step3() {
               >
                 Back
               </button>
-              <button
-                onClick={handleContinue}
-                disabled={selectedTerm === null}
-                className="px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base sm:text-lg touch-manipulation order-1 sm:order-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Generate Quote
-              </button>
             </div>
           </div>
         </div>
