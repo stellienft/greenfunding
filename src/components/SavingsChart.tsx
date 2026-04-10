@@ -20,41 +20,44 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
   const YEARS = 25;
   const GROWTH_RATE = 0.03;
 
+  const annualLoanCost = monthlyPayment ? monthlyPayment * 12 : 0;
+
   const data = useMemo(() => {
     const rows = [];
     let cumulativeBillWithoutSolar = 0;
-    let cumulativeSavings = 0;
-    let currentAnnualSavings = annualSavings;
-    let currentAnnualBillWithoutSolar = annualSavings;
+    let cumulativeNetSavings = 0;
+    let currentAnnualBill = annualSavings;
 
     for (let year = 1; year <= YEARS; year++) {
-      cumulativeBillWithoutSolar += currentAnnualBillWithoutSolar;
-      cumulativeSavings += currentAnnualSavings;
-      const annualLoanCost = (selectedTermYears && monthlyPayment && year <= selectedTermYears)
+      cumulativeBillWithoutSolar += currentAnnualBill;
+      const loanCostThisYear = (selectedTermYears && monthlyPayment && year <= selectedTermYears)
         ? monthlyPayment * 12
         : 0;
+      const netSavingThisYear = currentAnnualBill - loanCostThisYear;
+      cumulativeNetSavings += netSavingThisYear;
 
       rows.push({
         year,
-        annualBillWithoutSolar: currentAnnualBillWithoutSolar,
-        annualSavings: currentAnnualSavings,
-        annualLoanCost,
+        annualBillWithoutSolar: currentAnnualBill,
+        loanCostThisYear,
+        netSavingThisYear,
         cumulativeBillWithoutSolar,
-        cumulativeSavings,
+        cumulativeNetSavings,
       });
 
-      currentAnnualBillWithoutSolar = currentAnnualBillWithoutSolar * (1 + GROWTH_RATE);
-      currentAnnualSavings = currentAnnualSavings * (1 + GROWTH_RATE);
+      currentAnnualBill = currentAnnualBill * (1 + GROWTH_RATE);
     }
     return rows;
   }, [annualSavings, selectedTermYears, monthlyPayment]);
 
-  const totalSavings25 = data[YEARS - 1]?.cumulativeSavings ?? 0;
   const totalBillWithout25 = data[YEARS - 1]?.cumulativeBillWithoutSolar ?? 0;
+  const totalNetSavings25 = data[YEARS - 1]?.cumulativeNetSavings ?? 0;
+  const year1NetSaving = data[0]?.netSavingThisYear ?? annualSavings;
 
-  const maxValue = Math.max(...data.map(d => Math.max(d.annualBillWithoutSolar, d.annualLoanCost)));
+  const maxValue = Math.max(...data.map(d => Math.max(d.annualBillWithoutSolar, d.loanCostThisYear)));
   const ySteps = 5;
-  const yMax = Math.ceil(maxValue / 2000) * 2000;
+  const rawYMax = Math.ceil(maxValue / 1000) * 1000;
+  const yMax = Math.ceil(rawYMax / ySteps) * ySteps;
   const yTicks = Array.from({ length: ySteps + 1 }, (_, i) => (yMax / ySteps) * i).reverse();
 
   const chartWidth = 640;
@@ -78,42 +81,49 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
     return paddingTop + plotHeight - (value / yMax) * plotHeight;
   }
 
-  function barHeight(value: number): number {
-    return (value / yMax) * plotHeight;
+  function bHeight(value: number): number {
+    return Math.max(0, (value / yMax) * plotHeight);
   }
+
+  const hasLoanData = !!(selectedTermYears && monthlyPayment);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="mb-5">
-        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Your Estimated Energy Savings</h3>
-        <p className="text-sm text-gray-500">Annual savings growing at 3% per year over 25 years</p>
+        <h3 className="text-xl font-bold text-[#3A475B] mb-1">How Much Could You Save?</h3>
+        <p className="text-sm text-gray-500">Energy cost without solar vs. your finance repayments over 25 years</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <div className="bg-[#28AA48]/8 border border-[#28AA48]/20 rounded-xl p-3 text-center" style={{ backgroundColor: 'rgba(40,170,72,0.07)' }}>
-          <p className="text-xs text-gray-500 mb-1">Year 1 Savings</p>
+        <div className="border border-[#28AA48]/30 rounded-xl p-3 text-center" style={{ backgroundColor: 'rgba(40,170,72,0.06)' }}>
+          <p className="text-xs text-gray-500 mb-1">Year 1 Energy Bill</p>
           <p className="text-lg font-bold text-[#28AA48]">{formatCurrencyFull(annualSavings)}</p>
         </div>
-        <div className="bg-[#34AC48]/8 border border-[#34AC48]/20 rounded-xl p-3 text-center" style={{ backgroundColor: 'rgba(52,172,72,0.07)' }}>
-          <p className="text-xs text-gray-500 mb-1">Total 25-Year Savings</p>
-          <p className="text-lg font-bold text-[#3A475B]">{formatCurrencyFull(totalSavings25)}</p>
-        </div>
-        <div className="col-span-2 sm:col-span-1 bg-gray-50 border border-gray-200 rounded-xl p-3 text-center">
-          <p className="text-xs text-gray-500 mb-1">Without Solar (25yr)</p>
-          <p className="text-lg font-bold text-gray-600">{formatCurrencyFull(totalBillWithout25)}</p>
+        {hasLoanData ? (
+          <div className="border border-gray-200 rounded-xl p-3 text-center bg-gray-50">
+            <p className="text-xs text-gray-500 mb-1">Year 1 Repayments</p>
+            <p className="text-lg font-bold text-[#3A475B]">{formatCurrencyFull(annualLoanCost)}</p>
+          </div>
+        ) : (
+          <div className="border border-gray-200 rounded-xl p-3 text-center bg-gray-50">
+            <p className="text-xs text-gray-500 mb-1">25-Year Bill Without Solar</p>
+            <p className="text-lg font-bold text-gray-600">{formatCurrencyFull(totalBillWithout25)}</p>
+          </div>
+        )}
+        <div className="col-span-2 sm:col-span-1 border border-[#AFD235]/40 rounded-xl p-3 text-center" style={{ backgroundColor: 'rgba(175,210,53,0.07)' }}>
+          <p className="text-xs text-gray-500 mb-1">Estimated Net Savings (25yr)</p>
+          <p className={`text-lg font-bold ${totalNetSavings25 >= 0 ? 'text-[#28AA48]' : 'text-gray-600'}`}>
+            {formatCurrencyFull(totalNetSavings25)}
+          </p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 mb-4">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#3A475B' }} />
-          <span className="text-xs text-gray-600">Energy cost without solar</span>
+          <span className="text-xs text-gray-600">Electricity bill without solar</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#28AA48' }} />
-          <span className="text-xs text-gray-600">Energy savings with solar</span>
-        </div>
-        {selectedTermYears && monthlyPayment && (
+        {hasLoanData && (
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#AFD235' }} />
             <span className="text-xs text-gray-600">Finance repayments</span>
@@ -152,29 +162,20 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
                   x={xPos(i, 0)}
                   y={yPos(d.annualBillWithoutSolar)}
                   width={barWidth}
-                  height={barHeight(d.annualBillWithoutSolar)}
+                  height={bHeight(d.annualBillWithoutSolar)}
                   rx="2"
                   fill="#3A475B"
                   opacity="0.85"
                 />
-                <rect
-                  x={xPos(i, 1)}
-                  y={yPos(d.annualSavings)}
-                  width={barWidth}
-                  height={barHeight(d.annualSavings)}
-                  rx="2"
-                  fill="#28AA48"
-                  opacity="0.9"
-                />
-                {d.annualLoanCost > 0 && (
+                {hasLoanData && d.loanCostThisYear > 0 && (
                   <rect
                     x={xPos(i, 1)}
-                    y={yPos(d.annualLoanCost)}
+                    y={yPos(d.loanCostThisYear)}
                     width={barWidth}
-                    height={barHeight(d.annualLoanCost)}
+                    height={bHeight(d.loanCostThisYear)}
                     rx="2"
                     fill="#AFD235"
-                    opacity="0.85"
+                    opacity="0.9"
                   />
                 )}
                 {(d.year === 1 || d.year % 5 === 0 || d.year === YEARS) && (
@@ -213,10 +214,18 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         </div>
       </div>
 
-      {selectedTermYears && monthlyPayment && (
-        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-xs text-[#28AA48] font-semibold">
-            After year {selectedTermYears}, your finance repayments end and you keep 100% of the energy savings — estimated at {formatCurrencyFull(data[selectedTermYears - 1]?.annualSavings ?? 0)}/year by then.
+      {hasLoanData && selectedTermYears && (
+        <div className="mt-4 p-3 rounded-xl border" style={{ backgroundColor: 'rgba(40,170,72,0.06)', borderColor: 'rgba(40,170,72,0.25)' }}>
+          <p className="text-xs font-semibold" style={{ color: '#28AA48' }}>
+            After year {selectedTermYears}, your finance repayments end. Your energy savings of {formatCurrencyFull(data[selectedTermYears]?.annualBillWithoutSolar ?? annualSavings)}/year are yours to keep — and growing.
+          </p>
+        </div>
+      )}
+
+      {!hasLoanData && (
+        <div className="mt-4 p-3 rounded-xl border bg-gray-50 border-gray-200">
+          <p className="text-xs text-gray-500">
+            Select a loan term above to see how your finance repayments compare to your energy savings.
           </p>
         </div>
       )}
