@@ -109,7 +109,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         </div>
         {hasLoanData ? (
           <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(40,170,72,0.3)', backgroundColor: 'rgba(40,170,72,0.06)' }}>
-            <p className="text-xs text-gray-500 mb-1">Loan repayments</p>
+            <p className="text-xs text-gray-500 mb-1">Annual repayments</p>
             <p className="text-base font-bold text-[#28AA48]">{formatCurrencyFull(annualLoanCost)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
           </div>
         ) : (
