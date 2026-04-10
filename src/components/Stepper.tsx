@@ -9,7 +9,6 @@ interface Step {
 const steps: Step[] = [
   { number: 1, title: 'Project Details', path: '/' },
   { number: 2, title: 'Your Quote', path: '/step-3' },
-  { number: 3, title: 'Get Approved', path: '/step-4' }
 ];
 
 interface StepperProps {

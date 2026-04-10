@@ -13,6 +13,7 @@ interface TwoFactorManagerProps {
 
 type View = 'status' | 'setup' | 'disable';
 
+
 export function TwoFactorManager({
   userId,
   userType,
@@ -173,12 +174,18 @@ export function TwoFactorManager({
         </div>
 
         {totpEnabled ? (
-          <button
-            onClick={() => setView('disable')}
-            className="flex-shrink-0 px-4 py-2 border border-red-200 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
-          >
-            Disable
-          </button>
+          userType === 'admin' ? (
+            <button
+              onClick={() => setView('disable')}
+              className="flex-shrink-0 px-4 py-2 border border-red-200 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors"
+            >
+              Disable
+            </button>
+          ) : (
+            <span className="flex-shrink-0 text-xs text-gray-400 text-right max-w-[120px]">
+              Contact admin to reset
+            </span>
+          )
         ) : (
           <button
             onClick={() => setView('setup')}

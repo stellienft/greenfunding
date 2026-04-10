@@ -260,6 +260,27 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    if (action === 'admin-reset') {
+      const { userId, userType } = body;
+      if (!userId || !userType) {
+        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const table = userType === 'admin' ? 'admin_users' : 'installer_users';
+      await supabase
+        .from(table)
+        .update({ totp_enabled: false, totp_secret: null, totp_setup_prompted: false })
+        .eq('id', userId);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (action === 'mark-prompted') {
       const { userId, userType } = body;
       if (!userId || !userType) {

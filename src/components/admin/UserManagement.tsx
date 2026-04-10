@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, Pencil, RotateCcw } from 'lucide-react';
+import { UserPlus, Users, Mail, Building2, Trash2, AlertCircle, Pencil, RotateCcw, ShieldOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 const ALL_CALCULATORS = [
@@ -295,6 +295,32 @@ export function UserManagement() {
     } catch (error: any) {
       console.error('Error resetting password:', error);
       setError(error.message || 'Failed to reset password');
+    }
+  }
+
+  async function handleReset2FA(userId: string, userType?: 'admin' | 'installer') {
+    if (!confirm('Are you sure you want to reset 2FA for this user? They will need to re-enrol their authenticator app.')) return;
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/totp/admin-reset`;
+      const headers = {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ userId, userType: userType || 'installer' }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to reset 2FA');
+
+      setSuccess('2FA has been reset. The user will need to re-enrol their authenticator app.');
+      loadUsers();
+    } catch (error: any) {
+      setError(error.message || 'Failed to reset 2FA');
     }
   }
 
@@ -668,6 +694,13 @@ export function UserManagement() {
                             title={isAdmin ? 'Reset admin password' : 'Force password reset'}
                           >
                             <RotateCcw className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleReset2FA(user.id, user.user_type)}
+                            className="text-blue-500 hover:text-blue-700 transition-colors"
+                            title="Reset 2FA"
+                          >
+                            <ShieldOff className="w-5 h-5" />
                           </button>
                           {!isAdmin && (
                             <button

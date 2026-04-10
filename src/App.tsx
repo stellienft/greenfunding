@@ -5,7 +5,6 @@ import { AuthProvider } from './context/AuthContext';
 import { Step1 } from './pages/Step1';
 import { ServicedRentalStep1 } from './pages/ServicedRentalStep1';
 import { Step3 } from './pages/Step3';
-import { Step4 } from './pages/Step4';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { InstallerLogin } from './pages/InstallerLogin';
@@ -145,14 +144,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Step3 />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/step-4"
-                element={
-                  <ProtectedRoute>
-                    <Step4 />
                   </ProtectedRoute>
                 }
               />
