@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { FileCheck, Calendar, DollarSign, Loader, ChevronRight } from 'lucide-react';
@@ -50,13 +50,12 @@ export function Submissions() {
   }
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-[#3A475B] mb-2">My Submissions</h1>
-            <p className="text-gray-600">View all your submitted financing applications</p>
-          </div>
+    <InstallerLayout>
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[#3A475B] mb-1">Submissions</h1>
+          <p className="text-gray-500 text-sm">View all your submitted financing applications</p>
+        </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -156,8 +155,7 @@ export function Submissions() {
               ))}
             </div>
           )}
-        </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }

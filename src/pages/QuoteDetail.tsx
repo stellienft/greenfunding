@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
@@ -327,17 +327,17 @@ export function QuoteDetail() {
 
   if (loading) {
     return (
-      <Layout>
+      <InstallerLayout>
         <div className="min-h-screen flex items-center justify-center">
           <Loader className="w-7 h-7 animate-spin text-[#28AA48]" />
         </div>
-      </Layout>
+      </InstallerLayout>
     );
   }
 
   if (error || !quote) {
     return (
-      <Layout>
+      <InstallerLayout>
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="text-center">
             <p className="text-red-600 mb-4">{error || 'Quote not found'}</p>
@@ -346,13 +346,13 @@ export function QuoteDetail() {
             </button>
           </div>
         </div>
-      </Layout>
+      </InstallerLayout>
     );
   }
 
   if (submitted) {
     return (
-      <Layout>
+      <InstallerLayout>
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-10 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -370,7 +370,7 @@ export function QuoteDetail() {
             </button>
           </div>
         </div>
-      </Layout>
+      </InstallerLayout>
     );
   }
 
@@ -378,7 +378,7 @@ export function QuoteDetail() {
   const alreadySubmitted = quote.status === 'application_submitted';
 
   return (
-    <Layout>
+    <InstallerLayout>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-10 px-4">
         <div className="max-w-3xl mx-auto">
 
@@ -783,6 +783,6 @@ export function QuoteDetail() {
           )}
         </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }

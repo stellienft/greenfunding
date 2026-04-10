@@ -1,16 +1,14 @@
-import React from 'react';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { Mail, Phone, MapPin, Globe, MessageCircle } from 'lucide-react';
 
 export function Contacts() {
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-[#3A475B] mb-2">Contact Us</h1>
-            <p className="text-gray-600">Get in touch with the Green Funding team</p>
-          </div>
+    <InstallerLayout>
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[#3A475B] mb-1">Support</h1>
+          <p className="text-gray-500 text-sm">Get in touch with the Green Funding team</p>
+        </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
@@ -111,8 +109,7 @@ export function Contacts() {
               </div>
             </div>
           </div>
-        </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }

@@ -9,6 +9,7 @@ import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { InstallerLogin } from './pages/InstallerLogin';
 import { ResetPassword } from './pages/ResetPassword';
+import { InstallerDashboard } from './pages/InstallerDashboard';
 import { CalculatorDashboard } from './pages/CalculatorDashboard';
 import { MyAccount } from './pages/MyAccount';
 import { Submissions } from './pages/Submissions';
@@ -87,6 +88,14 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
+                    <InstallerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/calculators"
+                element={
+                  <ProtectedRoute>
                     <CalculatorDashboard />
                   </ProtectedRoute>
                 }
@@ -116,13 +125,14 @@ function App() {
                 }
               />
               <Route
-                path="/contacts"
+                path="/support"
                 element={
                   <ProtectedRoute>
                     <Contacts />
                   </ProtectedRoute>
                 }
               />
+              <Route path="/contacts" element={<Navigate to="/support" replace />} />
               <Route
                 path="/calculator/step1"
                 element={

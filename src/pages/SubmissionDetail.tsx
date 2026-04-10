@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import {
@@ -156,7 +156,7 @@ export function SubmissionDetail() {
   }
 
   return (
-    <Layout>
+    <InstallerLayout>
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-10 px-4">
         <div className="max-w-3xl mx-auto">
           <button
@@ -290,6 +290,6 @@ export function SubmissionDetail() {
           ) : null}
         </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }

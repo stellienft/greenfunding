@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { TwoFactorManager } from '../components/TwoFactorManager';
 import { User, Building2, Mail, Phone, Calendar, Lock, Eye, EyeOff, CheckCircle, AlertCircle, CreditCard as Edit3, Save, X, FileText, ClipboardList, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -387,16 +387,16 @@ export function MyAccount() {
 
   if (!installerProfile) {
     return (
-      <Layout>
+      <InstallerLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-gray-500 text-sm">Loading...</div>
         </div>
-      </Layout>
+      </InstallerLayout>
     );
   }
 
   return (
-    <Layout>
+    <InstallerLayout>
       <div className="min-h-screen bg-gray-50/50 py-10 px-4">
         <div className="max-w-5xl mx-auto">
 
@@ -454,6 +454,6 @@ export function MyAccount() {
           </div>
         </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }

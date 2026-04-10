@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '../components/Layout';
+import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { FileText, Calendar, DollarSign, Loader, ArrowRight, Building2, MapPin, Tag } from 'lucide-react';
@@ -79,9 +79,8 @@ export function MyQuotes() {
   }
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
-        <div className="max-w-5xl mx-auto">
+    <InstallerLayout>
+      <div className="max-w-5xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#3A475B] mb-1">My Quotes</h1>
             <p className="text-gray-500 text-sm">View and continue quotes you have generated for your clients</p>
@@ -202,8 +201,7 @@ export function MyQuotes() {
               })}
             </div>
           )}
-        </div>
       </div>
-    </Layout>
+    </InstallerLayout>
   );
 }
