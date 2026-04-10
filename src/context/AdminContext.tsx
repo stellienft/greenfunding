@@ -18,6 +18,7 @@ interface AdminContextType {
   loading: boolean;
   totpVerified: boolean;
   completeTotpVerification: () => void;
+  setAdminSession: (admin: Admin) => void;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -82,8 +83,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setTotpVerified(true);
   };
 
+  const setAdminSession = (adminData: Admin) => {
+    setAdmin(adminData);
+    setTotpVerified(true);
+    localStorage.setItem('admin', JSON.stringify(adminData));
+  };
+
   return (
-    <AdminContext.Provider value={{ admin, login, logout, loading, totpVerified, completeTotpVerification }}>
+    <AdminContext.Provider value={{ admin, login, logout, loading, totpVerified, completeTotpVerification, setAdminSession }}>
       {children}
     </AdminContext.Provider>
   );

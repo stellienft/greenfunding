@@ -9,7 +9,7 @@ type LoginView = 'login' | 'reset' | 'verify2fa' | 'setup2fa';
 
 export function AdminLogin() {
   const navigate = useNavigate();
-  const { login, admin, loading: adminLoading, completeTotpVerification } = useAdmin();
+  const { login, admin, loading: adminLoading, setAdminSession } = useAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -89,8 +89,7 @@ export function AdminLogin() {
 
       if (!loginRes.ok || loginData.error) throw new Error(loginData.error || 'Login failed');
 
-      completeTotpVerification();
-      localStorage.setItem('admin', JSON.stringify(loginData.admin));
+      setAdminSession(loginData.admin);
       navigate('/admin', { replace: true });
     } catch (err: any) {
       setTotpError(err.message);
@@ -111,8 +110,7 @@ export function AdminLogin() {
     });
     const loginData = await loginRes.json();
     if (loginData.admin) {
-      completeTotpVerification();
-      localStorage.setItem('admin', JSON.stringify(loginData.admin));
+      setAdminSession(loginData.admin);
       navigate('/admin', { replace: true });
     }
   };
@@ -137,8 +135,7 @@ export function AdminLogin() {
     });
     const loginData = await loginRes.json();
     if (loginData.admin) {
-      completeTotpVerification();
-      localStorage.setItem('admin', JSON.stringify(loginData.admin));
+      setAdminSession(loginData.admin);
       navigate('/admin', { replace: true });
     }
   };
