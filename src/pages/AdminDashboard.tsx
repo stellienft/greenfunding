@@ -15,11 +15,18 @@ import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2 } from 'lucide-react';
+import { PlatformDashboard } from '../components/admin/PlatformDashboard';
+import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
 
-type Tab = 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { id: 'dashboard' as Tab, label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
   {
     label: 'Calculator',
     items: [
@@ -61,7 +68,7 @@ const NAV_GROUPS = [
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { admin, logout } = useAdmin();
-  const [activeTab, setActiveTab] = useState<Tab>('config');
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [config, setConfig] = useState<CalculatorConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -198,7 +205,9 @@ export function AdminDashboard() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 overflow-auto">
-            {activeTab === 'analytics' ? (
+            {activeTab === 'dashboard' ? (
+              <PlatformDashboard onNavigate={(tab) => setActiveTab(tab as Tab)} />
+            ) : activeTab === 'analytics' ? (
               <AnalyticsDashboard />
             ) : loading ? (
               <div className="text-center py-12 text-gray-600">Loading...</div>
