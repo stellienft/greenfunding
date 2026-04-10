@@ -14,9 +14,10 @@ import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, X } from 'lucide-react';
+import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
+import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2 } from 'lucide-react';
 
-type Tab = 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account';
+type Tab = 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
   {
@@ -25,6 +26,12 @@ const NAV_GROUPS = [
       { id: 'config' as Tab, label: 'Calculator Config', icon: Settings },
       { id: 'assets' as Tab, label: 'Assets', icon: Package },
       { id: 'preview' as Tab, label: 'Preview Tool', icon: Eye },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { id: 'analytics' as Tab, label: 'Analytics & Intelligence', icon: BarChart2 },
     ],
   },
   {
@@ -191,7 +198,9 @@ export function AdminDashboard() {
           </header>
 
           <main className="flex-1 p-4 lg:p-8 overflow-auto">
-            {loading ? (
+            {activeTab === 'analytics' ? (
+              <AnalyticsDashboard />
+            ) : loading ? (
               <div className="text-center py-12 text-gray-600">Loading...</div>
             ) : (
               <>
