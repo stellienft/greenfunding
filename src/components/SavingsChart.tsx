@@ -192,6 +192,38 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         </div>
       )}
 
+      <div className="mt-5 rounded-2xl overflow-hidden border border-gray-100" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+        <div className="px-5 pt-4 pb-3 border-b border-white/10">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#5EC4C1' }}>Green Funding</p>
+          <p className="text-sm font-bold text-white mt-0.5">Estimated Cumulative Savings</p>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-white/10">
+          {[
+            {
+              label: `Over ${selectedTermYears ?? YEARS} years`,
+              sublabel: selectedTermYears ? 'Period of rental facility' : '25-year projection',
+              value: data[(selectedTermYears ?? YEARS) - 1]?.cumulativeSavings ?? 0,
+            },
+            {
+              label: 'Over 15 years',
+              sublabel: '15-year projection',
+              value: data[14]?.cumulativeSavings ?? 0,
+            },
+            {
+              label: 'Over 25 years',
+              sublabel: '25-year projection',
+              value: data[24]?.cumulativeSavings ?? 0,
+            },
+          ].map((box, idx) => (
+            <div key={idx} className="px-4 py-4 text-center">
+              <p className="text-xs font-medium text-white/60 mb-0.5">{box.sublabel}</p>
+              <p className="text-sm font-semibold text-white mb-2">{box.label}</p>
+              <p className="text-xl font-bold" style={{ color: '#28AA48' }}>{formatCurrencyFull(box.value)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <p className="text-xs text-gray-400 mt-3 text-right">* Indicative only. Based on 3% annual energy price growth.</p>
     </div>
   );
