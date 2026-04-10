@@ -8,7 +8,7 @@ import { calculateAll, calculateProgressPayment } from '../calculator';
 import {
   ArrowLeft, FileText, MapPin, Calendar, DollarSign, Tag, CheckCircle2,
   Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock,
-  Mail, Copy, ClipboardCheck
+  Mail, Copy, ClipboardCheck, Download
 } from 'lucide-react';
 
 interface SentQuote {
@@ -28,6 +28,7 @@ interface SentQuote {
   calculator_type: string;
   payment_timing: string;
   status: string;
+  pdf_url: string | null;
 }
 
 interface UploadedFile {
@@ -496,6 +497,20 @@ export function QuoteDetail() {
                   ))}
                 </div>
               </div>
+
+              {quote.pdf_url && (
+                <div className="mt-4">
+                  <a
+                    href={quote.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 w-full px-4 py-3 bg-[#28AA48]/10 hover:bg-[#28AA48]/20 border border-[#28AA48]/30 rounded-xl text-sm font-semibold text-[#28AA48] transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Quote PDF
+                  </a>
+                </div>
+              )}
 
               <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
                 <button

@@ -819,18 +819,24 @@ Deno.serve(async (req: Request) => {
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);
 
     if (mode === 'generate') {
-      const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
-      if (elasticEmailApiKey) {
-        const clientDisplay = recipientCompany || recipientName || 'Unknown Client';
-        const installerDisplay = [installerName, installerCompany].filter(Boolean).join(' / ') || 'Unknown Installer';
-        const termRows = termOptions.map(t => `<tr><td style="padding:8px 16px;border-bottom:1px solid #E5E7EB;font-family:Arial,sans-serif;font-size:14px;color:#3A475B;">${t.years} Year${t.years !== 1 ? 's' : ''}</td><td style="padding:8px 16px;border-bottom:1px solid #E5E7EB;font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#28AA48;text-align:right;">${formatCurrency(t.monthlyPayment)}/mo</td></tr>`).join('');
-        const internalHtml = `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#f5f5f5;font-family:Arial,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;"><tr><td style="background:linear-gradient(135deg,#1a7a32,#28AA48 60%,#AFD235);padding:28px 32px;"><span style="font-size:22px;font-weight:700;color:#fff;font-family:Arial,sans-serif;">Green Funding — New Quote Generated</span></td></tr><tr><td style="padding:28px 32px;"><p style="font-size:15px;color:#3A475B;margin:0 0 20px 0;font-family:Arial,sans-serif;">A new quote has been submitted via the installer portal.</p><table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB;border-radius:6px;margin-bottom:20px;"><tr><td style="background:#F8FAFB;padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;color:#6B7280;font-family:Arial,sans-serif;">Quote Details</td></tr><tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Quote Number:</strong> ${quoteNumber}</td></tr><tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Client:</strong> ${clientDisplay}</td></tr>${recipientEmail ? `<tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Client Email:</strong> ${recipientEmail}</td></tr>` : ''}${siteAddress ? `<tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Site Address:</strong> ${siteAddress}</td></tr>` : ''}<tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Project Cost (Inc. GST):</strong> ${formatCurrency(projectCost)}</td></tr><tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Installer:</strong> ${installerDisplay}</td></tr><tr><td style="padding:10px 16px;font-size:14px;color:#3A475B;font-family:Arial,sans-serif;border-top:1px solid #E5E7EB;"><strong>Date:</strong> ${quoteDate}</td></tr></table><table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB;border-radius:6px;"><tr><td colspan="2" style="background:#F8FAFB;padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;color:#6B7280;font-family:Arial,sans-serif;">Quoted Terms</td></tr>${termRows}</table></td></tr><tr><td style="border-top:1px solid #E5E7EB;padding:20px 32px;text-align:center;background:#F9FAFB;"><p style="font-size:12px;color:#9CA3AF;margin:0;font-family:Arial,sans-serif;">Green Funding Portal — Internal Notification</p></td></tr></table></td></tr></table></body></html>`;
-        EdgeRuntime.waitUntil(
-          sendEmail(elasticEmailApiKey, 'solutions@greenfunding.com.au', `New Quote ${quoteNumber} — ${clientDisplay}`, internalHtml)
-        );
+      const pdfPath = `quotes/${quoteRecord.quote_number}/GreenFunding-Quote-${quoteNumber}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('quote-pdfs')
+        .upload(pdfPath, pdfBytes, { contentType: 'application/pdf', upsert: true });
+
+      let pdfUrl: string | null = null;
+      if (!uploadError) {
+        const { data: publicData } = supabase.storage.from('quote-pdfs').getPublicUrl(pdfPath);
+        pdfUrl = publicData?.publicUrl ?? null;
+        if (pdfUrl) {
+          await supabase.from('sent_quotes').update({ pdf_url: pdfUrl }).eq('quote_number', quoteRecord.quote_number);
+        }
+      } else {
+        console.error('PDF upload error:', uploadError);
       }
+
       return new Response(
-        JSON.stringify({ success: true, quoteNumber, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf` }),
+        JSON.stringify({ success: true, quoteNumber, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf`, pdfUrl }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
