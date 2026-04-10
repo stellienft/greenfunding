@@ -98,6 +98,56 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    if (action === 'profile') {
+      const { adminId } = await req.json();
+      if (!adminId) {
+        return new Response(JSON.stringify({ error: 'Missing adminId' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('id, email, first_name, last_name, phone, totp_enabled')
+        .eq('id', adminId)
+        .maybeSingle();
+
+      if (error || !data) {
+        return new Response(JSON.stringify({ error: 'Profile not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ profile: data }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'update-profile') {
+      const { adminId, firstName, lastName, phone } = await req.json();
+      if (!adminId) {
+        return new Response(JSON.stringify({ error: 'Missing adminId' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error } = await supabase
+        .from('admin_users')
+        .update({ first_name: firstName, last_name: lastName, phone })
+        .eq('id', adminId);
+
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'change-password') {
       const { adminId, newPassword } = await req.json();
 
