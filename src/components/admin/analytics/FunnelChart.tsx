@@ -7,9 +7,7 @@ interface Props {
 
 export function FunnelChart({ quotes, applications }: Props) {
   const totalQuotes = quotes.length;
-  const quoteSent = quotes.filter(q =>
-    q.status === 'application_started' || q.status === 'application_submitted' || q.status === 'quote_generated'
-  ).length;
+  const quoteSent = totalQuotes;
   const appStarted = quotes.filter(q =>
     q.status === 'application_started' || q.status === 'application_submitted'
   ).length;

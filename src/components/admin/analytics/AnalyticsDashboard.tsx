@@ -43,7 +43,7 @@ export function AnalyticsDashboard() {
       const [quotesRes, appsRes, installersRes] = await Promise.all([
         supabase
           .from('sent_quotes')
-          .select('id, quote_number, created_at, installer_id, project_cost, term_options, asset_names, calculator_type, payment_timing, status, installer:installer_id(id, full_name, company_name, email)')
+          .select('id, quote_number, created_at, installer_id, project_cost, term_options, asset_names, calculator_type, payment_timing, status')
           .order('created_at', { ascending: false }),
         supabase
           .from('applications')
@@ -51,13 +51,21 @@ export function AnalyticsDashboard() {
           .order('created_at', { ascending: false }),
         supabase
           .from('installer_users')
-          .select('id, full_name, company_name, email, created_at, quote_count, application_count')
-          .eq('user_type', 'installer'),
+          .select('id, full_name, company_name, email, created_at, quote_count, application_count, user_type'),
       ]);
 
-      setAllQuotes((quotesRes.data ?? []) as unknown as Quote[]);
+      const installers = (installersRes.data ?? []) as InstallerUser[];
+      const installerMap = new Map(installers.map(i => [i.id, i]));
+
+      const rawQuotes = (quotesRes.data ?? []) as Array<Omit<Quote, 'installer'>& { installer_id: string | null }>;
+      const quotesWithInstaller: Quote[] = rawQuotes.map(q => ({
+        ...q,
+        installer: q.installer_id ? (installerMap.get(q.installer_id) ?? null) as Quote['installer'] : null,
+      }));
+
+      setAllQuotes(quotesWithInstaller);
       setAllApplications((appsRes.data ?? []) as unknown as Application[]);
-      setAllInstallers((installersRes.data ?? []) as InstallerUser[]);
+      setAllInstallers(installers);
       setLastRefresh(new Date());
     } catch (e) {
       console.error('Analytics load error:', e);
@@ -177,7 +185,7 @@ export function AnalyticsDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#3A475B]">Analytics & Intelligence</h2>
+          <h2 className="text-xl font-bold text-[#3A475B]">Analytics</h2>
           <p className="text-xs text-gray-400 mt-0.5">
             Last updated {lastRefresh.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
           </p>

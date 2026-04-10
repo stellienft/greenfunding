@@ -125,7 +125,7 @@ export function generateOpportunities(
   const now = new Date();
 
   const highValueQuotes = quotes
-    .filter(q => Number(q.project_cost) >= 500000 && q.status === 'quote_generated')
+    .filter(q => Number(q.project_cost) >= 500000 && q.status !== 'application_submitted')
     .slice(0, 3);
   highValueQuotes.forEach(q => {
     ops.push({

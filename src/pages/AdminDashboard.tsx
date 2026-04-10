@@ -31,7 +31,7 @@ const NAV_GROUPS = [
   {
     label: 'Intelligence',
     items: [
-      { id: 'analytics' as Tab, label: 'Analytics & Intelligence', icon: BarChart2 },
+      { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart2 },
     ],
   },
   {
