@@ -8,7 +8,7 @@ import { calculateAll, calculateProgressPayment } from '../calculator';
 import {
   ArrowLeft, FileText, MapPin, Calendar, DollarSign, Tag, CheckCircle2,
   Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock,
-  Mail, Copy, ClipboardCheck, Download
+  Mail, Copy, ClipboardCheck, Download, Pencil, Trash2, AlertTriangle
 } from 'lucide-react';
 
 interface SentQuote {
@@ -175,6 +175,18 @@ export function QuoteDetail() {
   const [showEmailTemplate, setShowEmailTemplate] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCompany, setEditCompany] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editSystemSize, setEditSystemSize] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     if (installerProfile && id) loadQuote();
   }, [installerProfile, id]);
@@ -201,6 +213,61 @@ export function QuoteDetail() {
       setError('Failed to load quote');
     } finally {
       setLoading(false);
+    }
+  }
+
+  function openEditModal() {
+    if (!quote) return;
+    setEditName(quote.recipient_name || '');
+    setEditCompany(quote.recipient_company || '');
+    setEditEmail(quote.recipient_email || '');
+    setEditPhone(quote.client_phone || '');
+    setEditAddress(quote.site_address || '');
+    setEditSystemSize(quote.system_size || '');
+    setShowEditModal(true);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quote) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('sent_quotes').update({
+        recipient_name: editName || null,
+        recipient_company: editCompany || null,
+        recipient_email: editEmail || null,
+        client_phone: editPhone || null,
+        site_address: editAddress || null,
+        system_size: editSystemSize || null,
+      }).eq('id', quote.id);
+      if (error) throw error;
+      setQuote(prev => prev ? {
+        ...prev,
+        recipient_name: editName || null,
+        recipient_company: editCompany || null,
+        recipient_email: editEmail || null,
+        client_phone: editPhone || null,
+        site_address: editAddress || null,
+        system_size: editSystemSize || null,
+      } : prev);
+      setShowEditModal(false);
+    } catch {
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!quote) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from('sent_quotes').delete().eq('id', quote.id);
+      if (error) throw error;
+      navigate('/quotes');
+    } catch {
+      alert('Failed to delete quote. Please try again.');
+      setDeleting(false);
     }
   }
 
@@ -383,13 +450,31 @@ export function QuoteDetail() {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-10 px-4">
         <div className="max-w-3xl mx-auto">
 
-          <button
-            onClick={() => navigate('/quotes')}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#28AA48] transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to My Quotes
-          </button>
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => navigate('/quotes')}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#28AA48] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to My Quotes
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={openEditModal}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#3A475B] bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            </div>
+          </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
             <div className="bg-gradient-to-r from-[#34AC48] to-[#AFD235] px-6 py-5">
@@ -576,6 +661,120 @@ export function QuoteDetail() {
 
         </div>
       </div>
+
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-bold text-[#3A475B]">Edit Quote Details</h2>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Name</label>
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Name</label>
+                  <input
+                    value={editCompany}
+                    onChange={e => setEditCompany(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={e => setEditEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={e => setEditPhone(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Site Address</label>
+                  <input
+                    value={editAddress}
+                    onChange={e => setEditAddress(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">System Size</label>
+                  <input
+                    value={editSystemSize}
+                    onChange={e => setEditSystemSize(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-2.5 text-sm font-semibold text-[#3A475B] bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#34AC48] to-[#AFD235] rounded-lg hover:shadow-md transition-all disabled:opacity-60"
+                >
+                  {saving ? <><div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />Saving...</> : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <h2 className="text-base font-bold text-[#3A475B] mb-2">Delete Quote?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              This will permanently delete quote {formatQuoteNumber(quote.quote_number)} for <strong>{quote.recipient_company || quote.recipient_name || 'this client'}</strong>. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 text-sm font-semibold text-[#3A475B] bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60"
+              >
+                {deleting ? <><div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </InstallerLayout>
   );
 }

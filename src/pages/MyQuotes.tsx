@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { FileText, Calendar, DollarSign, Loader, ArrowRight, Building2, MapPin, Tag } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Loader, ArrowRight, Building2, MapPin, Tag, Trash2, AlertTriangle, X } from 'lucide-react';
 
 interface SentQuote {
   id: string;
@@ -55,6 +55,8 @@ export function MyQuotes() {
   const [quotes, setQuotes] = useState<SentQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SentQuote | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (installerProfile) loadQuotes();
@@ -75,6 +77,21 @@ export function MyQuotes() {
       setError('Failed to load quotes');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from('sent_quotes').delete().eq('id', deleteTarget.id);
+      if (error) throw error;
+      setQuotes(prev => prev.filter(q => q.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch {
+      alert('Failed to delete quote. Please try again.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -121,10 +138,12 @@ export function MyQuotes() {
                 return (
                   <div
                     key={q.id}
-                    className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                    onClick={() => navigate(`/quotes/${q.id}`)}
+                    className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all group relative"
                   >
-                    <div className="p-5">
+                    <div
+                      className="p-5 cursor-pointer"
+                      onClick={() => navigate(`/quotes/${q.id}`)}
+                    >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-4 min-w-0">
                           <div className="w-10 h-10 bg-gradient-to-br from-[#34AC48] to-[#AFD235] rounded-lg flex items-center justify-center flex-shrink-0">
@@ -155,7 +174,7 @@ export function MyQuotes() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6 flex-shrink-0">
+                        <div className="flex items-center gap-4 flex-shrink-0">
                           <div className="hidden sm:block text-right">
                             <p className="text-xs text-gray-400">Project Cost (Inc. GST)</p>
                             <p className="font-bold text-[#3A475B] text-sm">{formatCurrency(q.project_cost)}</p>
@@ -173,6 +192,13 @@ export function MyQuotes() {
                               {new Date(q.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </p>
                           </div>
+                          <button
+                            onClick={e => { e.stopPropagation(); setDeleteTarget(q); }}
+                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete quote"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                           <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-[#28AA48] transition-colors" />
                         </div>
                       </div>
@@ -202,6 +228,37 @@ export function MyQuotes() {
             </div>
           )}
       </div>
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <h2 className="text-base font-bold text-[#3A475B] mb-2">Delete Quote?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              This will permanently delete quote {formatQuoteNumber(deleteTarget.quote_number)} for <strong>{deleteTarget.recipient_company || deleteTarget.recipient_name || 'this client'}</strong>. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 py-2.5 text-sm font-semibold text-[#3A475B] bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60"
+              >
+                {deleting ? <><div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />Deleting...</> : <><Trash2 className="w-4 h-4" />Delete</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </InstallerLayout>
   );
 }
