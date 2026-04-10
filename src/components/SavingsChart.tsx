@@ -194,8 +194,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
 
       <div className="mt-5 rounded-2xl overflow-hidden border border-gray-100" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
         <div className="px-5 pt-4 pb-3 border-b border-white/10">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#5EC4C1' }}>Green Funding</p>
-          <p className="text-sm font-bold text-white mt-0.5">Estimated Cumulative Savings</p>
+          <p className="text-sm font-bold text-white">Estimated Cumulative Savings</p>
         </div>
         <div className="grid grid-cols-3 divide-x divide-white/10">
           {[
