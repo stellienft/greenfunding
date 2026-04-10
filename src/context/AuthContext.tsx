@@ -7,12 +7,14 @@ interface InstallerUser {
   full_name: string;
   company_name: string;
   email: string;
+  phone_number: string | null;
   needs_password_reset: boolean;
   quote_count: number;
   application_count: number;
   allowed_calculators?: string[];
   totp_enabled: boolean;
   totp_setup_prompted: boolean;
+  created_at: string;
 }
 
 interface AuthContextType {
@@ -23,6 +25,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
+  updateProfile: (fields: { full_name?: string; company_name?: string; phone_number?: string }) => Promise<void>;
   refreshProfile: () => Promise<void>;
   completeTotpVerification: () => void;
   markTotpSetupPrompted: () => Promise<void>;
@@ -129,6 +132,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function updateProfile(fields: { full_name?: string; company_name?: string; phone_number?: string }) {
+    if (!user) throw new Error('Not authenticated');
+    const { error } = await supabase
+      .from('installer_users')
+      .update(fields)
+      .eq('id', user.id);
+    if (error) throw error;
+    await loadInstallerProfile(user.id);
+  }
+
   async function refreshProfile() {
     if (user) {
       await loadInstallerProfile(user.id);
@@ -166,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         updatePassword,
+        updateProfile,
         refreshProfile,
         completeTotpVerification,
         markTotpSetupPrompted,
