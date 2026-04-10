@@ -335,10 +335,43 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
                 </>
               )}
 
+              {(config.interestRateTiers || []).length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Loan Amount</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {[...(config.interestRateTiers || [])].reverse().map((tier, index, arr) => (
+                          <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3 font-medium text-[#3A475B]">
+                              {tier.maxAmount === null
+                                ? `$${tier.minAmount.toLocaleString()}+`
+                                : `$${tier.minAmount.toLocaleString()} – $${tier.maxAmount.toLocaleString()}`
+                              }
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                                {(tier.rate * 100).toFixed(2)}%
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {config.rateUsedStrategy === 'amount_based' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h4 className="font-semibold text-[#3A475B]">Interest Rate Tiers</h4>
+                    <h4 className="font-semibold text-[#3A475B]">Edit Tiers</h4>
                     <button
                       type="button"
                       onClick={() => {
