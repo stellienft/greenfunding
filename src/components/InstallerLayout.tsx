@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LogOut, LayoutDashboard, Calculator, User, FileCheck, FileText,
+  LogOut, LayoutDashboard, User, FileText,
   LifeBuoy, Menu, X, ChevronRight, Building2
 } from 'lucide-react';
 
@@ -18,10 +18,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/calculators', label: 'Calculator', icon: Calculator, matchPrefix: '/calculator' },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, matchPrefix: '/dashboard' },
   { path: '/quotes', label: 'My Quotes', icon: FileText },
-  { path: '/submissions', label: 'Submissions', icon: FileCheck },
   { path: '/my-account', label: 'My Account', icon: User },
   { path: '/support', label: 'Support', icon: LifeBuoy },
 ];
@@ -52,6 +50,9 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
   };
 
   const isActive = (item: NavItem) => {
+    if (item.path === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname.startsWith('/calculator');
+    }
     if (item.matchPrefix) {
       return location.pathname.startsWith(item.matchPrefix);
     }

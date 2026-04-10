@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import {
-  FileText, FileCheck, TrendingUp, Calculator, ArrowRight,
-  Calendar, DollarSign, Tag, MapPin
+  FileText, TrendingUp, ArrowRight,
+  DollarSign, Tag, MapPin, Calculator, Users
 } from 'lucide-react';
 
 interface QuoteSummary {
@@ -26,6 +27,12 @@ interface MonthlyCount {
   count: number;
 }
 
+interface CalcConfig {
+  rental: boolean;
+  serviced_rental: boolean;
+  progress_payment_rental: boolean;
+}
+
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n);
 }
@@ -39,17 +46,6 @@ function calcTypeLabel(t: string) {
     case 'progress_payment_rental': return 'Progress Payment';
     case 'serviced_rental': return 'Serviced Rental';
     default: return 'Rental';
-  }
-}
-
-function statusBadge(status: string) {
-  switch (status) {
-    case 'application_submitted':
-      return { label: 'App Submitted', cls: 'bg-green-100 text-green-700 border-green-200' };
-    case 'application_started':
-      return { label: 'App Started', cls: 'bg-blue-100 text-blue-700 border-blue-200' };
-    default:
-      return { label: 'Quote', cls: 'bg-gray-100 text-gray-600 border-gray-200' };
   }
 }
 
@@ -72,9 +68,11 @@ function MiniBar({ data }: { data: MonthlyCount[] }) {
 export function InstallerDashboard() {
   const navigate = useNavigate();
   const { installerProfile } = useAuth();
+  const { updateState, resetState } = useApp();
   const [recentQuotes, setRecentQuotes] = useState<QuoteSummary[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyCount[]>([]);
   const [totalProjectValue, setTotalProjectValue] = useState(0);
+  const [calcStates, setCalcStates] = useState<CalcConfig>({ rental: true, serviced_rental: false, progress_payment_rental: false });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,15 +83,26 @@ export function InstallerDashboard() {
     if (!installerProfile) return;
     setLoading(true);
     try {
-      const { data: quotes } = await supabase
-        .from('sent_quotes')
-        .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options')
-        .eq('installer_id', installerProfile.id)
-        .order('created_at', { ascending: false });
+      const [quotesResult, configResult] = await Promise.all([
+        supabase
+          .from('sent_quotes')
+          .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options')
+          .eq('installer_id', installerProfile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('calculator_config')
+          .select('calculator_type, enabled'),
+      ]);
 
-      if (quotes) {
-        setRecentQuotes(quotes.slice(0, 5));
-        const total = quotes.reduce((sum, q) => sum + (q.project_cost || 0), 0);
+      if (configResult.data) {
+        const states: Record<string, boolean> = {};
+        configResult.data.forEach(row => { states[row.calculator_type] = row.enabled || false; });
+        setCalcStates(states as CalcConfig);
+      }
+
+      if (quotesResult.data) {
+        setRecentQuotes(quotesResult.data.slice(0, 5));
+        const total = quotesResult.data.reduce((sum, q) => sum + (q.project_cost || 0), 0);
         setTotalProjectValue(total);
 
         const now = new Date();
@@ -101,7 +110,7 @@ export function InstallerDashboard() {
         for (let i = 5; i >= 0; i--) {
           const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
           const label = d.toLocaleDateString('en-AU', { month: 'short' });
-          const count = quotes.filter(q => {
+          const count = quotesResult.data.filter(q => {
             const qd = new Date(q.created_at);
             return qd.getFullYear() === d.getFullYear() && qd.getMonth() === d.getMonth();
           }).length;
@@ -116,12 +125,50 @@ export function InstallerDashboard() {
     }
   }
 
+  const handleCalculatorClick = (calcType: 'rental' | 'progress_payment_rental' | 'serviced_rental', path: string) => {
+    resetState();
+    updateState({ calculatorType: calcType });
+    navigate(path);
+  };
+
+  const allowedCalcs = installerProfile?.allowed_calculators;
+  const isAllowed = (key: string) =>
+    !allowedCalcs || allowedCalcs.length === 0 || allowedCalcs.includes(key);
+
+  const allCalcDefs = [
+    {
+      id: 'rental',
+      title: 'Rental',
+      description: 'Calculate financing options for renewable services.',
+      icon: Calculator,
+      calcType: 'rental' as const,
+      path: '/calculator/step1',
+    },
+    {
+      id: 'serviced_rental',
+      title: 'Serviced Rental',
+      description: 'Includes service & maintenance packages.',
+      icon: TrendingUp,
+      calcType: 'serviced_rental' as const,
+      path: '/calculator/serviced-rental-step1',
+    },
+    {
+      id: 'progress_payment_rental',
+      title: 'Progress Payment',
+      description: 'Flexible payments tied to project milestones.',
+      icon: Users,
+      calcType: 'progress_payment_rental' as const,
+      path: '/calculator/step1',
+    },
+  ];
+
+  const calculators = allCalcDefs
+    .filter(c => isAllowed(c.id))
+    .map(c => ({ ...c, available: (calcStates as Record<string, boolean>)[c.id] ?? false }));
+
   const profile = installerProfile;
   const firstName = profile?.full_name?.split(' ')[0] || 'Installer';
   const quoteCount = profile?.quote_count || 0;
-  const appCount = profile?.application_count || 0;
-  const conversionRate = quoteCount > 0 ? Math.round((appCount / quoteCount) * 100) : 0;
-
   const thisMonthQuotes = monthlyData[monthlyData.length - 1]?.count || 0;
   const lastMonthQuotes = monthlyData[monthlyData.length - 2]?.count || 0;
   const quoteTrend = lastMonthQuotes > 0
@@ -140,7 +187,7 @@ export function InstallerDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -154,27 +201,23 @@ export function InstallerDashboard() {
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
-                <FileCheck className="w-4 h-4 text-[#6EAE3C]" />
-              </div>
-              <span className="text-xs font-medium text-gray-500">Applications</span>
-            </div>
-            <div className="text-3xl font-bold text-[#3A475B]">{appCount}</div>
-            <div className="text-xs text-gray-400 mt-1">Submitted for review</div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-amber-600" />
               </div>
-              <span className="text-xs font-medium text-gray-500">Conversion</span>
+              <span className="text-xs font-medium text-gray-500">This Month</span>
             </div>
-            <div className="text-3xl font-bold text-[#3A475B]">{conversionRate}%</div>
-            <div className="text-xs text-gray-400 mt-1">Quote to application</div>
+            <div className="text-3xl font-bold text-[#3A475B]">{thisMonthQuotes}</div>
+            <div className="flex items-center gap-1 mt-1">
+              {quoteTrend !== 0 && (
+                <span className={`text-xs font-semibold ${quoteTrend > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {quoteTrend > 0 ? '+' : ''}{quoteTrend}% vs last month
+                </span>
+              )}
+              {quoteTrend === 0 && <span className="text-xs text-gray-400">vs last month</span>}
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="col-span-2 lg:col-span-1 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-4 h-4 text-teal-600" />
@@ -186,82 +229,66 @@ export function InstallerDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {monthlyData.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#3A475B]">Quotes This Month</h3>
-              {quoteTrend !== 0 && (
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${quoteTrend > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {quoteTrend > 0 ? '+' : ''}{quoteTrend}%
-                </span>
-              )}
-            </div>
-            <div className="text-4xl font-bold text-[#3A475B] mb-4">{thisMonthQuotes}</div>
-            {monthlyData.length > 0 && <MiniBar data={monthlyData} />}
-            <div className="flex justify-between mt-1">
+            <h3 className="text-sm font-semibold text-[#3A475B] mb-4">Quote Activity (Last 6 Months)</h3>
+            <MiniBar data={monthlyData} />
+            <div className="flex justify-between mt-2">
               {monthlyData.map((d, i) => (
                 <span key={i} className="text-[10px] text-gray-400 flex-1 text-center">{d.month}</span>
               ))}
             </div>
           </div>
+        )}
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-[#3A475B]">Quick Actions</h3>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] rounded-lg flex items-center justify-center">
+              <Calculator className="w-4 h-4 text-white" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={() => navigate('/calculators')}
-                className="flex items-center gap-3 p-4 bg-gradient-to-br from-[#6EAE3C]/5 to-[#6EAE3C]/10 border border-[#6EAE3C]/20 rounded-xl hover:border-[#6EAE3C]/40 hover:shadow-sm transition-all text-left"
-              >
-                <div className="w-10 h-10 bg-[#6EAE3C] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calculator className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-[#3A475B]">New Quote</div>
-                  <div className="text-xs text-gray-500">Generate a finance quote</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => navigate('/quotes')}
-                className="flex items-center gap-3 p-4 bg-blue-50/50 border border-blue-100 rounded-xl hover:border-blue-200 hover:shadow-sm transition-all text-left"
-              >
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-[#3A475B]">My Quotes</div>
-                  <div className="text-xs text-gray-500">View all generated quotes</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => navigate('/submissions')}
-                className="flex items-center gap-3 p-4 bg-green-50/50 border border-green-100 rounded-xl hover:border-green-200 hover:shadow-sm transition-all text-left"
-              >
-                <div className="w-10 h-10 bg-[#28AA48] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileCheck className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-[#3A475B]">Submissions</div>
-                  <div className="text-xs text-gray-500">Track applications</div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => navigate('/my-account')}
-                className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left"
-              >
-                <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Calculator className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-[#3A475B]">My Account</div>
-                  <div className="text-xs text-gray-500">Profile & security</div>
-                </div>
-              </button>
+            <div>
+              <h3 className="text-sm font-semibold text-[#3A475B]">
+                {calculators.length === 1 ? calculators[0].title + ' Calculator' : 'Generate a Quote'}
+              </h3>
+              <p className="text-xs text-gray-400">
+                {calculators.length === 1
+                  ? calculators[0].description
+                  : 'Select a calculator to generate a finance quote'}
+              </p>
             </div>
+          </div>
+          <div className={`p-5 grid gap-4 ${calculators.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-3'}`}>
+            {calculators.map(calc => {
+              const Icon = calc.icon;
+              return (
+                <button
+                  key={calc.id}
+                  disabled={!calc.available}
+                  onClick={() => calc.available && handleCalculatorClick(calc.calcType, calc.path)}
+                  className={`flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
+                    calc.available
+                      ? 'border-gray-200 hover:border-[#6EAE3C] hover:shadow-sm cursor-pointer bg-white'
+                      : 'border-gray-100 opacity-50 cursor-not-allowed bg-gray-50'
+                  } ${calculators.length === 1 ? 'sm:max-w-sm' : ''}`}
+                >
+                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    calc.available ? 'bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F]' : 'bg-gray-200'
+                  }`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-[#3A475B]">{calc.title}</div>
+                    <div className="text-xs text-gray-500 mt-0.5 truncate">{calc.description}</div>
+                    {!calc.available && (
+                      <div className="text-[10px] font-semibold text-gray-400 mt-1">Coming Soon</div>
+                    )}
+                  </div>
+                  {calc.available && (
+                    <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -284,18 +311,11 @@ export function InstallerDashboard() {
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FileText className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-sm text-gray-500 mb-4">No quotes yet</p>
-              <button
-                onClick={() => navigate('/calculators')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#6EAE3C] text-white text-sm font-medium rounded-lg hover:bg-[#5d9432] transition-colors"
-              >
-                Generate your first quote
-              </button>
+              <p className="text-sm text-gray-500">No quotes yet — use the calculator above to get started</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
               {recentQuotes.map(q => {
-                const badge = statusBadge(q.status || 'generated');
                 const lowestPayment = q.term_options?.length
                   ? Math.min(...q.term_options.map(t => t.monthlyPayment))
                   : null;
@@ -312,9 +332,6 @@ export function InstallerDashboard() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-[#3A475B] truncate">
                           {q.recipient_company || q.recipient_name || 'Unnamed Client'}
-                        </span>
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex-shrink-0 ${badge.cls}`}>
-                          {badge.label}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">

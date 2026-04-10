@@ -10,10 +10,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { InstallerLogin } from './pages/InstallerLogin';
 import { ResetPassword } from './pages/ResetPassword';
 import { InstallerDashboard } from './pages/InstallerDashboard';
-import { CalculatorDashboard } from './pages/CalculatorDashboard';
 import { MyAccount } from './pages/MyAccount';
-import { Submissions } from './pages/Submissions';
-import { SubmissionDetail } from './pages/SubmissionDetail';
 import { Contacts } from './pages/Contacts';
 import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
@@ -92,14 +89,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/calculators"
-                element={
-                  <ProtectedRoute>
-                    <CalculatorDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/calculators" element={<Navigate to="/dashboard" replace />} />
               <Route
                 path="/my-account"
                 element={
@@ -108,22 +98,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/submissions"
-                element={
-                  <ProtectedRoute>
-                    <Submissions />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/submissions/:id"
-                element={
-                  <ProtectedRoute>
-                    <SubmissionDetail />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/submissions" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/submissions/:id" element={<Navigate to="/dashboard" replace />} />
               <Route
                 path="/support"
                 element={
