@@ -355,7 +355,7 @@ function PasswordSection() {
 
 function ActivityStats({ profile }: { profile: { quote_count: number; application_count: number } }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <div className="bg-gradient-to-br from-blue-50 to-blue-100/60 rounded-xl p-5 border border-blue-100">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-8 h-8 bg-blue-600/10 rounded-lg flex items-center justify-center">
@@ -367,16 +367,6 @@ function ActivityStats({ profile }: { profile: { quote_count: number; applicatio
         <div className="text-xs text-blue-500 mt-1">Finance calculations</div>
       </div>
 
-      <div className="bg-gradient-to-br from-green-50 to-green-100/60 rounded-xl p-5 border border-green-100">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 bg-[#6EAE3C]/10 rounded-lg flex items-center justify-center">
-            <ClipboardList className="w-4 h-4 text-[#6EAE3C]" />
-          </div>
-          <span className="text-xs font-medium text-[#5a9030]">Applications</span>
-        </div>
-        <div className="text-3xl font-bold text-[#6EAE3C]">{profile.application_count || 0}</div>
-        <div className="text-xs text-[#6EAE3C]/70 mt-1">Submitted for review</div>
-      </div>
     </div>
   );
 }
