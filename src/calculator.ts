@@ -16,12 +16,12 @@ export interface ProgressPayment {
 }
 
 export interface CalculatorConfig {
-  interestRateMin: number;
-  interestRateMax: number;
-  rateUsedStrategy: 'min' | 'max' | 'midpoint' | 'custom' | 'term_based' | 'amount_based';
-  customRateUsed: number;
-  rateUnder5Years: number;
-  rate5YearsAndAbove: number;
+  interestRateMin?: number;
+  interestRateMax?: number;
+  rateUsedStrategy?: string;
+  customRateUsed?: number;
+  rateUnder5Years?: number;
+  rate5YearsAndAbove?: number;
   interestRateTiers: InterestRateTier[];
   repaymentType: 'amortised' | 'interest_only';
   paymentTiming?: 'advance' | 'arrears';
@@ -90,39 +90,15 @@ export interface ProgressPaymentBreakdown {
 }
 
 export function calculateRateUsed(config: CalculatorConfig, loanTermYears?: number, projectCost?: number): number {
-  switch (config.rateUsedStrategy) {
-    case 'min':
-      return config.interestRateMin;
-    case 'max':
-      return config.interestRateMax;
-    case 'midpoint':
-      return (config.interestRateMin + config.interestRateMax) / 2;
-    case 'custom':
-      return config.customRateUsed;
-    case 'term_based':
-      if (loanTermYears !== undefined && loanTermYears <= 5) {
-        return config.rateUnder5Years;
+  if (config.interestRateTiers && config.interestRateTiers.length > 0 && projectCost !== undefined) {
+    for (const tier of config.interestRateTiers) {
+      if (projectCost >= tier.minAmount && (tier.maxAmount === null || projectCost <= tier.maxAmount)) {
+        return tier.rate;
       }
-      return config.rate5YearsAndAbove;
-    case 'amount_based':
-      if (projectCost !== undefined && config.interestRateTiers && config.interestRateTiers.length > 0) {
-        for (const tier of config.interestRateTiers) {
-          if (projectCost >= tier.minAmount && (tier.maxAmount === null || projectCost <= tier.maxAmount)) {
-            let baseRate = tier.rate;
-
-            // For amounts over $100k: if term is over 5 years, add 1.5% to the base rate
-            if (projectCost > 100000 && loanTermYears !== undefined && loanTermYears > 5) {
-              baseRate += 0.015;
-            }
-
-            return baseRate;
-          }
-        }
-      }
-      return config.interestRateMin;
-    default:
-      return config.interestRateMin;
+    }
+    return config.interestRateTiers[config.interestRateTiers.length - 1].rate;
   }
+  return 0;
 }
 
 export function calculateOriginationFee(
