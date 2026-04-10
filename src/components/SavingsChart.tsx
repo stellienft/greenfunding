@@ -98,15 +98,6 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         <p className="text-sm text-gray-500">See how your electricity savings compare to your loan repayments year by year</p>
       </div>
 
-      {hasLoanData && (
-        <div className="mb-5 text-center">
-          <p className="text-xs text-gray-500 mb-1">Estimated savings over {(selectedTermYears ?? 0) * 12} months</p>
-          <div className="inline-block px-5 py-2 rounded-full font-bold text-white text-base" style={{ background: 'linear-gradient(135deg, #28AA48, #AFD235)' }}>
-            {formatCurrencyFull(data[(selectedTermYears ?? 1) - 1]?.cumulativeSavings ?? 0)}
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="border border-gray-200 rounded-xl p-3 text-center bg-gray-50">
           <p className="text-xs text-gray-500 mb-1">Electricity bill without solar</p>
@@ -117,9 +108,9 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
           <p className="text-base font-bold" style={{ color: '#3ABFBB' }}>{formatCurrencyFull(electricityBillWithSolar)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
         </div>
         {hasLoanData ? (
-          <div className="border border-red-200 rounded-xl p-3 text-center bg-red-50">
+          <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(40,170,72,0.3)', backgroundColor: 'rgba(40,170,72,0.06)' }}>
             <p className="text-xs text-gray-500 mb-1">Loan repayments</p>
-            <p className="text-base font-bold text-red-500">{formatCurrencyFull(annualLoanCost)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
+            <p className="text-base font-bold text-[#28AA48]">{formatCurrencyFull(annualLoanCost)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
           </div>
         ) : (
           <div className="border border-[#28AA48]/20 rounded-xl p-3 text-center" style={{ backgroundColor: 'rgba(40,170,72,0.05)' }}>
@@ -140,7 +131,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         </div>
         {hasLoanData && (
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#E8536A' }} />
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#28AA48' }} />
             <span className="text-xs text-gray-600">Payment plan instalments</span>
           </div>
         )}
@@ -169,7 +160,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
                     width={barWidth}
                     height={bHeight(d.loanCost)}
                     rx="2"
-                    fill={d.loanCost > 0 ? '#E8536A' : 'transparent'}
+                    fill={d.loanCost > 0 ? '#28AA48' : 'transparent'}
                     opacity="0.9"
                   />
                 )}
