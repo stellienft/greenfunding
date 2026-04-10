@@ -178,13 +178,36 @@ export function InstallerDashboard() {
   return (
     <InstallerLayout>
       <div className="max-w-5xl mx-auto space-y-7">
-        <div>
-          <h1 className="text-2xl font-bold text-[#3A475B]">
-            Welcome back, {firstName}
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {profile?.company_name} &middot; Here's your activity overview
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-[#3A475B]">
+              Welcome back, {firstName}
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {profile?.company_name} &middot; Here's your activity overview
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {calculators.map(calc => {
+              const Icon = calc.icon;
+              return (
+                <button
+                  key={calc.id}
+                  disabled={!calc.available}
+                  onClick={() => calc.available && handleCalculatorClick(calc.calcType, calc.path)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-medium text-sm transition-all whitespace-nowrap ${
+                    calc.available
+                      ? 'bg-[#6EAE3C] border-[#6EAE3C] text-white hover:bg-[#5d9432] hover:border-[#5d9432] shadow-sm'
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span>New {calc.title} Quote</span>
+                  {!calc.available && <span className="text-[10px] font-normal ml-1">(Coming Soon)</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -240,28 +263,6 @@ export function InstallerDashboard() {
             </div>
           </div>
         )}
-
-        <div className="flex flex-wrap gap-3">
-          {calculators.map(calc => {
-            const Icon = calc.icon;
-            return (
-              <button
-                key={calc.id}
-                disabled={!calc.available}
-                onClick={() => calc.available && handleCalculatorClick(calc.calcType, calc.path)}
-                className={`flex items-center gap-3 px-5 py-3 rounded-xl border font-medium text-sm transition-all ${
-                  calc.available
-                    ? 'bg-[#6EAE3C] border-[#6EAE3C] text-white hover:bg-[#5d9432] hover:border-[#5d9432] shadow-sm'
-                    : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span>New {calc.title} Quote</span>
-                {!calc.available && <span className="text-[10px] font-normal ml-1">(Coming Soon)</span>}
-              </button>
-            );
-          })}
-        </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
