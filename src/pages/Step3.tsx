@@ -364,6 +364,8 @@ export function Step3() {
       navigate('/quote-preview', {
         state: {
           quoteNumber: result.quoteNumber,
+          quoteId: result.quoteId || null,
+          pdfUrl: result.pdfUrl || null,
           quoteDate,
           clientName: quoteClientFields.clientName.trim(),
           clientAddress: quoteClientFields.clientAddress.trim(),

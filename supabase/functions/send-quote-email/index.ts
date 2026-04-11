@@ -785,7 +785,7 @@ Deno.serve(async (req: Request) => {
         payment_timing: paymentTiming || 'arrears',
         calculator_type: calculatorType || 'rental',
       })
-      .select('quote_number, created_at')
+      .select('id, quote_number, created_at')
       .single();
 
     if (insertError || !quoteRecord) {
@@ -836,7 +836,7 @@ Deno.serve(async (req: Request) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, quoteNumber, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf`, pdfUrl }),
+        JSON.stringify({ success: true, quoteNumber, quoteId: quoteRecord.id, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf`, pdfUrl }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

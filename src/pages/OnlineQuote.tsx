@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check, ExternalLink, CheckCircle, Loader } from 'lucide-react';
+import { ArrowLeft, Download, Check, ExternalLink, Loader } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
 import { CheckCircle2, X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface TermOption {
   years: number;
@@ -16,6 +17,7 @@ export interface OnlineQuoteData {
   quoteNumber: string;
   quoteDate: string;
   quoteId?: string;
+  pdfUrl?: string | null;
   clientName: string;
   clientAddress: string;
   clientEmail?: string;
@@ -139,11 +141,10 @@ export function OnlineQuote() {
     annualSolarGenerationKwh,
     energySavings,
     disclaimerText,
+    pdfUrl,
   } = quoteData;
 
-  const [accepting, setAccepting] = useState(false);
-  const [accepted, setAccepted] = useState(false);
-  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
@@ -153,33 +154,24 @@ export function OnlineQuote() {
   const isLowDoc = projectCost < 250000;
   const lowDocReqs = getLowDocRequirements(projectCost);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleAcceptQuote = async () => {
-    if (!quoteData.quoteId) {
-      setAcceptError('Quote ID not found. Please regenerate the quote.');
+  const handleDownloadPdf = async () => {
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
       return;
     }
-    setAccepting(true);
-    setAcceptError(null);
+    if (!quoteData.quoteId) return;
+    setDownloadingPdf(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/accept-quote`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ quoteId: quoteData.quoteId }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to accept quote');
-      setAccepted(true);
-    } catch (err: any) {
-      setAcceptError(err.message || 'Failed to accept quote. Please try again.');
+      const { data } = await supabase
+        .from('sent_quotes')
+        .select('pdf_url')
+        .eq('id', quoteData.quoteId)
+        .maybeSingle();
+      if (data?.pdf_url) {
+        window.open(data.pdf_url, '_blank');
+      }
     } finally {
-      setAccepting(false);
+      setDownloadingPdf(false);
     }
   };
 
@@ -205,43 +197,15 @@ export function OnlineQuote() {
             <ArrowLeft className="w-4 h-4" />
             Back to Calculator
           </button>
-          <div className="flex items-center gap-2">
-            {accepted ? (
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 font-semibold rounded-lg text-sm">
-                <CheckCircle className="w-4 h-4" />
-                Quote Accepted
-              </div>
-            ) : (
-              <button
-                onClick={handleAcceptQuote}
-                disabled={accepting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#3A475B] text-white font-bold rounded-lg hover:bg-[#2e3847] transition-all text-sm disabled:opacity-60"
-              >
-                {accepting ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Accept Quote
-              </button>
-            )}
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm"
-            >
-              <Download className="w-4 h-4" />
-              Download as PDF
-            </button>
-          </div>
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-60"
+          >
+            {downloadingPdf ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Download PDF
+          </button>
         </div>
-        {acceptError && (
-          <div className="no-print max-w-4xl mx-auto px-4 pt-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">{acceptError}</div>
-          </div>
-        )}
-        {accepted && (
-          <div className="no-print max-w-4xl mx-auto px-4 pt-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 font-medium">
-              Quote accepted! An email has been sent to {clientEmail || 'the client'} with a secure link to upload their documents.
-            </div>
-          </div>
-        )}
 
         <div className="max-w-4xl mx-auto px-4 py-8 print-container space-y-8">
 
@@ -514,23 +478,14 @@ export function OnlineQuote() {
 
         </div>
 
-        <div className="no-print mt-6 flex justify-center gap-3 pb-8">
-          {!accepted && (
-            <button
-              onClick={handleAcceptQuote}
-              disabled={accepting}
-              className="flex items-center gap-2 px-8 py-3.5 bg-[#3A475B] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
-            >
-              {accepting ? <Loader className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
-              Accept Quote
-            </button>
-          )}
+        <div className="no-print mt-6 flex justify-center pb-8">
           <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base"
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
           >
-            <Download className="w-5 h-5" />
-            Download as PDF
+            {downloadingPdf ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+            Download PDF
           </button>
         </div>
       </div>
