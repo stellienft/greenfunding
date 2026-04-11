@@ -376,33 +376,6 @@ async function generateQuotePdf(
 
     y -= cardH + 18;
 
-    if (hasSolar && annualSolarGenerationKwh) {
-      drawSectionLabel(page, 'Solar Generation Details', PL, y);
-      y -= 14;
-
-      const solCardGap = 6;
-      const solCardCount = 1 + (hasSavings ? 1 : 0) + sortedTerms.filter(t => t.costPerKwhCents && t.costPerKwhCents > 0).length;
-      const solCardW = (CW - solCardGap * (solCardCount - 1)) / solCardCount;
-      const solCardH = 56;
-
-      drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER, 'per year');
-
-      let solIdx = 1;
-      if (hasSavings && energySavings) {
-        drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, 'Est. Annual Energy Savings', formatCurrencyAU(energySavings), true, C.GREEN_LIGHT, C.GREEN, C.GREEN, C.GREEN_BORDER, 'per year');
-        solIdx++;
-      }
-
-      for (const t of sortedTerms) {
-        if (t.costPerKwhCents && t.costPerKwhCents > 0) {
-          drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, `Cost per kWh - ${t.years} yr term`, `${t.costPerKwhCents.toFixed(2)}c`, true, C.BLUE_BG, C.BLUE_TEXT, C.BLUE_TEXT, C.BLUE_BORDER, 'per kilowatt-hour');
-          solIdx++;
-        }
-      }
-
-      y -= solCardH + 18;
-    }
-
     if (disclaimerText) {
       const dH = 28;
       dr(page, PL, y - dH, CW, dH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75, 6);
@@ -595,7 +568,7 @@ async function generateQuotePdf(
     y -= 14;
 
     const tableHeaderH = 28;
-    const tableBodyH = 36 * sortedTerms.length;
+    const tableBodyH = 44 * sortedTerms.length;
     const tableTotalH = tableHeaderH + tableBodyH;
     dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
     dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
@@ -607,7 +580,7 @@ async function generateQuotePdf(
     y -= tableHeaderH;
 
     sortedTerms.forEach((t, i) => {
-      const rowH = 36;
+      const rowH = 44;
       const rowY = y - rowH * i;
       if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
       if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
@@ -617,15 +590,19 @@ async function generateQuotePdf(
       page.drawCircle({ x: dotX, y: dotY, size: 4, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
 
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
+      dt(page, termLabel, PL + 28, rowY - 13, 10, true, C.DARK_TEXT);
+
+      if (t.costPerKwhCents && t.costPerKwhCents > 0) {
+        dt(page, `${t.costPerKwhCents.toFixed(2)}c per kWh`, PL + 28, rowY - 27, 7.5, false, C.GRAY_TEXT);
+      }
 
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
       const amtW = tw(amtText, true, 13);
-      dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
-      dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
+      dt(page, amtText, W - PR - amtW - 36, rowY - 15, 13, true, C.GREEN);
+      dt(page, '/mo', W - PR - 30, rowY - 13, 8, false, C.GRAY_LIGHT);
     });
 
-    y -= 36 * sortedTerms.length;
+    y -= 44 * sortedTerms.length;
 
     const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
