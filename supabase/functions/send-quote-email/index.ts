@@ -99,6 +99,23 @@ const C = {
   TEAL: hexToRgb('#5EC4C1'),
 };
 
+// SVG logo paths from green-funding-invertedlogo.svg (white text + gradient GG icon)
+// Scale factor to fit in header: original viewBox 366x66, we render at ~110x20 pts
+const LOGO_SCALE = 0.28;
+const LOGO_PATHS_WHITE = [
+  "M22.0898 45.9182C29.407 45.9182 34.2823 47.4915 34.2823 53.7162C34.2823 61.3 26.9651 65.5913 16.7073 65.5184C6.81065 65.4455 0.925104 61.5143 0.925104 54.3593C0.925104 52.2158 1.64306 50.2095 2.79094 48.5675C0.99819 46.8527 -0.0078125 44.5635 -0.0078125 42.1284C-0.0078125 39.3376 1.42811 36.0494 4.65247 34.4032C3.5046 32.4741 2.85972 30.2534 2.85972 27.7498C2.85972 20.3847 9.24397 14.7344 17.1329 14.7344H33.4138V19.8145H27.8206C29.4715 21.8894 30.4732 24.5345 30.4732 27.7541C30.4732 35.2649 24.4501 40.9152 16.703 40.9152C13.7624 40.9152 11.0367 40.1264 8.81405 38.6988C6.94822 39.269 5.87343 40.4136 5.87343 42.1327C5.87343 44.422 8.0961 45.9224 10.9679 45.9224H22.0855L22.0898 45.9182ZM28.4741 54.2135C28.4741 51.4956 26.1096 51.2083 20.8001 51.2083H9.68248C9.1107 51.2083 8.53461 51.1355 7.96282 51.0669C7.10299 52.07 6.67308 53.1418 6.67308 54.355C6.67308 58.2905 10.1855 60.1468 16.7159 60.1468C23.6719 60.1468 28.4784 57.7846 28.4784 54.2092L28.4741 54.2135ZM8.46152 27.7498C8.46152 32.2554 11.9051 35.6893 16.7116 35.6893C21.5181 35.6893 24.9617 32.3283 24.9617 27.7498C24.9617 23.4585 21.733 20.1703 16.7847 20.1703C11.8364 20.1703 8.46582 23.5313 8.46582 27.7498H8.46152Z",
+  "M58.672 16.0205L56.3032 21.3835C55.2284 21.0277 53.8656 20.7405 52.6446 20.7405C47.5501 20.7405 43.5347 24.1744 43.5347 31.1108V51.2083H37.7266V15.5918H42.1719L43.0317 19.5273C45.3275 16.3077 49.201 14.7344 53.1433 14.7344C55.2241 14.7344 57.2318 15.3774 58.6678 16.0205H58.672Z",
+  "M154.416 29.2545V51.2126H148.607V30.3263C148.607 23.2441 143.947 20.6719 139.498 20.6719C133.831 20.6719 130.031 24.9632 130.031 30.6864V51.2126H124.223V15.5918H128.668L129.601 19.6687C132.683 16.0934 136.918 14.7344 140.289 14.7344C147.103 14.7344 154.42 19.4544 154.42 29.2545H154.416Z",
+  "M177.944 14.3744V15.5919H185.906V21.3837H177.944V51.2084H172.204V21.3837H166.035V15.5919H172.204V13.7313C172.204 4.29131 177.08 0 184.685 0C185.906 0 187.196 0.0728793 188.485 0.28723V5.5817C187.479 5.44023 186.551 5.36735 185.687 5.36735C180.162 5.36735 177.94 8.29967 177.94 14.3787L177.944 14.3744Z",
+  "M212.584 15.5918H218.393V51.2126H214.089L213.014 47.1357C210.001 50.6382 205.697 52.07 202.327 52.07C195.512 52.07 188.195 47.4229 188.195 37.1941V15.5918H194.003V35.9037C194.003 43.4874 198.664 46.1325 203.113 46.1325C208.565 46.1325 212.58 41.9827 212.58 35.0463V15.5918H212.584Z",
+  "M251.744 29.2545V51.2126H245.936V30.3263C245.936 23.2441 241.275 20.6719 236.826 20.6719C231.159 20.6719 227.359 24.9632 227.359 30.6864V51.2126H221.551V15.5918H225.996L226.929 19.6687C230.011 16.0934 234.246 14.7344 237.617 14.7344C244.431 14.7344 251.748 19.4544 251.748 29.2545H251.744Z",
+  "M278.638 1.14453H284.446V51.2126H280.001L279.141 47.0628C276.987 50.2823 273.118 52.07 268.668 52.07C260.276 52.07 253.965 45.8453 253.965 34.5447V32.6841C253.965 23.8143 258.341 14.7301 268.384 14.7301C272.473 14.7301 276.058 16.2306 278.642 19.5959V1.14453H278.638ZM278.638 34.9048V32.0454C278.638 24.7489 275.121 20.4576 269.24 20.4576C263.359 20.4576 259.773 24.676 259.773 32.7613V34.3346C259.773 42.0598 263.573 46.5655 269.24 46.5655C274.906 46.5655 278.638 42.0598 278.638 34.9091V34.9048Z",
+  "M287.605 5.29412C287.605 3.29209 289.256 1.71875 291.191 1.71875C293.126 1.71875 294.85 3.29209 294.85 5.29412C294.85 7.29616 293.199 8.8695 291.191 8.8695C289.183 8.8695 287.605 7.29616 287.605 5.29412ZM294.205 51.2124H288.25V15.5915H294.205V51.2124Z",
+  "M328.197 29.2545V51.2126H322.389V30.3263C322.389 23.2441 317.728 20.6719 313.279 20.6719C307.613 20.6719 303.812 24.9632 303.812 30.6864V51.2126H298.004V15.5918H302.449L303.382 19.6687C306.465 16.0934 310.699 14.7344 314.07 14.7344C320.884 14.7344 328.201 19.4544 328.201 29.2545H328.197Z",
+  "M353.809 45.9182C361.126 45.9182 366.001 47.4915 366.001 53.7162C366.001 61.3 358.684 65.5913 348.426 65.5184C338.529 65.4455 332.644 61.5143 332.644 54.3593C332.644 52.2158 333.362 50.2095 334.51 48.5675C332.717 46.8527 331.711 44.5635 331.711 42.1284C331.711 39.3376 333.147 36.0494 336.371 34.4032C335.223 32.4741 334.578 30.2534 334.578 27.7498C334.578 20.3847 340.963 14.7344 348.852 14.7344H365.133V19.8145H359.539C361.19 21.8894 362.192 24.5345 362.192 27.7541C362.192 35.2649 356.169 40.9152 348.422 40.9152C345.481 40.9152 342.755 40.1264 340.533 38.6988C338.667 39.269 337.592 40.4136 337.592 42.1327C337.592 44.422 339.815 45.9224 342.687 45.9224H353.804L353.809 45.9182ZM360.193 54.2135C360.193 51.4956 357.828 51.2083 352.519 51.2083H341.401C340.829 51.2083 340.253 51.1355 339.682 51.0669C338.822 52.07 338.392 53.1418 338.392 54.355C338.392 58.2905 341.904 60.1468 348.435 60.1468C355.391 60.1468 360.197 57.7846 360.197 54.2092L360.193 54.2135ZM340.18 27.7498C340.18 32.2554 343.624 35.6893 348.43 35.6893C353.237 35.6893 356.68 32.3283 356.68 27.7498C356.68 23.4585 353.452 20.1703 348.503 20.1703C343.555 20.1703 340.185 23.5313 340.185 27.7498H340.18Z",
+];
+const LOGO_PATH_GG = "M120.751 38.2444C119.72 40.928 117.914 43.1573 115.648 44.7092C113.387 46.2611 110.657 47.1399 107.772 47.1399C103.933 47.1399 100.459 45.588 97.9443 43.0801C95.4293 40.5722 93.873 37.1083 93.873 33.28C93.873 29.4517 95.4293 25.9878 97.9443 23.4799C100.459 20.972 103.933 19.4201 107.772 19.4201C109.66 19.4201 111.491 19.793 113.172 20.5004C114.268 20.9591 115.304 21.5636 116.259 22.2967C115.898 24.6674 114.935 26.8666 113.503 28.7058C111.693 31.0336 109.131 32.787 106.108 33.5972C105.15 33.8545 104.178 34.0088 103.211 34.056C102.226 34.1074 101.246 34.056 100.283 33.8973C108.099 42.7372 120.919 31.5309 121.026 20.3889C119.285 18.6098 117.217 17.2165 114.96 16.2691C112.695 15.3174 110.253 14.8115 107.772 14.8115C102.656 14.8115 98.026 16.8779 94.6727 20.2217C91.3193 23.5656 89.2471 28.1827 89.2471 33.2843C89.2471 33.6701 89.2815 34.0517 89.3073 34.4332C89.2858 34.4118 89.2686 34.3903 89.2471 34.3689C89.2729 34.3946 89.2815 34.4332 89.3073 34.4589C89.346 35.0677 89.4148 35.6636 89.5094 36.2552C88.7355 39.0846 84.5009 43.4917 82.7253 44.7092C80.464 46.2611 77.734 47.1399 74.8493 47.1399C71.0101 47.1399 67.5364 45.588 65.0214 43.0801C62.5064 40.5722 60.9501 37.1083 60.9501 33.28C60.9501 29.4517 62.5064 25.9878 65.0214 23.4799C67.5364 20.972 71.0101 19.4201 74.8493 19.4201C76.7366 19.4201 78.568 19.793 80.249 20.5004C81.3453 20.9591 82.3814 21.5636 83.3358 22.2967C82.9747 24.6674 82.0117 26.8666 80.5801 28.7058C78.7701 31.0336 76.2078 32.787 73.1855 33.5972C72.2268 33.8545 71.2552 34.0088 70.2879 34.056C69.3034 34.1074 68.3232 34.056 67.3601 33.8973C75.176 42.7372 87.9961 31.5309 88.1036 20.3889C86.3624 18.6098 84.2945 17.2165 82.0375 16.2691C79.7718 15.3174 77.3299 14.8115 74.8493 14.8115C69.7333 14.8115 65.1031 16.8779 61.7498 20.2217C58.3964 23.5656 56.3242 28.1827 56.3242 33.2843C56.3242 38.3858 58.3964 43.003 61.7498 46.3468C65.1031 49.6907 69.7333 51.7571 74.8493 51.7571C79.9653 51.7571 87.6221 48.9619 91.3838 41.8841C92.2566 43.5346 93.3614 45.0393 94.6727 46.3468C98.026 49.6907 102.656 51.7571 107.772 51.7571C115.128 51.7571 123.039 46.7498 120.751 38.2444Z";
+
 async function generateQuotePdf(
   quoteNumber: string,
   quoteDate: string,
@@ -143,12 +160,31 @@ async function generateQuotePdf(
     page.drawText(String(text ?? ''), { x, y, size, font, color: rgb(color.r, color.g, color.b), opacity });
   }
 
-  function dr(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, color: { r: number; g: number; b: number }, opacity = 1, borderColor?: { r: number; g: number; b: number }, borderWidth = 0) {
+  function dr(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, color: { r: number; g: number; b: number }, opacity = 1, borderColor?: { r: number; g: number; b: number }, borderWidth = 0, radius = 0) {
     page.drawRectangle({
       x, y, width: w, height: h,
       color: rgb(color.r, color.g, color.b),
       opacity,
       ...(borderColor ? { borderColor: rgb(borderColor.r, borderColor.g, borderColor.b), borderWidth } : {}),
+      ...(radius > 0 ? { borderRadius: radius } : {}),
+    });
+  }
+
+  function drawLogo(page: ReturnType<typeof pdfDoc.addPage>, x: number, baseY: number, scale: number) {
+    const svgH = 66;
+    for (const path of LOGO_PATHS_WHITE) {
+      page.drawSvgPath(path, {
+        x,
+        y: baseY + svgH * scale,
+        scale,
+        color: rgb(1, 1, 1),
+      });
+    }
+    page.drawSvgPath(LOGO_PATH_GG, {
+      x,
+      y: baseY + svgH * scale,
+      scale,
+      color: rgb(0.149, 0.655, 0.282),
     });
   }
 
@@ -185,34 +221,34 @@ async function generateQuotePdf(
   }
 
   function drawPageHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 56;
+    const headerH = 64;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    const logoText = 'Green Funding';
-    dt(page, logoText, PL, topY - 22, 15, true, C.WHITE);
+    // Logo SVG at scale 0.28 → renders ~102x18 pts, positioned left-aligned
+    drawLogo(page, PL, topY - headerH + 10, LOGO_SCALE);
     const subText = 'Finance Solutions for Clean Energy';
-    dt(page, subText, PL, topY - 36, 7, false, { r: 1, g: 1, b: 1 }, 0.6);
+    dt(page, subText, PL, topY - headerH + 8, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
 
     const qnLabel = 'Finance Quote';
     const qnLabelW = tw(qnLabel, false, 7);
-    dt(page, qnLabel, W - PR - qnLabelW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.6);
-    const qnW = tw(quoteNumber, true, 11);
-    dt(page, quoteNumber, W - PR - qnW, topY - 30, 11, true, C.WHITE);
+    dt(page, qnLabel, W - PR - qnLabelW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    const qnW = tw(quoteNumber, true, 13);
+    dt(page, quoteNumber, W - PR - qnW, topY - 32, 13, true, C.WHITE);
     const qdW = tw(quoteDate, false, 8);
-    dt(page, quoteDate, W - PR - qdW, topY - 42, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
+    dt(page, quoteDate, W - PR - qdW, topY - 46, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
 
     return topY - headerH;
   }
 
   function drawMiniHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 40;
+    const headerH = 44;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    dt(page, 'Green Funding', PL, topY - 16, 12, true, C.WHITE);
+    drawLogo(page, PL, topY - headerH + 8, 0.24);
     const qnW = tw(quoteNumber, false, 7);
-    dt(page, quoteNumber, W - PR - qnW, topY - 14, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    dt(page, quoteNumber, W - PR - qnW, topY - 16, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
     const qdW = tw(quoteDate, false, 7);
-    dt(page, quoteDate, W - PR - qdW, topY - 25, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
+    dt(page, quoteDate, W - PR - qdW, topY - 27, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
 
     return topY - headerH;
   }
@@ -235,16 +271,21 @@ async function generateQuotePdf(
     return dtWrapped(page, value, x, y - 12, 9, true, C.DARK_TEXT, maxW, 13);
   }
 
-  function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }) {
-    dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0);
+  function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }, sublabel?: string) {
+    dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0, 6);
     const lW = tw(label, false, 7);
     dt(page, label, x + (w - lW) / 2, y - 13, 7, false, labelColor);
-    const vLines = wrapText(value, bold, bold ? 11 : 9, w - 12);
-    const vH = vLines.length * 14;
-    const vStartY = y - h / 2 - vH / 2 + (vLines.length > 1 ? 6 : 2);
+    const valueSize = bold ? 11 : 9;
+    const vLines = wrapText(value, bold, valueSize, w - 12);
+    const totalTextH = vLines.length * 14 + (sublabel ? 11 : 0);
+    const vStartY = y - h / 2 + totalTextH / 2 - (sublabel ? 5 : 0);
     for (let i = 0; i < vLines.length; i++) {
-      const vW = tw(vLines[i], bold, bold ? 11 : 9);
-      dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, bold ? 11 : 9, bold, valueColor);
+      const vW = tw(vLines[i], bold, valueSize);
+      dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, valueSize, bold, valueColor);
+    }
+    if (sublabel) {
+      const slW = tw(sublabel, false, 6.5);
+      dt(page, sublabel, x + (w - slW) / 2, vStartY - vLines.length * 14 + 2, 6.5, false, labelColor, 0.7);
     }
   }
 
@@ -257,8 +298,8 @@ async function generateQuotePdf(
 
     const colW = (CW - 8) / 2;
 
-    dr(page, PL, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75);
-    dr(page, PL + colW + 8, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75);
+    dr(page, PL, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
+    dr(page, PL + colW + 8, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
 
     drawSectionLabel(page, 'Prepared By', PL + 10, y - 10);
     let byY = y - 24;
@@ -329,17 +370,17 @@ async function generateQuotePdf(
       const solCardW = (CW - solCardGap * (solCardCount - 1)) / solCardCount;
       const solCardH = 52;
 
-      drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER);
+      drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER, 'per year');
 
       let solIdx = 1;
       if (hasSavings && energySavings) {
-        drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, 'Est. Annual Savings', formatCurrencyAU(energySavings), true, C.GREEN_LIGHT, C.GREEN, C.GREEN, C.GREEN_BORDER);
+        drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, 'Est. Annual Energy Savings', formatCurrencyAU(energySavings), true, C.GREEN_LIGHT, C.GREEN, C.GREEN, C.GREEN_BORDER, 'per year');
         solIdx++;
       }
 
       for (const t of sortedTerms) {
         if (t.costPerKwhCents && t.costPerKwhCents > 0) {
-          drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, `Cost/kWh (${t.years}yr)`, `${t.costPerKwhCents.toFixed(2)}c`, true, C.BLUE_BG, C.BLUE_TEXT, C.BLUE_TEXT, C.BLUE_BORDER);
+          drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, `Cost per kWh - ${t.years} yr term`, `${t.costPerKwhCents.toFixed(2)}c`, true, C.BLUE_BG, C.BLUE_TEXT, C.BLUE_TEXT, C.BLUE_BORDER, 'per kilowatt-hour');
           solIdx++;
         }
       }
@@ -372,7 +413,7 @@ async function generateQuotePdf(
 
     y -= tableHeaderH;
 
-    dr(page, PL, y - tableHeaderH * sortedTerms.length, CW, tableHeaderH * sortedTerms.length, C.WHITE, 1, C.BORDER, 0.75);
+    dr(page, PL, y - tableHeaderH * sortedTerms.length, CW, tableHeaderH * sortedTerms.length, C.WHITE, 1, C.BORDER, 0.75, 0);
 
     sortedTerms.forEach((t, i) => {
       const rowH = 28;
@@ -453,7 +494,7 @@ async function generateQuotePdf(
     const sCardW = (CW - sCardGap * (sCardCount - 1)) / sCardCount;
 
     // Card 1: bill without solar (dark bg)
-    dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, C.BORDER, 0.5);
+    dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, C.BORDER, 0.5, 6);
     const c1Label = 'Electricity bill without solar';
     const c1LabelW = tw(c1Label, false, 6.5);
     dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 12, 6.5, false, C.WHITE, 0.7);
@@ -462,7 +503,7 @@ async function generateQuotePdf(
     dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 28, 9, true, C.WHITE);
 
     // Card 2: bill with solar (teal bg)
-    dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.15, C.TEAL, 0.4);
+    dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.15, C.TEAL, 0.4, 6);
     const c2Label = 'Electricity bill with solar';
     const c2LabelW = tw(c2Label, false, 6.5);
     dt(page, c2Label, PL + sCardW + sCardGap + (sCardW - c2LabelW) / 2, y - 12, 6.5, false, C.TEAL);
@@ -471,7 +512,7 @@ async function generateQuotePdf(
     dt(page, c2Val, PL + sCardW + sCardGap + (sCardW - c2ValW) / 2, y - 28, 9, true, C.TEAL);
 
     // Card 3: annual repayments (green bg)
-    dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3);
+    dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3, 6);
     const c3Label = firstTermYears ? `Annual repayments (${firstTermYears} yr)` : '25-Year Net Savings';
     const c3LabelW = tw(c3Label, false, 6.5);
     dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 12, 6.5, false, C.GREEN);
@@ -568,14 +609,14 @@ async function generateQuotePdf(
       const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? energySavings;
       const noteText = `After year ${firstTermYears}, your finance repayments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
       const noteH = 28;
-      dr(page, PL, y - noteH, CW, noteH, C.GREEN, 0.08, C.GREEN, 0.2);
+      dr(page, PL, y - noteH, CW, noteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
       dtWrapped(page, noteText, PL + 10, y - 10, 7.5, false, C.GREEN, CW - 20, 11);
       y -= noteH + 12;
     }
 
     // Cumulative savings table
     const cumH = 56;
-    dr(page, PL, y - cumH, CW, cumH, C.DARK);
+    dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, undefined, 0, 8);
 
     const cumLabelY = y - 14;
     dt(page, 'Estimated Cumulative Savings', PL + 14, cumLabelY, 8, true, C.WHITE);
@@ -615,7 +656,7 @@ async function generateQuotePdf(
     if (disclaimerText) {
       y -= 20;
       const dH = 28;
-      dr(page, PL, y - dH, CW, dH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75);
+      dr(page, PL, y - dH, CW, dH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75, 6);
       dtWrapped(page, disclaimerText, PL + 10, y - 10, 7.5, false, C.AMBER_TEXT, CW - 20, 11);
     }
 
@@ -660,7 +701,7 @@ async function generateQuotePdf(
 
       for (const item of lowDocItems) {
         const rowH = 28;
-        dr(page, PL, y - rowH, CW, rowH, C.GRAY_BG, 1, C.BORDER, 0.75);
+        dr(page, PL, y - rowH, CW, rowH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
         page.drawCircle({ x: PL + 14, y: y - rowH / 2 - 1, size: 6, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
         dt(page, 'v', PL + 10.5, y - rowH / 2 - 3.5, 7, true, C.WHITE);
         const maxItemW = CW - 30 - (item.url ? 90 : 0);
@@ -698,7 +739,7 @@ async function generateQuotePdf(
 
       y -= tableHeaderH;
 
-      dr(page, PL, y - 24 * fullDocRows.length, CW, 24 * fullDocRows.length, C.WHITE, 1, C.BORDER, 0.75);
+      dr(page, PL, y - 24 * fullDocRows.length, CW, 24 * fullDocRows.length, C.WHITE, 1, C.BORDER, 0.75, 0);
 
       fullDocRows.forEach((row, i) => {
         const rowH = 24;
@@ -733,7 +774,7 @@ async function generateQuotePdf(
     y -= 20;
 
     const getStartedH = 64;
-    dr(page, PL, y - getStartedH, CW, getStartedH, C.GRAY_BG, 1, C.BORDER, 0.75);
+    dr(page, PL, y - getStartedH, CW, getStartedH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
 
     drawSectionLabel(page, 'Get Started', PL + 14, y - 10);
     const contactText = 'Contact your Green Funding representative to begin the application process.';
@@ -751,7 +792,7 @@ async function generateQuotePdf(
 
     if (disclaimerText) {
       const disclaimerH = 36 + dtWrapped(page, disclaimerText, PL + 12, y - 20, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
-      dr(page, PL, y - disclaimerH, CW, disclaimerH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75);
+      dr(page, PL, y - disclaimerH, CW, disclaimerH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75, 6);
       dtWrapped(page, disclaimerText, PL + 12, y - 14, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
     }
 
