@@ -11,7 +11,7 @@ import { X } from 'lucide-react';
 export function ServicedRentalStep1() {
   const navigate = useNavigate();
   const { isAdminMode, onAdminNavigate } = useCalculatorLayout();
-  const { state, updateState, config, assets, loadingConfig } = useApp();
+  const { state, updateState, resetState, config, assets, loadingConfig } = useApp();
   const [selectedAssets, setSelectedAssets] = useState<string[]>(state.selectedAssetIds);
   const [projectCost, setProjectCost] = useState(state.projectCost || 100000);
   const [inputValue, setInputValue] = useState('');
@@ -25,6 +25,7 @@ export function ServicedRentalStep1() {
   const [hasShownModal, setHasShownModal] = useState(false);
   const [residualPercentage, setResidualPercentage] = useState<number | undefined>(state.residualPercentage);
   const [paymentTiming, setPaymentTiming] = useState<'advance' | 'arrears'>(state.paymentTiming || 'arrears');
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   useEffect(() => {
     if (config && !state.projectCost) {
@@ -126,6 +127,29 @@ export function ServicedRentalStep1() {
 
     const dest = isAdminMode ? '/admin/step-3' : '/step-3';
     if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
+  };
+
+  const hasStarted = selectedAssets.length > 0 || projectCost !== (config?.costSliderDefault || 100000) || annualMaintenanceCost > 0;
+
+  const handleRestartClick = () => {
+    if (hasStarted) {
+      setShowRestartConfirm(true);
+    } else {
+      doRestart();
+    }
+  };
+
+  const doRestart = () => {
+    resetState();
+    setSelectedAssets([]);
+    setProjectCost(config?.costSliderDefault || 100000);
+    setInputValue('');
+    setAnnualMaintenanceCost(0);
+    setAnnualSolarGeneration(undefined);
+    setSpecialPricingRequested(false);
+    setResidualPercentage(undefined);
+    setPaymentTiming('arrears');
+    setShowRestartConfirm(false);
   };
 
   const handleModalClose = () => {
@@ -429,16 +453,49 @@ export function ServicedRentalStep1() {
                 </div>
               )}
 
-              <button
-                onClick={handleContinue}
-                className="w-full py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-lg"
-              >
-                Continue
-              </button>
+              <div className="flex justify-between items-center gap-3">
+                <button
+                  onClick={handleRestartClick}
+                  className="px-5 py-3 text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-gray-200 hover:border-red-200"
+                >
+                  Restart Quote
+                </button>
+                <button
+                  onClick={handleContinue}
+                  className="flex-1 py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-lg"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {showRestartConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+            <h3 className="text-lg font-bold text-[#3A475B] mb-2">Restart Quote?</h3>
+            <p className="text-gray-500 text-sm mb-6">
+              You have already started a quote. Restarting will clear all your current selections and start fresh.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doRestart}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors text-sm"
+              >
+                Yes, Restart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSpecialPricingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

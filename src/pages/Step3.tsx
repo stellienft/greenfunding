@@ -23,7 +23,7 @@ interface LoanTermOption {
 
 export function Step3() {
   const navigate = useNavigate();
-  const { state, updateState, config, assets, introEmailTemplate } = useApp();
+  const { state, updateState, resetState, config, assets, introEmailTemplate } = useApp();
   const { user, installerProfile, refreshProfile } = useAuth();
   const { isAdminMode, onAdminNavigate } = useCalculatorLayout();
   const [selectedTerm, setSelectedTerm] = useState<number | null>(null);
@@ -55,6 +55,7 @@ export function Step3() {
   const [emailModalTab, setEmailModalTab] = useState<'intro' | 'quote'>('quote');
   const [introBodyEdited, setIntroBodyEdited] = useState<string | null>(null);
   const [copiedIntro, setCopiedIntro] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   const isSolarOnlyProject = () => {
     if (state.selectedAssetIds.length !== 1) return false;
@@ -392,6 +393,17 @@ export function Step3() {
   };
 
   const handleBack = () => {
+    const dest = isAdminMode ? '/admin?tab=calculator' : '/';
+    if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
+  };
+
+  const handleRestartClick = () => {
+    setShowRestartConfirm(true);
+  };
+
+  const doRestart = () => {
+    resetState();
+    setShowRestartConfirm(false);
     const dest = isAdminMode ? '/admin?tab=calculator' : '/';
     if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
   };
@@ -795,11 +807,42 @@ export function Step3() {
               >
                 Back
               </button>
+              <button
+                onClick={handleRestartClick}
+                className="px-5 py-3 text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-gray-200 hover:border-red-200 order-2 sm:order-2"
+              >
+                Restart Quote
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+
+      {showRestartConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+            <h3 className="text-lg font-bold text-[#3A475B] mb-2">Restart Quote?</h3>
+            <p className="text-gray-500 text-sm mb-6">
+              You have already started a quote. Restarting will clear all your current selections and start fresh.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={doRestart}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors text-sm"
+              >
+                Yes, Restart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showEmailModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
