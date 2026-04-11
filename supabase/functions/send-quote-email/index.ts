@@ -12,6 +12,7 @@ interface TermOption {
   monthlyPayment: number;
   interestRate: number;
   totalFinanced: number;
+  costPerKwhCents?: number;
 }
 
 interface QuotePayload {
@@ -30,9 +31,23 @@ interface QuotePayload {
   installerId?: string;
   introEmailSubject?: string;
   introEmailBody?: string;
+  annualSolarGenerationKwh?: number;
+  energySavings?: number;
+  disclaimerText?: string;
+  installerEmail?: string;
+  installerPhone?: string;
 }
 
-const formatCurrency = (amount: number): string => {
+const formatCurrencyAU = (amount: number): string => {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+const formatCurrencyDecimals = (amount: number): string => {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
     currency: 'AUD',
@@ -60,6 +75,29 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 0, g: 0, b: 0 };
 }
 
+const C = {
+  DARK: hexToRgb('#1a2e3b'),
+  DARK2: hexToRgb('#2D3A4A'),
+  DARK_TEXT: hexToRgb('#3A475B'),
+  GREEN: hexToRgb('#28AA48'),
+  GREEN2: hexToRgb('#AFD235'),
+  GREEN_LIGHT: hexToRgb('#DCFCE7'),
+  GREEN_BORDER: hexToRgb('#BBF7D0'),
+  GRAY_TEXT: hexToRgb('#6B7280'),
+  GRAY_LIGHT: hexToRgb('#9CA3AF'),
+  GRAY_BG: hexToRgb('#F9FAFB'),
+  GRAY_BG2: hexToRgb('#F3F4F6'),
+  BORDER: hexToRgb('#E5E7EB'),
+  BORDER2: hexToRgb('#D1D5DB'),
+  WHITE: { r: 1, g: 1, b: 1 },
+  AMBER_BG: hexToRgb('#FFFBEB'),
+  AMBER_BORDER: hexToRgb('#FDE68A'),
+  AMBER_TEXT: hexToRgb('#92400E'),
+  BLUE_BG: hexToRgb('#EFF6FF'),
+  BLUE_BORDER: hexToRgb('#BFDBFE'),
+  BLUE_TEXT: hexToRgb('#1E3A5F'),
+};
+
 async function generateQuotePdf(
   quoteNumber: string,
   quoteDate: string,
@@ -67,49 +105,63 @@ async function generateQuotePdf(
   recipientCompany: string | undefined,
   siteAddress: string | undefined,
   systemSize: string | undefined,
-  contribution: string | undefined,
   projectCost: number,
   assetNames: string[],
   termOptions: TermOption[],
   installerName?: string,
   installerCompany?: string,
+  installerEmail?: string,
+  installerPhone?: string,
   clientPhone?: string,
-  _logoBase64?: string | null
+  clientEmail?: string,
+  annualSolarGenerationKwh?: number,
+  energySavings?: number,
+  disclaimerText?: string,
 ): Promise<Uint8Array> {
-  const GREEN = hexToRgb('#28AA48');
-  const GREEN2 = hexToRgb('#7DC241');
-  const DARK = hexToRgb('#1F2937');
-  const GRAY = hexToRgb('#6B7280');
-  const LIGHT_GRAY = hexToRgb('#9CA3AF');
-  const GREEN_BOX_BG = hexToRgb('#3DAA3A');
-  const GREEN_BOX_BG2 = hexToRgb('#8DC63F');
-  const ROW_ALT = hexToRgb('#F3F4F6');
-  const BORDER_COLOR = hexToRgb('#D1D5DB');
-  const NOTE_BG = hexToRgb('#3DAA3A');
-
   const pdfDoc = await PDFDocument.create();
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontB = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const pageWidth = PageSizes.A4[0];
-  const pageHeight = PageSizes.A4[1];
-  const ML = 50;
-  const MR = 50;
-  const CW = pageWidth - ML - MR;
-  const netCapex = projectCost / 1.1;
+  const W = PageSizes.A4[0];
+  const H = PageSizes.A4[1];
+  const PL = 40;
+  const PR = 40;
+  const CW = W - PL - PR;
 
-  const validUntilDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const validUntil = validUntilDate.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
+  const isLowDoc = projectCost < 250000;
+  const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
+  const hasSavings = !!(energySavings && energySavings > 0);
 
-  const preparedFor = recipientCompany || recipientName || '';
+  function tw(text: string, bold: boolean, size: number): number {
+    return (bold ? fontB : fontR).widthOfTextAtSize(String(text ?? ''), size);
+  }
 
-  function wrapText(text: string, font: typeof fontRegular, size: number, maxW: number): string[] {
+  function dt(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, y: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, opacity = 1) {
+    const font = bold ? fontB : fontR;
+    page.drawText(String(text ?? ''), { x, y, size, font, color: rgb(color.r, color.g, color.b), opacity });
+  }
+
+  function dr(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, color: { r: number; g: number; b: number }, opacity = 1, borderColor?: { r: number; g: number; b: number }, borderWidth = 0) {
+    page.drawRectangle({
+      x, y, width: w, height: h,
+      color: rgb(color.r, color.g, color.b),
+      opacity,
+      ...(borderColor ? { borderColor: rgb(borderColor.r, borderColor.g, borderColor.b), borderWidth } : {}),
+    });
+  }
+
+  function dl(page: ReturnType<typeof pdfDoc.addPage>, x1: number, y1: number, x2: number, y2: number, color: { r: number; g: number; b: number }, thickness = 0.5) {
+    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color: rgb(color.r, color.g, color.b) });
+  }
+
+  function wrapText(text: string, bold: boolean, size: number, maxW: number): string[] {
     const words = String(text ?? '').split(' ');
     const lines: string[] = [];
     let current = '';
     for (const w of words) {
       const test = current ? `${current} ${w}` : w;
-      if (font.widthOfTextAtSize(test, size) > maxW && current) {
+      if (tw(test, bold, size) > maxW && current) {
         lines.push(current);
         current = w;
       } else {
@@ -120,261 +172,391 @@ async function generateQuotePdf(
     return lines;
   }
 
-  function drawTextWrapped(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxW: number, lineH?: number): number {
-    const font = bold ? fontBold : fontRegular;
-    const lh = lineH ?? size * 1.45;
-    const lines = wrapText(text, font, size, maxW);
-    let curY = py;
+  function dtWrapped(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, y: number, size: number, bold: boolean, color: { r: number; g: number; b: number }, maxW: number, lineH?: number): number {
+    const lh = lineH ?? size * 1.5;
+    const lines = wrapText(text, bold, size, maxW);
+    let curY = y;
     for (const line of lines) {
-      page.drawText(line, { x, y: curY, size, font, color: rgb(color.r, color.g, color.b) });
+      dt(page, line, x, curY, size, bold, color);
       curY -= lh;
     }
-    return py - curY;
+    return y - curY;
   }
 
-  function drawT(page: ReturnType<typeof pdfDoc.addPage>, text: string, x: number, py: number, size: number, bold: boolean, color: { r: number; g: number; b: number }) {
-    const font = bold ? fontBold : fontRegular;
-    page.drawText(String(text ?? ''), { x, y: py, size, font, color: rgb(color.r, color.g, color.b) });
+  function drawPageHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
+    const headerH = 56;
+    const gradMidX = W * 0.55;
+    dr(page, 0, topY - headerH, W * 0.55, headerH, C.DARK);
+    dr(page, gradMidX - 1, topY - headerH, W - gradMidX + 1, headerH, C.DARK2);
+
+    const logoText = 'Green Funding';
+    dt(page, logoText, PL, topY - 22, 15, true, C.WHITE);
+    const subText = 'Finance Solutions for Clean Energy';
+    dt(page, subText, PL, topY - 36, 7, false, { r: 1, g: 1, b: 1 }, 0.6);
+
+    const qnLabel = 'Finance Quote';
+    const qnLabelW = tw(qnLabel, false, 7);
+    dt(page, qnLabel, W - PR - qnLabelW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.6);
+    const qnW = tw(quoteNumber, true, 11);
+    dt(page, quoteNumber, W - PR - qnW, topY - 30, 11, true, C.WHITE);
+    const qdW = tw(quoteDate, false, 8);
+    dt(page, quoteDate, W - PR - qdW, topY - 42, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
+
+    return topY - headerH;
   }
 
-  function drawRect(page: ReturnType<typeof pdfDoc.addPage>, x: number, py: number, w: number, h: number, color: { r: number; g: number; b: number }) {
-    page.drawRectangle({ x, y: py, width: w, height: h, color: rgb(color.r, color.g, color.b) });
+  function drawMiniHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
+    const headerH = 40;
+    dr(page, 0, topY - headerH, W * 0.55, headerH, C.DARK);
+    dr(page, W * 0.55 - 1, topY - headerH, W - W * 0.55 + 1, headerH, C.DARK2);
+
+    dt(page, 'Green Funding', PL, topY - 16, 12, true, C.WHITE);
+    const qnW = tw(quoteNumber, false, 7);
+    dt(page, quoteNumber, W - PR - qnW, topY - 14, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    const qdW = tw(quoteDate, false, 7);
+    dt(page, quoteDate, W - PR - qdW, topY - 25, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
+
+    return topY - headerH;
   }
 
-  function drawLine(page: ReturnType<typeof pdfDoc.addPage>, x1: number, py: number, x2: number, color: { r: number; g: number; b: number }, thickness = 0.75) {
-    page.drawLine({ start: { x: x1, y: py }, end: { x: x2, y: py }, thickness, color: rgb(color.r, color.g, color.b) });
+  function drawPageFooter(page: ReturnType<typeof pdfDoc.addPage>) {
+    const footerH = 24;
+    const footerY = 0;
+    dr(page, 0, footerY, W * 0.55, footerH, C.DARK);
+    dr(page, W * 0.55 - 1, footerY, W - W * 0.55 + 1, footerH, C.DARK2);
+    const footerText = 'This quote is indicative only and subject to credit approval. Valid for 30 days.';
+    const ftW = tw(footerText, false, 6.5);
+    dt(page, footerText, (W - ftW) / 2, footerY + 8, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
   }
 
-  function drawBorderedBox(page: ReturnType<typeof pdfDoc.addPage>, x: number, py: number, w: number, h: number) {
-    page.drawRectangle({ x, y: py, width: w, height: h, borderColor: rgb(BORDER_COLOR.r, BORDER_COLOR.g, BORDER_COLOR.b), borderWidth: 1, color: rgb(1, 1, 1) });
+  function drawSectionLabel(page: ReturnType<typeof pdfDoc.addPage>, label: string, x: number, y: number) {
+    dt(page, label.toUpperCase(), x, y, 7, true, C.GRAY_LIGHT);
   }
 
-  function textW(text: string, bold: boolean, size: number) {
-    return (bold ? fontBold : fontRegular).widthOfTextAtSize(String(text ?? ''), size);
+  function drawLabelValue(page: ReturnType<typeof pdfDoc.addPage>, label: string, value: string, x: number, y: number, maxW: number): number {
+    dt(page, label, x, y, 7, true, C.GRAY_TEXT);
+    return dtWrapped(page, value, x, y - 12, 9, true, C.DARK_TEXT, maxW, 13);
+  }
+
+  function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }) {
+    dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0);
+    const lW = tw(label, false, 7);
+    dt(page, label, x + (w - lW) / 2, y - 13, 7, false, labelColor);
+    const vLines = wrapText(value, bold, bold ? 11 : 9, w - 12);
+    const vH = vLines.length * 14;
+    const vStartY = y - h / 2 - vH / 2 + (vLines.length > 1 ? 6 : 2);
+    for (let i = 0; i < vLines.length; i++) {
+      const vW = tw(vLines[i], bold, bold ? 11 : 9);
+      dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, bold ? 11 : 9, bold, valueColor);
+    }
   }
 
   function drawPage1() {
-    const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let y = pageHeight - 48;
+    const page = pdfDoc.addPage([W, H]);
+    let y = H;
 
-    // === LOGO top-left ===
-    // "green" in green, "funding" in dark
-    const logoSize = 22;
-    drawT(page, 'green', ML, y, logoSize, false, GREEN);
-    const greenW = textW('green', false, logoSize);
-    drawT(page, ' funding', ML + greenW, y, logoSize, false, DARK);
+    y = drawPageHeader(page, y);
+    y -= 16;
 
-    // === DATE BOX top-right ===
-    const boxW = 150;
-    const boxH = 80;
-    const boxX = pageWidth - MR - boxW;
-    const boxY = y - boxH + 14;
-    drawBorderedBox(page, boxX, boxY, boxW, boxH);
+    const colW = (CW - 8) / 2;
 
-    const dateLabel = 'Quotation Date';
-    drawT(page, dateLabel, boxX + (boxW - textW(dateLabel, false, 9)) / 2, y, 9, false, DARK);
-    drawT(page, quoteDate, boxX + (boxW - textW(quoteDate, true, 16)) / 2, y - 18, 16, true, GREEN);
-    const quoteLabel = 'Quote No:';
-    drawT(page, quoteLabel, boxX + (boxW - textW(quoteLabel, false, 9)) / 2, y - 36, 9, false, DARK);
-    drawT(page, quoteNumber, boxX + (boxW - textW(quoteNumber, true, 15)) / 2, y - 52, 15, true, GREEN);
+    dr(page, PL, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75);
+    dr(page, PL + colW + 8, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75);
 
-    y -= 50;
-
-    // === FROM section ===
-    drawT(page, 'FROM', ML, y, 9, true, GREEN);
-    drawLine(page, ML, y - 3, ML + 45, GREEN, 1.5);
-    y -= 18;
-
-    drawT(page, 'Green Funding', ML, y, 10, true, DARK);
-    y -= 14;
-    drawT(page, 'Level 18, 324 Queen Street, Brisbane QLD 4000', ML, y, 9, false, DARK);
-    y -= 13;
-    drawT(page, '1300 403 100', ML, y, 9, false, DARK);
-    y -= 13;
-    drawT(page, 'solutions@greenfunding.com.au', ML, y, 9, false, DARK);
-    y -= 13;
-    drawT(page, 'greenfunding.com.au', ML, y, 9, false, DARK);
-    y -= 22;
-
-    // === PREPARED FOR section ===
-    drawT(page, 'PREPARED FOR', ML, y, 9, true, GREEN);
-    drawLine(page, ML, y - 3, ML + 70, GREEN, 1.5);
-    y -= 20;
-
-    if (preparedFor) {
-      drawT(page, preparedFor, ML, y, 16, true, DARK);
-      y -= 20;
+    drawSectionLabel(page, 'Prepared By', PL + 10, y - 10);
+    let byY = y - 24;
+    if (installerCompany) {
+      byY -= dtWrapped(page, installerCompany, PL + 10, byY, 9, true, C.DARK_TEXT, colW - 20, 13);
+    }
+    if (installerName && installerCompany) {
+      dt(page, installerName, PL + 10, byY, 8, false, C.GRAY_TEXT);
+      byY -= 12;
+    } else if (installerName) {
+      byY -= dtWrapped(page, installerName, PL + 10, byY, 9, true, C.DARK_TEXT, colW - 20, 13);
+    }
+    if (installerEmail) {
+      dt(page, installerEmail, PL + 10, byY, 7.5, false, C.GRAY_TEXT);
+      byY -= 11;
+    }
+    if (installerPhone) {
+      dt(page, installerPhone, PL + 10, byY, 7.5, false, C.GRAY_TEXT);
     }
 
-    if (recipientName && recipientCompany) {
-      drawT(page, recipientName, ML, y, 10, false, DARK);
-      y -= 13;
-    }
-
+    const forX = PL + colW + 18;
+    drawSectionLabel(page, 'Prepared For', forX, y - 10);
+    let forY = y - 24;
+    forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9, true, C.DARK_TEXT, colW - 20, 13);
     if (siteAddress) {
-      drawT(page, siteAddress, ML, y, 9, false, GRAY);
-      y -= 13;
+      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 20, 11);
     }
-
+    if (clientEmail) {
+      dt(page, clientEmail, forX, forY, 7.5, false, C.GRAY_TEXT);
+      forY -= 11;
+    }
     if (clientPhone) {
-      drawT(page, clientPhone, ML, y, 9, false, GRAY);
-      y -= 13;
+      dt(page, clientPhone, forX, forY, 7.5, false, C.GRAY_TEXT);
     }
 
-    y -= 4;
-    drawT(page, 'Project Funding Summary', ML, y, 12, true, DARK);
-    y -= 22;
+    y -= 92;
 
-    // === WATERMARK CIRCLES (decorative, light green) ===
-    const WATERMARK = { r: 0.16, g: 0.67, b: 0.28 };
-    page.drawCircle({ x: pageWidth - 30, y: pageHeight * 0.42, size: 130, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.07 });
-    page.drawCircle({ x: pageWidth + 20, y: pageHeight * 0.38, size: 90, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.05 });
-    page.drawCircle({ x: pageWidth - 60, y: pageHeight * 0.28, size: 60, color: rgb(WATERMARK.r, WATERMARK.g, WATERMARK.b), opacity: 0.06 });
+    drawSectionLabel(page, 'Project Summary', PL, y);
+    y -= 14;
 
-    // === GREEN SUMMARY BOX ===
-    const summaryLines: string[] = [];
-    if (systemSize) summaryLines.push(`System: ${systemSize}`);
-    if (contribution) summaryLines.push(`Contribution: ${contribution}`);
-    summaryLines.push(`Net Capex: $ ${netCapex.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (ex. GST)`);
+    const cardCount = 2 + (systemSize ? 1 : 0) + (hasSolar && annualSolarGenerationKwh ? 1 : 0);
+    const cardGap = 6;
+    const cardW = (CW - cardGap * (cardCount - 1)) / cardCount;
+    const cardH = 52;
 
-    const summaryLineH = 18;
-    const summaryPadV = 14;
-    const summaryH = summaryLines.length * summaryLineH + summaryPadV * 2 - 4;
+    drawInfoCard(page, PL, y, cardW, cardH, 'Project Cost', formatCurrencyAU(projectCost), true, C.GREEN, { r: 1, g: 1, b: 1 }, C.WHITE);
 
-    drawRect(page, ML, y - summaryH, CW, summaryH, GREEN_BOX_BG);
-    drawRect(page, ML + CW * 0.5, y - summaryH, CW * 0.5, summaryH, GREEN_BOX_BG2);
+    const assetText = assetNames.join(', ') || 'N/A';
+    drawInfoCard(page, PL + cardW + cardGap, y, cardW, cardH, 'Equipment', assetText, false, C.GRAY_BG2, C.GRAY_TEXT, C.DARK_TEXT, C.BORDER2);
 
-    let sy = y - summaryPadV - 2;
-    for (const line of summaryLines) {
-      const colonIdx = line.indexOf(':');
-      if (colonIdx > -1) {
-        const label = line.substring(0, colonIdx + 1);
-        const val = line.substring(colonIdx + 1);
-        drawT(page, label, ML + 12, sy, 10, true, { r: 1, g: 1, b: 1 });
-        drawT(page, val, ML + 12 + textW(label, true, 10) + 3, sy, 10, false, { r: 1, g: 1, b: 1 });
-      } else {
-        drawT(page, line, ML + 12, sy, 10, false, { r: 1, g: 1, b: 1 });
+    if (systemSize) {
+      drawInfoCard(page, PL + (cardW + cardGap) * 2, y, cardW, cardH, 'System Size', systemSize, true, C.GRAY_BG2, C.GRAY_TEXT, C.DARK_TEXT, C.BORDER2);
+    }
+
+    if (hasSolar && annualSolarGenerationKwh) {
+      const idx = systemSize ? 3 : 2;
+      drawInfoCard(page, PL + (cardW + cardGap) * idx, y, cardW, cardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.GRAY_BG2, C.GRAY_TEXT, C.DARK_TEXT, C.BORDER2);
+    }
+
+    y -= cardH + 18;
+
+    if (hasSolar && annualSolarGenerationKwh) {
+      drawSectionLabel(page, 'Solar Generation Details', PL, y);
+      y -= 14;
+
+      const solCardGap = 6;
+      const solCardCount = 1 + (hasSavings ? 1 : 0) + sortedTerms.filter(t => t.costPerKwhCents && t.costPerKwhCents > 0).length;
+      const solCardW = (CW - solCardGap * (solCardCount - 1)) / solCardCount;
+      const solCardH = 52;
+
+      drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER);
+
+      let solIdx = 1;
+      if (hasSavings && energySavings) {
+        drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, 'Est. Annual Savings', formatCurrencyAU(energySavings), true, C.GREEN_LIGHT, C.GREEN, C.GREEN, C.GREEN_BORDER);
+        solIdx++;
       }
-      sy -= summaryLineH;
+
+      for (const t of sortedTerms) {
+        if (t.costPerKwhCents && t.costPerKwhCents > 0) {
+          drawInfoCard(page, PL + (solCardW + solCardGap) * solIdx, y, solCardW, solCardH, `Cost/kWh (${t.years}yr)`, `${t.costPerKwhCents.toFixed(2)}c`, true, C.BLUE_BG, C.BLUE_TEXT, C.BLUE_TEXT, C.BLUE_BORDER);
+          solIdx++;
+        }
+      }
+
+      y -= solCardH + 18;
     }
-    y -= summaryH + 18;
 
-    // === TERM TABLE ===
-    const sortedTermOptions = [...termOptions].sort((a, b) => a.years - b.years);
+    drawSectionLabel(page, 'Repayment Options', PL, y);
+    y -= 14;
 
-    const termHeaderH = 28;
-    const termHeaderLabel = 'Term';
-    const repaymentHeaderLabel = 'Monthly Repayment (ex GST)';
-    drawT(page, termHeaderLabel, ML + 8, y - 16, 9, false, GRAY);
-    drawT(page, repaymentHeaderLabel, pageWidth - MR - textW(repaymentHeaderLabel, false, 9) - 8, y - 16, 9, false, GRAY);
-    y -= termHeaderH;
+    const tableHeaderH = 28;
+    const hasInterest = sortedTerms.some(t => t.interestRate !== undefined);
+    const hasTotalFinanced = sortedTerms.some(t => t.totalFinanced !== undefined);
 
-    drawLine(page, ML, y, ML + CW, BORDER_COLOR);
-    y -= 8;
+    const col1W = 130;
+    const col2W = hasTotalFinanced || hasInterest ? (CW - col1W) / 3 : CW - col1W;
+    const col3W = hasTotalFinanced ? (CW - col1W) / 3 : 0;
+    const col4W = hasInterest ? (CW - col1W) / 3 : 0;
 
-    sortedTermOptions.forEach((t, i) => {
+    dr(page, PL, y - tableHeaderH, CW * 0.5, tableHeaderH, C.DARK);
+    dr(page, PL + CW * 0.5 - 1, y - tableHeaderH, CW * 0.5 + 1, tableHeaderH, C.DARK2);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0);
+
+    dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    dt(page, 'Monthly Repayment', PL + col1W + col2W - tw('Monthly Repayment', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    if (hasTotalFinanced && col3W > 0) {
+      dt(page, 'Total Financed', PL + col1W + col2W + col3W - tw('Total Financed', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    }
+    if (hasInterest && col4W > 0) {
+      dt(page, 'Interest Rate', W - PR - tw('Interest Rate', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    }
+
+    y -= tableHeaderH;
+
+    dr(page, PL, y - tableHeaderH * sortedTerms.length, CW, tableHeaderH * sortedTerms.length, C.WHITE, 1, C.BORDER, 0.75);
+
+    sortedTerms.forEach((t, i) => {
       const rowH = 28;
+      const rowY = y - rowH * i;
       if (i % 2 !== 0) {
-        drawRect(page, ML, y - rowH + 6, CW, rowH, ROW_ALT);
+        dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
       }
-      drawLine(page, ML, y + 6, ML + CW, BORDER_COLOR, 0.5);
+      dl(page, PL, rowY, PL + CW, rowY, C.BORDER, 0.5);
+
+      const dotX = PL + 16;
+      const dotY = rowY - rowH / 2 - 1;
+      page.drawCircle({ x: dotX, y: dotY, size: 3, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
+
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      drawT(page, termLabel, ML + 8, y - 10, 11, false, DARK);
-      const amtFormatted = '$ ' + t.monthlyPayment.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      drawT(page, amtFormatted, pageWidth - MR - textW(amtFormatted, true, 11) - 8, y - 10, 11, true, DARK);
-      y -= rowH;
+      dt(page, termLabel, PL + 26, rowY - rowH / 2 - 4, 9.5, true, C.DARK_TEXT);
+
+      const amtText = formatCurrencyDecimals(t.monthlyPayment);
+      const amtW = tw(amtText, true, 11);
+      dt(page, amtText, PL + col1W + col2W - amtW - 10, rowY - rowH / 2 - 4, 11, true, C.GREEN);
+      const moLabel = '/mo';
+      dt(page, moLabel, PL + col1W + col2W - 10, rowY - rowH / 2 - 3, 7, false, C.GRAY_LIGHT);
+
+      if (hasTotalFinanced && t.totalFinanced !== undefined && col3W > 0) {
+        const tfText = formatCurrencyAU(t.totalFinanced);
+        const tfW = tw(tfText, false, 8.5);
+        dt(page, tfText, PL + col1W + col2W + col3W - tfW - 10, rowY - rowH / 2 - 4, 8.5, false, C.GRAY_TEXT);
+      }
+
+      if (hasInterest && t.interestRate !== undefined && col4W > 0) {
+        const irText = `${(t.interestRate * 100).toFixed(2)}%`;
+        const irW = tw(irText, false, 8.5);
+        dt(page, irText, W - PR - irW - 10, rowY - rowH / 2 - 4, 8.5, false, C.GRAY_TEXT);
+      }
     });
 
-    y -= 24;
+    y -= tableHeaderH * sortedTerms.length;
 
-    // === NOTES SECTION ===
-    drawT(page, 'Notes', ML, y, 13, false, GREEN);
-    drawLine(page, ML, y - 4, ML + 38, GREEN, 1);
-    y -= 22;
-    drawT(page, 'Quote valid for 30 days', ML, y, 12, true, DARK);
-    y -= 18;
+    const noteText = `* All repayments include GST. Quote valid for 30 days from ${quoteDate}.`;
+    dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
+    y -= 28;
 
-    const d1 = `This is not an offer for finance. This quote is provided for informational purposes only and does not constitute a legally binding offer or agreement. All pricing, system specifications, and financial projections are indicative and subject to change following a detailed site inspection, technical assessment, and credit approval.`;
-    const d1H = drawTextWrapped(page, d1, ML, y, 9, false, hexToRgb('#374151'), CW, 14);
-    y -= d1H + 14;
-
-    const d2 = `Green Funding is a trading name of Vincent Capital Pty Ltd. Credit Representative Number 545720 of QED Credit Services Pty Ltd | Australian Credit Licence Number 387856. All finance is subject to credit provider's lending criteria. Fees, terms, and conditions apply.`;
-    drawTextWrapped(page, d2, ML, y, 8, false, LIGHT_GRAY, CW, 13);
-
-    // === GREEN FOOTER BAR ===
-    const footerH = 18;
-    drawRect(page, ML, 28, CW, footerH, GREEN_BOX_BG);
-    drawRect(page, ML + CW * 0.5, 28, CW * 0.5, footerH, GREEN_BOX_BG2);
+    drawPageFooter(page);
   }
 
   function drawPage2() {
-    const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    let y = pageHeight - 48;
+    const page = pdfDoc.addPage([W, H]);
+    let y = H;
 
-    drawT(page, 'green', ML, y, 22, false, GREEN);
-    const gw = textW('green', false, 22);
-    drawT(page, ' funding', ML + gw, y, 22, false, DARK);
-    y -= 50;
-
-    const isLowDoc = projectCost <= 250000;
-
-    drawT(page, isLowDoc ? 'Low Doc Requirements' : 'Full Doc Requirements', ML, y, 14, true, GREEN);
-    y -= 18;
-
-    const descText = isLowDoc
-      ? `Your project cost of ${formatCurrency(projectCost)} qualifies for our Low Doc finance pathway. This is a streamlined process requiring minimal documentation.`
-      : `Your project cost of ${formatCurrency(projectCost)} requires our Full Doc finance pathway. Please prepare the documentation listed below.`;
-    const descH = drawTextWrapped(page, descText, ML, y, 10, false, GRAY, CW, 15);
-    y -= descH + 16;
-
-    const lowDocItems = [
-      'Completed Finance Application',
-      '6 months business bank statements',
-      "Installer's quote / invoice",
-      'Signed Privacy Consent & Acknowledgement',
-    ];
-    const fullDocItems = [
-      'Completed Finance Application',
-      '2 years financial statements (P&L and Balance Sheet)',
-      '2 years tax returns (business and individual)',
-      '6 months business bank statements',
-      "Installer's quote / invoice",
-      'Signed Privacy Consent & Acknowledgement',
-    ];
-    const items = isLowDoc ? lowDocItems : fullDocItems;
-
-    items.forEach((item, i) => {
-      const rowH = 30;
-      drawRect(page, ML, y - rowH + 4, CW, rowH, i % 2 === 0 ? ROW_ALT : { r: 1, g: 1, b: 1 });
-      drawRect(page, ML + 8, y - rowH + 9, 18, 18, GREEN);
-      const numStr = String(i + 1);
-      drawT(page, numStr, ML + 8 + (18 - textW(numStr, true, 9)) / 2, y - rowH + 17, 9, true, { r: 1, g: 1, b: 1 });
-      drawT(page, item, ML + 34, y - 12, 10, false, DARK);
-      y -= rowH;
-    });
-
-    y -= 24;
-    drawLine(page, ML, y, ML + CW, BORDER_COLOR);
+    y = drawMiniHeader(page, y);
     y -= 20;
 
-    drawT(page, 'Ready to Proceed?', ML, y, 13, true, DARK);
+    drawSectionLabel(page, "What You'll Need to Apply", PL, y);
     y -= 16;
-    drawT(page, 'Contact our team to get started with your application.', ML, y, 10, false, GRAY);
+
+    if (isLowDoc) {
+      let lowDocTitle: string;
+      let lowDocItems: Array<{ label: string; url?: string }>;
+
+      if (projectCost >= 150000) {
+        lowDocTitle = 'Low Doc Requirements ($150k\u2013$250k)';
+        lowDocItems = [
+          { label: 'Invoice to be financed' },
+          { label: "Directors Drivers Licence & Medicare card" },
+          { label: '6 months Bank Statements', url: 'scv.bankstatements.com.au/HSHV' },
+          { label: 'Privacy Consent', url: 'drive.google.com' },
+          { label: 'Asset and Liability statement', url: 'drive.google.com' },
+        ];
+      } else {
+        lowDocTitle = 'Low Doc Requirements (up to $150k)';
+        lowDocItems = [
+          { label: 'Invoice to be financed' },
+          { label: "Directors Drivers Licence & Medicare card" },
+          { label: 'Privacy Consent', url: 'drive.google.com' },
+          { label: 'Asset and Liability statement', url: 'drive.google.com' },
+        ];
+      }
+
+      dt(page, lowDocTitle, PL, y, 10, true, C.DARK_TEXT);
+      y -= 16;
+
+      for (const item of lowDocItems) {
+        const rowH = 28;
+        dr(page, PL, y - rowH, CW, rowH, C.GRAY_BG, 1, C.BORDER, 0.75);
+        page.drawCircle({ x: PL + 14, y: y - rowH / 2 - 1, size: 6, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
+        dt(page, '\u2713', PL + 10.5, y - rowH / 2 - 3.5, 7, true, C.WHITE);
+        const maxItemW = CW - 30 - (item.url ? 90 : 0);
+        dtWrapped(page, item.label, PL + 26, y - rowH / 2 - 3, 8.5, false, C.DARK_TEXT, maxItemW, 12);
+        if (item.url) {
+          dt(page, `[Download]`, W - PR - tw('[Download]', false, 7.5), y - rowH / 2 - 3, 7.5, false, C.GREEN);
+        }
+        y -= rowH + 4;
+      }
+    } else {
+      dt(page, 'Full Doc Requirements', PL, y, 10, true, C.DARK_TEXT);
+      y -= 16;
+
+      const fullDocRows = [
+        { document: 'FY24 & FY25 Accountant prepared financials', u500: true, m500: true, o1m: true },
+        { document: 'Mgt YTD Dec 25 Financials', u500: true, m500: true, o1m: true },
+        { document: 'Finance Commitment Schedule', u500: true, m500: true, o1m: true },
+        { document: 'Current ATO Portal Statement', u500: true, m500: true, o1m: true },
+        { document: 'Business Overview and Major Clients', u500: true, m500: true, o1m: true },
+        { document: 'Asset and Liability', u500: true, m500: true, o1m: true },
+        { document: 'Aged Debtors and Creditors', u500: false, m500: true, o1m: true },
+        { document: 'Cashflow Projections', u500: false, m500: false, o1m: true },
+      ];
+
+      const tableHeaderH = 26;
+      dr(page, PL, y - tableHeaderH, CW * 0.5, tableHeaderH, C.DARK);
+      dr(page, PL + CW * 0.5 - 1, y - tableHeaderH, CW * 0.5 + 1, tableHeaderH, C.DARK2);
+
+      const docColW = CW * 0.55;
+      const checkColW = (CW - docColW) / 3;
+
+      dt(page, 'Document', PL + 10, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '<$500k', PL + docColW + checkColW / 2 - tw('<$500k', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '$500k\u2013$1m', PL + docColW + checkColW * 1.5 - tw('$500k\u2013$1m', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '$1m+', PL + docColW + checkColW * 2.5 - tw('$1m+', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+
+      y -= tableHeaderH;
+
+      dr(page, PL, y - 24 * fullDocRows.length, CW, 24 * fullDocRows.length, C.WHITE, 1, C.BORDER, 0.75);
+
+      fullDocRows.forEach((row, i) => {
+        const rowH = 24;
+        const rowY = y - rowH * i;
+        if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
+        dl(page, PL, rowY, PL + CW, rowY, C.BORDER, 0.4);
+
+        const isApplicable =
+          (projectCost < 500000 && row.u500) ||
+          (projectCost >= 500000 && projectCost < 1000000 && row.m500) ||
+          (projectCost >= 1000000 && row.o1m);
+
+        dt(page, row.document, PL + 10, rowY - rowH / 2 - 3.5, 8, false, isApplicable ? C.DARK_TEXT : C.GRAY_LIGHT);
+
+        [[row.u500, 0.5], [row.m500, 1.5], [row.o1m, 2.5]].forEach(([val, multiplier]) => {
+          const cx = PL + docColW + checkColW * (multiplier as number);
+          const cy = rowY - rowH / 2;
+          const r = 7;
+          if (val) {
+            page.drawCircle({ x: cx, y: cy, size: r, color: rgb(C.GREEN_LIGHT.r, C.GREEN_LIGHT.g, C.GREEN_LIGHT.b) });
+            dt(page, '\u2713', cx - 3.5, cy - 3, 8, true, C.GREEN);
+          } else {
+            page.drawCircle({ x: cx, y: cy, size: r, color: rgb(0.99, 0.9, 0.9) });
+            dt(page, 'x', cx - 3, cy - 3.5, 8, true, { r: 0.8, g: 0.2, b: 0.2 });
+          }
+        });
+      });
+
+      y -= 24 * fullDocRows.length;
+    }
+
     y -= 20;
 
-    drawRect(page, ML, y - 54, CW, 54, ROW_ALT);
-    drawT(page, 'solutions@greenfunding.com.au', ML + 14, y - 16, 10, false, GREEN);
-    drawT(page, '1300 403 100', ML + 14, y - 32, 10, false, GREEN);
+    const getStartedH = 64;
+    dr(page, PL, y - getStartedH, CW, getStartedH, C.GRAY_BG, 1, C.BORDER, 0.75);
 
-    const contactRight = installerName || installerCompany
-      ? [installerName, installerCompany].filter(Boolean).join(' | ')
-      : 'greenfunding.com.au';
-    drawT(page, contactRight, pageWidth - MR - textW(contactRight, false, 9) - 14, y - 16, 9, false, DARK);
+    drawSectionLabel(page, 'Get Started', PL + 14, y - 10);
+    const contactText = 'Contact your Green Funding representative to begin the application process.';
+    dtWrapped(page, contactText, PL + 14, y - 22, 8, false, C.GRAY_TEXT, CW / 2 - 20, 12);
 
-    page.drawText('greenfunding.com.au', {
-      x: pageWidth / 2 - fontRegular.widthOfTextAtSize('greenfunding.com.au', 8) / 2,
-      y: 20, size: 8, font: fontRegular, color: rgb(LIGHT_GRAY.r, LIGHT_GRAY.g, LIGHT_GRAY.b),
-    });
+    const contactRightX = PL + CW / 2 + 14;
+    dt(page, 'Phone:', contactRightX, y - 22, 8, true, C.DARK_TEXT);
+    dt(page, '1300 GET GFN', contactRightX + tw('Phone: ', true, 8), y - 22, 8, false, C.GRAY_TEXT);
+    dt(page, 'Email:', contactRightX, y - 34, 8, true, C.DARK_TEXT);
+    dt(page, 'info@greenfunding.com.au', contactRightX + tw('Email: ', true, 8), y - 34, 8, false, C.GRAY_TEXT);
+    dt(page, 'Web:', contactRightX, y - 46, 8, true, C.DARK_TEXT);
+    dt(page, 'www.greenfunding.com.au', contactRightX + tw('Web: ', true, 8), y - 46, 8, false, C.GRAY_TEXT);
+
+    y -= getStartedH + 16;
+
+    if (disclaimerText) {
+      const disclaimerH = 36 + dtWrapped(page, disclaimerText, PL + 12, y - 20, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
+      dr(page, PL, y - disclaimerH, CW, disclaimerH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75);
+      dtWrapped(page, disclaimerText, PL + 12, y - 14, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
+    }
+
+    drawPageFooter(page);
   }
 
   drawPage1();
@@ -718,7 +900,6 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
-      contribution,
       clientPhone,
       projectCost,
       selectedAssetIds,
@@ -728,6 +909,11 @@ Deno.serve(async (req: Request) => {
       installerId,
       introEmailSubject,
       introEmailBody,
+      annualSolarGenerationKwh,
+      energySavings,
+      disclaimerText,
+      installerEmail: payloadInstallerEmail,
+      installerPhone: payloadInstallerPhone,
     } = payload;
 
     if (!termOptions || termOptions.length === 0) {
@@ -756,15 +942,20 @@ Deno.serve(async (req: Request) => {
 
     let installerName: string | undefined;
     let installerCompany: string | undefined;
+    let installerEmail: string | undefined = payloadInstallerEmail;
+    let installerPhone: string | undefined = payloadInstallerPhone;
+
     if (installerId) {
       const { data: installer } = await supabase
         .from('installer_users')
-        .select('full_name, company_name')
+        .select('full_name, company_name, email, phone_number')
         .eq('id', installerId)
         .maybeSingle();
       if (installer) {
         installerName = installer.full_name;
         installerCompany = installer.company_name;
+        if (!installerEmail) installerEmail = installer.email;
+        if (!installerPhone) installerPhone = installer.phone_number;
       }
     }
 
@@ -806,14 +997,18 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
-      contribution,
       projectCost,
       assetNames,
       termOptions,
       installerName,
       installerCompany,
+      installerEmail,
+      installerPhone,
       clientPhone,
-      null
+      recipientEmail,
+      annualSolarGenerationKwh,
+      energySavings,
+      disclaimerText,
     );
 
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);
@@ -836,7 +1031,7 @@ Deno.serve(async (req: Request) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, quoteNumber, quoteId: quoteRecord.id, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf`, pdfUrl }),
+        JSON.stringify({ success: true, quoteNumber, quoteId: quoteRecord.id, pdfBase64, filename: `GreenFunding-Quote-${quoteNumber}.pdf`, pdfUrl, assetNames }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -857,7 +1052,7 @@ Deno.serve(async (req: Request) => {
       recipientCompany,
       siteAddress,
       systemSize,
-      contribution,
+      undefined,
       projectCost,
       assetNames,
       termOptions,

@@ -342,6 +342,7 @@ export function Step3() {
             monthlyPayment: t.monthlyPayment,
             interestRate: t.interestRate,
             totalFinanced: t.totalFinanced,
+            costPerKwhCents: t.costPerKwh ?? undefined,
           })),
           paymentTiming: state.paymentTiming,
           calculatorType: state.calculatorType,
@@ -351,6 +352,10 @@ export function Step3() {
           siteAddress: quoteClientFields.clientAddress.trim() || undefined,
           clientPhone: quoteClientFields.companyPhone.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
+          annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
+          energySavings: state.energySavings || undefined,
+          installerEmail: installerProfile?.email || user?.email || undefined,
+          installerPhone: installerProfile?.phone_number || undefined,
         }),
       });
       const result = await response.json();
