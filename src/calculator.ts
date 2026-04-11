@@ -10,6 +10,12 @@ export interface InterestRateTier {
   rate: number;
 }
 
+export interface TermRateAdjustment {
+  minTermYears: number;
+  maxTermYears: number | null;
+  rateAdjustment: number;
+}
+
 export interface ProgressPayment {
   percentage: number;
   daysAfterStart: number;
@@ -23,6 +29,7 @@ export interface CalculatorConfig {
   rateUnder5Years?: number;
   rate5YearsAndAbove?: number;
   interestRateTiers: InterestRateTier[];
+  termRateAdjustments?: TermRateAdjustment[];
   repaymentType: 'amortised' | 'interest_only';
   paymentTiming?: 'advance' | 'arrears';
   feesEnabled: boolean;
@@ -90,15 +97,30 @@ export interface ProgressPaymentBreakdown {
 }
 
 export function calculateRateUsed(config: CalculatorConfig, loanTermYears?: number, projectCost?: number): number {
+  let baseRate = 0;
+
   if (config.interestRateTiers && config.interestRateTiers.length > 0 && projectCost !== undefined) {
     for (const tier of config.interestRateTiers) {
       if (projectCost >= tier.minAmount && (tier.maxAmount === null || projectCost <= tier.maxAmount)) {
-        return tier.rate;
+        baseRate = tier.rate;
+        break;
       }
     }
-    return config.interestRateTiers[config.interestRateTiers.length - 1].rate;
+    if (baseRate === 0) {
+      baseRate = config.interestRateTiers[config.interestRateTiers.length - 1].rate;
+    }
   }
-  return 0;
+
+  if (loanTermYears !== undefined && config.termRateAdjustments && config.termRateAdjustments.length > 0) {
+    for (const adj of config.termRateAdjustments) {
+      if (loanTermYears >= adj.minTermYears && (adj.maxTermYears === null || loanTermYears <= adj.maxTermYears)) {
+        baseRate += adj.rateAdjustment;
+        break;
+      }
+    }
+  }
+
+  return baseRate;
 }
 
 export function calculateOriginationFee(

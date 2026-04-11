@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { CalculatorConfig } from '../../calculator';
+import { CalculatorConfig, TermRateAdjustment } from '../../calculator';
 import { Save, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -336,6 +336,99 @@ export function ConfigEditor({ config: initialConfig, onUpdate }: ConfigEditorPr
                   </div>
                 </div>
               )}
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="font-semibold text-[#3A475B]">Term Rate Adjustments</h4>
+                    <p className="text-xs text-gray-500 mt-0.5">Add a rate loading for longer loan terms (e.g. +1.5% for 7+ year loans)</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const adjs: TermRateAdjustment[] = [...(config.termRateAdjustments || [])];
+                      adjs.push({ minTermYears: 7, maxTermYears: null, rateAdjustment: 0.015 });
+                      updateConfig({ termRateAdjustments: adjs });
+                    }}
+                    className="flex items-center gap-1 px-3 py-1 text-sm bg-[#28AA48] text-white rounded-lg hover:bg-[#229639]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Rule
+                  </button>
+                </div>
+                {(config.termRateAdjustments || []).length > 0 ? (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200">
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Min Term (yrs)</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Max Term (yrs)</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Rate Add (%)</th>
+                          <th className="px-4 py-2"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {(config.termRateAdjustments || []).map((adj, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={adj.minTermYears}
+                                onChange={e => {
+                                  const adjs = [...(config.termRateAdjustments || [])];
+                                  adjs[idx] = { ...adjs[idx], minTermYears: Number(e.target.value) };
+                                  updateConfig({ termRateAdjustments: adjs });
+                                }}
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={adj.maxTermYears ?? ''}
+                                onChange={e => {
+                                  const adjs = [...(config.termRateAdjustments || [])];
+                                  adjs[idx] = { ...adjs[idx], maxTermYears: e.target.value ? Number(e.target.value) : null };
+                                  updateConfig({ termRateAdjustments: adjs });
+                                }}
+                                placeholder="No limit"
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={(adj.rateAdjustment * 100).toFixed(2)}
+                                onChange={e => {
+                                  const adjs = [...(config.termRateAdjustments || [])];
+                                  adjs[idx] = { ...adjs[idx], rateAdjustment: Number(e.target.value) / 100 };
+                                  updateConfig({ termRateAdjustments: adjs });
+                                }}
+                                step="0.01"
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const adjs = (config.termRateAdjustments || []).filter((_, i) => i !== idx);
+                                  updateConfig({ termRateAdjustments: adjs });
+                                }}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No term rate adjustments configured. All terms use the base rate tier.</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-6">
