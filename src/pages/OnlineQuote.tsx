@@ -40,23 +40,6 @@ function formatCurrencyDecimals(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 
-function buildSavingsData(annualSavings: number, termYears?: number, monthlyPayment?: number) {
-  const YEARS = 25;
-  const GROWTH_RATE = 0.03;
-  const electricityBillWithSolar = annualSavings * 0.05;
-  const rows: { year: number; cumulativeSavings: number }[] = [];
-  let currentBill = annualSavings;
-  let cumulative = 0;
-  for (let year = 1; year <= YEARS; year++) {
-    const loanCost = (termYears && monthlyPayment && year <= termYears) ? monthlyPayment * 12 : 0;
-    const billWithSolar = electricityBillWithSolar * Math.pow(1 + GROWTH_RATE, year - 1);
-    const netSaving = currentBill - billWithSolar - loanCost;
-    cumulative += netSaving;
-    rows.push({ year, cumulativeSavings: cumulative });
-    currentBill = currentBill * (1 + GROWTH_RATE);
-  }
-  return rows;
-}
 
 export function OnlineQuote() {
   const location = useLocation();
@@ -100,10 +83,6 @@ export function OnlineQuote() {
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
   const hasSavings = !!(energySavings && energySavings > 0);
 
-  const savingsData = hasSavings
-    ? buildSavingsData(energySavings!, firstTerm?.years, firstTerm?.monthlyPayment)
-    : null;
-
   const handlePrint = () => {
     window.print();
   };
@@ -141,10 +120,7 @@ export function OnlineQuote() {
             <div className="px-8 py-6" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="text-2xl font-extrabold" style={{ color: '#28AA48' }}>green</span>
-                    <span className="text-2xl font-extrabold text-white">funding</span>
-                  </div>
+                  <img src="/image.png" alt="Green Funding" className="h-10 mb-1" />
                   <p className="text-white/60 text-sm">Finance Solutions for Clean Energy</p>
                 </div>
                 <div className="text-right">
@@ -274,7 +250,7 @@ export function OnlineQuote() {
               </p>
             </div>
 
-            {hasSavings && energySavings && savingsData && (
+            {hasSavings && energySavings && (
               <div className="px-8 py-6 border-b border-gray-100">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Energy Savings Analysis</p>
                 <SavingsChart
@@ -282,40 +258,6 @@ export function OnlineQuote() {
                   selectedTermYears={firstTerm?.years}
                   monthlyPayment={firstTerm?.monthlyPayment}
                 />
-
-                <div className="mt-5 rounded-2xl overflow-hidden border border-gray-100" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
-                  <div className="px-5 pt-4 pb-3 border-b border-white/10">
-                    <p className="text-sm font-bold text-white">Estimated Cumulative Savings</p>
-                    <p className="text-xs text-white/50 mt-0.5">Based on 3% annual energy price growth</p>
-                  </div>
-                  <div className="grid grid-cols-3 divide-x divide-white/10">
-                    {[
-                      {
-                        label: firstTerm ? `Over ${firstTerm.years} years` : 'Over term',
-                        sublabel: firstTerm ? 'Period of rental facility' : '—',
-                        value: savingsData[(firstTerm?.years ?? 5) - 1]?.cumulativeSavings ?? 0,
-                      },
-                      {
-                        label: 'Over 15 years',
-                        sublabel: '15-year projection',
-                        value: savingsData[14]?.cumulativeSavings ?? 0,
-                      },
-                      {
-                        label: 'Over 25 years',
-                        sublabel: '25-year projection',
-                        value: savingsData[24]?.cumulativeSavings ?? 0,
-                      },
-                    ].map((box, idx) => (
-                      <div key={idx} className="px-4 py-4 text-center">
-                        <p className="text-xs font-medium text-white/60 mb-0.5">{box.sublabel}</p>
-                        <p className="text-sm font-semibold text-white mb-2">{box.label}</p>
-                        <p className="text-xl font-bold" style={{ color: box.value >= 0 ? '#28AA48' : '#ef4444' }}>
-                          {new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(box.value)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -360,10 +302,7 @@ export function OnlineQuote() {
 
             <div className="px-8 py-5" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-1">
-                  <span className="text-base font-extrabold" style={{ color: '#28AA48' }}>green</span>
-                  <span className="text-base font-extrabold text-white">funding</span>
-                </div>
+                <img src="/image.png" alt="Green Funding" className="h-7" />
                 <p className="text-white/40 text-xs">
                   This quote is indicative only and subject to credit approval. Valid for 30 days.
                 </p>
