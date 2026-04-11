@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check } from 'lucide-react';
+import { ArrowLeft, Download, Check, ExternalLink } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
+import { CheckCircle2, X } from 'lucide-react';
 
 interface TermOption {
   years: number;
@@ -40,6 +41,67 @@ function formatCurrencyDecimals(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 }
 
+interface LowDocRequirement {
+  label: string;
+  url?: string;
+}
+
+function getLowDocRequirements(projectCost: number): { title: string; items: LowDocRequirement[] } | null {
+  if (projectCost >= 250000) return null;
+
+  const base: LowDocRequirement[] = [
+    { label: 'Invoice to be financed' },
+    { label: "Directors Drivers Licence & Medicare card" },
+    { label: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
+    { label: 'Asset and Liability statement', url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
+  ];
+
+  if (projectCost >= 150000) {
+    const withBankStatements: LowDocRequirement[] = [
+      { label: 'Invoice to be financed' },
+      { label: "Directors Drivers Licence & Medicare card" },
+      { label: '6 months Bank Statements', url: 'https://scv.bankstatements.com.au/HSHV' },
+      { label: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
+      { label: 'Asset and Liability statement', url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
+    ];
+    return { title: 'Low Doc Requirements ($150k–$250k)', items: withBankStatements };
+  }
+
+  return { title: 'Low Doc Requirements (up to $150k)', items: base };
+}
+
+const fullDocRequirements: { document: string; under500k: boolean; between500kAnd1m: boolean; over1m: boolean }[] = [
+  { document: 'FY24 & FY25 Accountant prepared financials', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Mgt YTD Dec 25 Financials', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Finance Commitment Schedule', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Current ATO Portal Statement', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Business Overview and Major Clients', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Asset and Liability', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Aged Debtors and Creditors', under500k: false, between500kAnd1m: true, over1m: true },
+  { document: 'Cashflow Projections', under500k: false, between500kAnd1m: false, over1m: true },
+];
+
+function PageHeader({ quoteNumber, quoteDate }: { quoteNumber: string; quoteDate: string }) {
+  return (
+    <div className="px-8 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+      <img src="/image.png" alt="Green Funding" className="h-9" />
+      <div className="text-right">
+        <p className="text-white/50 text-xs uppercase tracking-widest">{quoteNumber}</p>
+        <p className="text-white/40 text-xs mt-0.5">{quoteDate}</p>
+      </div>
+    </div>
+  );
+}
+
+function PageFooter({ text }: { text?: string }) {
+  return (
+    <div className="px-8 py-4" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+      <p className="text-white/40 text-xs text-center">
+        {text ?? 'This quote is indicative only and subject to credit approval. Valid for 30 days.'}
+      </p>
+    </div>
+  );
+}
 
 export function OnlineQuote() {
   const location = useLocation();
@@ -82,6 +144,8 @@ export function OnlineQuote() {
 
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
   const hasSavings = !!(energySavings && energySavings > 0);
+  const isLowDoc = projectCost < 250000;
+  const lowDocReqs = getLowDocRequirements(projectCost);
 
   const handlePrint = () => {
     window.print();
@@ -93,7 +157,9 @@ export function OnlineQuote() {
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
-          .print-container { box-shadow: none !important; border: none !important; }
+          .print-container { box-shadow: none !important; border: none !important; padding: 0 !important; }
+          .print-page { box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; page-break-after: always; }
+          .print-page:last-child { page-break-after: avoid; }
         }
       `}</style>
 
@@ -115,8 +181,10 @@ export function OnlineQuote() {
           </button>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-8 print-container">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="max-w-4xl mx-auto px-4 py-8 print-container space-y-8">
+
+          {/* PAGE 1 — Cover + Repayment Options */}
+          <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="px-8 py-6" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -250,8 +318,15 @@ export function OnlineQuote() {
               </p>
             </div>
 
-            {hasSavings && energySavings && (
-              <div className="px-8 py-6 border-b border-gray-100">
+            <PageFooter />
+          </div>
+
+          {/* PAGE 2 — Energy Savings (only if applicable) */}
+          {hasSavings && energySavings && (
+            <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
+              <PageHeader quoteNumber={quoteNumber} quoteDate={quoteDate} />
+
+              <div className="px-8 py-6">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Energy Savings Analysis</p>
                 <SavingsChart
                   annualSavings={energySavings}
@@ -259,66 +334,132 @@ export function OnlineQuote() {
                   monthlyPayment={firstTerm?.monthlyPayment}
                 />
               </div>
-            )}
+
+              {disclaimerText && (
+                <div className="mx-8 mb-6 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
+                  <p className="text-xs text-amber-800">{disclaimerText}</p>
+                </div>
+              )}
+
+              <PageFooter />
+            </div>
+          )}
+
+          {/* PAGE 3 (or 2) — Requirements */}
+          <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
+            <PageHeader quoteNumber={quoteNumber} quoteDate={quoteDate} />
 
             <div className="px-8 py-6 border-b border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">What You'll Need</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#3A475B] mb-2">
-                    {projectCost < 250000 ? 'Low Doc Requirements' : 'Full Doc Requirements'}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {(projectCost < 250000
-                      ? ['Last 6 months business bank statements', 'Signed application form', 'Installer invoice / quote']
-                      : ['Last 2 years financial statements', 'Last 2 years tax returns', 'ATO portal printout', 'Signed application form', 'Installer invoice / quote']
-                    ).map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">What You'll Need to Apply</p>
+
+              {isLowDoc && lowDocReqs ? (
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-[#3A475B]">{lowDocReqs.title}</p>
+                  <ul className="space-y-2.5">
+                    {lowDocReqs.items.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
                         <Check className="w-4 h-4 text-[#28AA48] mt-0.5 flex-shrink-0" />
-                        {item}
+                        <span className="text-sm text-gray-700 flex-1">
+                          {item.label}
+                          {item.url && (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-2 inline-flex items-center gap-1 text-xs text-[#28AA48] font-medium hover:underline"
+                            >
+                              Download <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
+              ) : (
                 <div>
-                  <p className="text-sm font-semibold text-[#3A475B] mb-2">Get Started</p>
+                  <p className="text-sm font-bold text-[#3A475B] mb-4">Full Doc Requirements</p>
+                  <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+                          <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Document</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">&lt;$500k</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">$500k–$1m</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">$1m+</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fullDocRequirements.map((req, i) => {
+                          const isApplicable =
+                            (projectCost < 500000 && req.under500k) ||
+                            (projectCost >= 500000 && projectCost < 1000000 && req.between500kAnd1m) ||
+                            (projectCost >= 1000000 && req.over1m);
+                          return (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className={`px-4 py-3.5 border-b border-gray-100 font-medium ${isApplicable ? 'text-[#3A475B]' : 'text-gray-400'}`}>
+                                {req.document}
+                              </td>
+                              {[req.under500k, req.between500kAnd1m, req.over1m].map((val, ci) => (
+                                <td key={ci} className="px-4 py-3.5 text-center border-b border-gray-100">
+                                  <div className="flex justify-center">
+                                    {val ? (
+                                      <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+                                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                      </div>
+                                    ) : (
+                                      <div className="w-7 h-7 bg-red-100 rounded-full flex items-center justify-center">
+                                        <X className="w-4 h-4 text-red-500" />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-8 py-6 border-b border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Get Started</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
                   <p className="text-sm text-gray-600">
                     Contact your Green Funding representative to begin the application process. Our team will guide you through each step.
                   </p>
-                  <div className="mt-3 space-y-1">
-                    <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 GET GFN</p>
-                    <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> info@greenfunding.com.au</p>
-                    <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Web:</span> www.greenfunding.com.au</p>
-                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 GET GFN</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> info@greenfunding.com.au</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Web:</span> www.greenfunding.com.au</p>
                 </div>
               </div>
             </div>
 
-            {disclaimerText && (
-              <div className="px-8 py-5 border-b border-gray-100 bg-amber-50">
+            {!hasSavings && disclaimerText && (
+              <div className="mx-8 mb-6 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
                 <p className="text-xs text-amber-800">{disclaimerText}</p>
               </div>
             )}
 
-            <div className="px-8 py-5" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <img src="/image.png" alt="Green Funding" className="h-7" />
-                <p className="text-white/40 text-xs">
-                  This quote is indicative only and subject to credit approval. Valid for 30 days.
-                </p>
-              </div>
-            </div>
+            <PageFooter />
           </div>
 
-          <div className="no-print mt-6 flex justify-center">
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base"
-            >
-              <Download className="w-5 h-5" />
-              Download as PDF
-            </button>
-          </div>
+        </div>
+
+        <div className="no-print mt-6 flex justify-center pb-8">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base"
+          >
+            <Download className="w-5 h-5" />
+            Download as PDF
+          </button>
         </div>
       </div>
     </>
