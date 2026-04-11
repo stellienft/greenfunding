@@ -319,6 +319,7 @@ export function Step3() {
       setQuoteError('Please select at least one loan term to include.');
       return;
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setGeneratingPdf(true);
     setQuoteError(null);
     try {
