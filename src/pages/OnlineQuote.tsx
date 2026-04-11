@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Download, Check, ExternalLink, CheckCircle, Loader } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
 import { CheckCircle2, X } from 'lucide-react';
 
@@ -14,6 +15,7 @@ interface TermOption {
 export interface OnlineQuoteData {
   quoteNumber: string;
   quoteDate: string;
+  quoteId?: string;
   clientName: string;
   clientAddress: string;
   clientEmail?: string;
@@ -84,7 +86,7 @@ const fullDocRequirements: { document: string; under500k: boolean; between500kAn
 function PageHeader({ quoteNumber, quoteDate }: { quoteNumber: string; quoteDate: string }) {
   return (
     <div className="px-8 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
-      <img src="/image.png" alt="Green Funding" className="h-9" />
+      <img src="/green-funding-invertedlogo.svg" alt="Green Funding" className="h-7" />
       <div className="text-right">
         <p className="text-white/50 text-xs uppercase tracking-widest">{quoteNumber}</p>
         <p className="text-white/40 text-xs mt-0.5">{quoteDate}</p>
@@ -139,6 +141,10 @@ export function OnlineQuote() {
     disclaimerText,
   } = quoteData;
 
+  const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+
   const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
 
@@ -151,15 +157,42 @@ export function OnlineQuote() {
     window.print();
   };
 
+  const handleAcceptQuote = async () => {
+    if (!quoteData.quoteId) {
+      setAcceptError('Quote ID not found. Please regenerate the quote.');
+      return;
+    }
+    setAccepting(true);
+    setAcceptError(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/accept-quote`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quoteId: quoteData.quoteId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to accept quote');
+      setAccepted(true);
+    } catch (err: any) {
+      setAcceptError(err.message || 'Failed to accept quote. Please try again.');
+    } finally {
+      setAccepting(false);
+    }
+  };
+
   return (
     <>
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
-          .print-container { box-shadow: none !important; border: none !important; padding: 0 !important; }
-          .print-page { box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; page-break-after: always; }
+          body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          .print-container { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 210mm !important; margin: 0 auto !important; }
+          .print-page { box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; page-break-after: always; width: 210mm; min-height: 297mm; }
           .print-page:last-child { page-break-after: avoid; }
+          @page { size: A4; margin: 0; }
         }
       `}</style>
 
@@ -172,14 +205,43 @@ export function OnlineQuote() {
             <ArrowLeft className="w-4 h-4" />
             Back to Calculator
           </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm"
-          >
-            <Download className="w-4 h-4" />
-            Download as PDF
-          </button>
+          <div className="flex items-center gap-2">
+            {accepted ? (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 font-semibold rounded-lg text-sm">
+                <CheckCircle className="w-4 h-4" />
+                Quote Accepted
+              </div>
+            ) : (
+              <button
+                onClick={handleAcceptQuote}
+                disabled={accepting}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#3A475B] text-white font-bold rounded-lg hover:bg-[#2e3847] transition-all text-sm disabled:opacity-60"
+              >
+                {accepting ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Accept Quote
+              </button>
+            )}
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm"
+            >
+              <Download className="w-4 h-4" />
+              Download as PDF
+            </button>
+          </div>
         </div>
+        {acceptError && (
+          <div className="no-print max-w-4xl mx-auto px-4 pt-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">{acceptError}</div>
+          </div>
+        )}
+        {accepted && (
+          <div className="no-print max-w-4xl mx-auto px-4 pt-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 font-medium">
+              Quote accepted! An email has been sent to {clientEmail || 'the client'} with a secure link to upload their documents.
+            </div>
+          </div>
+        )}
 
         <div className="max-w-4xl mx-auto px-4 py-8 print-container space-y-8">
 
@@ -188,7 +250,7 @@ export function OnlineQuote() {
             <div className="px-8 py-6" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <img src="/image.png" alt="Green Funding" className="h-10 mb-1" />
+                  <img src="/green-funding-invertedlogo.svg" alt="Green Funding" className="h-8 mb-2" />
                   <p className="text-white/60 text-sm">Finance Solutions for Clean Energy</p>
                 </div>
                 <div className="text-right">
@@ -452,7 +514,17 @@ export function OnlineQuote() {
 
         </div>
 
-        <div className="no-print mt-6 flex justify-center pb-8">
+        <div className="no-print mt-6 flex justify-center gap-3 pb-8">
+          {!accepted && (
+            <button
+              onClick={handleAcceptQuote}
+              disabled={accepting}
+              className="flex items-center gap-2 px-8 py-3.5 bg-[#3A475B] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
+            >
+              {accepting ? <Loader className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
+              Accept Quote
+            </button>
+          )}
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base"

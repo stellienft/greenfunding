@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
 import {
-  FileText, Calendar, DollarSign, User, Building2, MapPin, Tag, Download,
-  ChevronDown, ChevronUp, Search, X, Loader
+  FileText, Calendar, User, Building2, MapPin, Download,
+  ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface TermOption {
   years: number;
   monthlyPayment: number;
   interestRate: number;
   totalFinanced?: number;
+}
+
+interface DocumentUpload {
+  id: string;
+  document_type: string;
+  file_name: string;
+  file_path: string;
+  uploaded_at: string;
 }
 
 interface AdminQuote {
@@ -29,6 +38,8 @@ interface AdminQuote {
   status: string;
   client_phone: string | null;
   pdf_url: string | null;
+  accepted_at: string | null;
+  upload_token: string | null;
   installer: {
     full_name: string | null;
     company_name: string | null;
@@ -50,6 +61,8 @@ function statusBadge(status: string) {
       return { label: 'Application Submitted', cls: 'bg-green-100 text-green-800 border-green-200' };
     case 'application_started':
       return { label: 'Application Started', cls: 'bg-blue-100 text-blue-800 border-blue-200' };
+    case 'accepted':
+      return { label: 'Quote Accepted', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
     default:
       return { label: 'Quote Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
   }
@@ -76,6 +89,45 @@ interface ExpandedQuoteRowProps {
 }
 
 function ExpandedQuoteRow({ quote }: ExpandedQuoteRowProps) {
+  const [uploads, setUploads] = useState<DocumentUpload[]>([]);
+  const [loadingUploads, setLoadingUploads] = useState(false);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (quote.status === 'accepted' || quote.accepted_at) {
+      loadUploads();
+    }
+  }, [quote.id]);
+
+  async function loadUploads() {
+    setLoadingUploads(true);
+    try {
+      const { data } = await supabase
+        .from('quote_document_uploads')
+        .select('id, document_type, file_name, file_path, uploaded_at')
+        .eq('quote_id', quote.id)
+        .order('uploaded_at', { ascending: true });
+      if (data) setUploads(data);
+    } finally {
+      setLoadingUploads(false);
+    }
+  }
+
+  async function getSignedUrl(filePath: string): Promise<string | null> {
+    if (signedUrls[filePath]) return signedUrls[filePath];
+    const { data } = await supabase.storage
+      .from('application-documents')
+      .createSignedUrl(filePath, 60 * 60);
+    if (data?.signedUrl) {
+      setSignedUrls(prev => ({ ...prev, [filePath]: data.signedUrl }));
+      return data.signedUrl;
+    }
+    return null;
+  }
+
+  const appUrl = window.location.origin;
+  const uploadPageUrl = quote.upload_token ? `${appUrl}/upload-documents/${quote.upload_token}` : null;
+
   return (
     <div className="px-5 pb-5 pt-1 border-t border-gray-100 bg-gray-50/60">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
@@ -173,6 +225,58 @@ function ExpandedQuoteRow({ quote }: ExpandedQuoteRowProps) {
             <Download className="w-4 h-4" />
             Download Quote PDF
           </a>
+        </div>
+      )}
+
+      {(quote.status === 'accepted' || quote.accepted_at) && (
+        <div className="mt-5 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+              <FolderOpen className="w-3.5 h-3.5" />
+              Client Document Uploads
+            </p>
+            {uploadPageUrl && (
+              <a
+                href={uploadPageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#28AA48] font-semibold hover:underline"
+              >
+                View Upload Portal
+              </a>
+            )}
+          </div>
+
+          {loadingUploads ? (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Loader className="w-3.5 h-3.5 animate-spin" /> Loading documents…
+            </div>
+          ) : uploads.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">No documents uploaded yet. Client has been emailed their upload link.</p>
+          ) : (
+            <div className="space-y-2">
+              {uploads.map(upload => (
+                <div key={upload.id} className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CheckCircle2 className="w-4 h-4 text-[#28AA48] flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-[#3A475B] capitalize">{upload.document_type.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-gray-400 truncate">{upload.file_name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const url = await getSignedUrl(upload.file_path);
+                      if (url) window.open(url, '_blank');
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#28AA48] hover:underline"
+                  >
+                    <Download className="w-3 h-3" /> Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -339,6 +443,7 @@ export function AdminQuotesList() {
         >
           <option value="all">All Statuses</option>
           <option value="generated">Quote Generated</option>
+          <option value="accepted">Quote Accepted</option>
           <option value="application_started">Application Started</option>
           <option value="application_submitted">Application Submitted</option>
         </select>
