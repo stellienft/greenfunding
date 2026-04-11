@@ -9,7 +9,7 @@ import { AssetsManager } from '../components/admin/AssetsManager';
 import { DocumentsManager } from '../components/admin/DocumentsManager';
 import { ApplicationsList } from '../components/admin/ApplicationsList';
 import { AdminQuotesList } from '../components/admin/AdminQuotesList';
-import { CalculatorDashboard } from './CalculatorDashboard';
+import { AdminCalculatorPicker } from '../components/admin/AdminCalculatorPicker';
 import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
@@ -224,7 +224,7 @@ export function AdminDashboard() {
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}
                 {activeTab === 'calculator' && (
-                  <CalculatorDashboard />
+                  <AdminCalculatorPicker />
                 )}
                 {activeTab === 'account' && <AdminAccount />}
               </>
