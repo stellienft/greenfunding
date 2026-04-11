@@ -16,7 +16,13 @@ import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
 import { PlatformDashboard } from '../components/admin/PlatformDashboard';
+import { Step1 } from './Step1';
+import { ServicedRentalStep1 } from './ServicedRentalStep1';
+import { Step3 } from './Step3';
+import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
 import { LogOut, Settings, Package, FileText, Inbox, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
+
+type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
 type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
@@ -69,6 +75,7 @@ export function AdminDashboard() {
   const navigate = useNavigate();
   const { admin, logout } = useAdmin();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [calcView, setCalcView] = useState<CalcView>('picker');
   const [config, setConfig] = useState<CalculatorConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -106,6 +113,22 @@ export function AdminDashboard() {
 
   const activeLabel = NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeTab)?.label ?? '';
 
+  const handleAdminCalcNavigate = (path: string) => {
+    if (path.includes('step1') && path.includes('serviced-rental')) {
+      setCalcView('serviced-rental-step1');
+    } else if (path.includes('step1')) {
+      setCalcView('step1');
+    } else if (path.includes('step-3')) {
+      setCalcView('step3');
+    } else {
+      setCalcView('picker');
+    }
+  };
+
+  const handleCalcPickerOpen = (_id: string, path: string) => {
+    handleAdminCalcNavigate(path);
+  };
+
   if (!admin) {
     return null;
   }
@@ -131,7 +154,7 @@ export function AdminDashboard() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
+                    onClick={() => { setActiveTab(item.id); setSidebarOpen(false); if (item.id === 'calculator') setCalcView('picker'); }}
                     className={`
                       w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                       ${isActive
@@ -224,7 +247,14 @@ export function AdminDashboard() {
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}
                 {activeTab === 'calculator' && (
-                  <AdminCalculatorPicker />
+                  <AdminCalculatorProvider onNavigate={handleAdminCalcNavigate}>
+                    {calcView === 'picker' && (
+                      <AdminCalculatorPicker onOpen={handleCalcPickerOpen} />
+                    )}
+                    {calcView === 'step1' && <Step1 />}
+                    {calcView === 'serviced-rental-step1' && <ServicedRentalStep1 />}
+                    {calcView === 'step3' && <Step3 />}
+                  </AdminCalculatorProvider>
                 )}
                 {activeTab === 'account' && <AdminAccount />}
               </>

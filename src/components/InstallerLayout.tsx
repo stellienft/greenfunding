@@ -2,7 +2,6 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCalculatorLayout } from '../context/CalculatorLayoutContext';
-import { AdminCalculatorLayout } from './AdminCalculatorLayout';
 import {
   LogOut, LayoutDashboard, User, FileText,
   LifeBuoy, Menu, X, ChevronRight, Building2, Calculator
@@ -45,7 +44,7 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
   }, [location.pathname]);
 
   if (isAdminMode) {
-    return <AdminCalculatorLayout>{children}</AdminCalculatorLayout>;
+    return <>{children}</>;
   }
 
   const handleLogout = async () => {

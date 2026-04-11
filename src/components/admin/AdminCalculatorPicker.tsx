@@ -1,24 +1,25 @@
 import { Calculator, TrendingUp, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+
+type CalcId = 'rental' | 'serviced_rental' | 'progress_payment_rental';
 
 const CALCULATORS = [
   {
-    id: 'rental' as const,
+    id: 'rental' as CalcId,
     title: 'Rental',
     description: 'Calculate financing options for a range of different renewable services.',
     icon: Calculator,
     path: '/admin/calculator/step1',
   },
   {
-    id: 'serviced_rental' as const,
+    id: 'serviced_rental' as CalcId,
     title: 'Serviced Rental',
     description: 'Includes full service and maintenance packages with your rental agreement.',
     icon: TrendingUp,
     path: '/admin/calculator/serviced-rental-step1',
   },
   {
-    id: 'progress_payment_rental' as const,
+    id: 'progress_payment_rental' as CalcId,
     title: 'Progress Payment Rental',
     description: 'Flexible payment structure tied to project milestones and completion stages.',
     icon: Users,
@@ -26,14 +27,17 @@ const CALCULATORS = [
   },
 ];
 
-export function AdminCalculatorPicker() {
-  const navigate = useNavigate();
+interface AdminCalculatorPickerProps {
+  onOpen?: (id: CalcId, path: string) => void;
+}
+
+export function AdminCalculatorPicker({ onOpen }: AdminCalculatorPickerProps) {
   const { updateState, resetState } = useApp();
 
-  const handleOpen = (id: typeof CALCULATORS[number]['id'], path: string) => {
+  const handleOpen = (id: CalcId, path: string) => {
     resetState();
     updateState({ calculatorType: id });
-    navigate(path);
+    if (onOpen) onOpen(id, path);
   };
 
   return (

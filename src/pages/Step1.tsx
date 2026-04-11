@@ -10,7 +10,7 @@ import { X } from 'lucide-react';
 
 export function Step1() {
   const navigate = useNavigate();
-  const { isAdminMode } = useCalculatorLayout();
+  const { isAdminMode, onAdminNavigate } = useCalculatorLayout();
   const { state, updateState, config, assets, loadingConfig } = useApp();
   const [selectedAssets, setSelectedAssets] = useState<string[]>(state.selectedAssetIds);
   const [projectCost, setProjectCost] = useState(state.projectCost || 100000);
@@ -116,7 +116,8 @@ export function Step1() {
       paymentTiming,
     });
 
-    navigate(isAdminMode ? '/admin/step-3' : '/step-3');
+    const dest = isAdminMode ? '/admin/step-3' : '/step-3';
+    if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
     window.scrollTo(0, 0);
   };
 
@@ -140,7 +141,8 @@ export function Step1() {
         loanTermYears: 7
       });
 
-      navigate(isAdminMode ? '/admin/step-3' : '/step-4');
+      const dest2 = isAdminMode ? '/admin/step-3' : '/step-4';
+      if (isAdminMode && onAdminNavigate) onAdminNavigate(dest2); else navigate(dest2);
       window.scrollTo(0, 0);
     } else {
       setShowSpecialPricingModal(false);

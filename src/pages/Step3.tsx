@@ -25,7 +25,7 @@ export function Step3() {
   const navigate = useNavigate();
   const { state, updateState, config, assets, introEmailTemplate } = useApp();
   const { user, installerProfile, refreshProfile } = useAuth();
-  const { isAdminMode } = useCalculatorLayout();
+  const { isAdminMode, onAdminNavigate } = useCalculatorLayout();
   const [selectedTerm, setSelectedTerm] = useState<number | null>(null);
   const [termOptions, setTermOptions] = useState<LoanTermOption[]>([]);
   const [showMoreTerms, setShowMoreTerms] = useState(false);
@@ -66,7 +66,8 @@ export function Step3() {
 
   useEffect(() => {
     if (!config || !state.projectCost || state.selectedAssetIds.length === 0) {
-      navigate(isAdminMode ? '/admin?tab=calculator' : '/');
+      const dest = isAdminMode ? '/admin?tab=calculator' : '/';
+      if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
       return;
     }
 
@@ -391,7 +392,8 @@ export function Step3() {
   };
 
   const handleBack = () => {
-    navigate(isAdminMode ? '/admin?tab=calculator' : '/');
+    const dest = isAdminMode ? '/admin?tab=calculator' : '/';
+    if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
   };
 
   if (!config || termOptions.length === 0) {

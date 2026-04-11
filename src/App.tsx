@@ -18,7 +18,6 @@ import { Setup2FA } from './pages/Setup2FA';
 import { Verify2FA } from './pages/Verify2FA';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Analytics } from './components/Analytics';
-import { AdminCalculatorProvider } from './context/CalculatorLayoutContext';
 import { useEffect } from 'react';
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -148,36 +147,6 @@ function App() {
                   <ProtectedRoute>
                     <QuoteDetail />
                   </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/calculator/step1"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminCalculatorProvider>
-                      <Step1 />
-                    </AdminCalculatorProvider>
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/calculator/serviced-rental-step1"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminCalculatorProvider>
-                      <ServicedRentalStep1 />
-                    </AdminCalculatorProvider>
-                  </AdminProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/step-3"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminCalculatorProvider>
-                      <Step3 />
-                    </AdminCalculatorProvider>
-                  </AdminProtectedRoute>
                 }
               />
               <Route path="/admin/login" element={<AdminLogin />} />
