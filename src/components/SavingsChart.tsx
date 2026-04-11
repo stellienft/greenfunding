@@ -94,8 +94,8 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="mb-5">
-        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Energy Savings Thanks to Solar Over 25 Years</h3>
-        <p className="text-sm text-gray-500">See how your electricity savings compare to your loan repayments year by year</p>
+        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Savings Thanks to Solar</h3>
+        <p className="text-sm text-gray-500">See how your electricity savings compare to your annual payments year by year</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -109,7 +109,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
         </div>
         {hasLoanData ? (
           <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(40,170,72,0.3)', backgroundColor: 'rgba(40,170,72,0.06)' }}>
-            <p className="text-xs text-gray-500 mb-1">Annual repayments{selectedTermYears ? ` (${selectedTermYears} yr)` : ''}</p>
+            <p className="text-xs text-gray-500 mb-1">Annual payments{selectedTermYears ? ` (${selectedTermYears} yr)` : ''}</p>
             <p className="text-base font-bold text-[#28AA48]">{formatCurrencyFull(annualLoanCost)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
           </div>
         ) : (
@@ -187,7 +187,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
       {hasLoanData && selectedTermYears && (
         <div className="mt-4 p-3 rounded-xl border" style={{ backgroundColor: 'rgba(40,170,72,0.05)', borderColor: 'rgba(40,170,72,0.2)' }}>
           <p className="text-xs font-semibold" style={{ color: '#28AA48' }}>
-            After year {selectedTermYears}, your finance repayments end. Your electricity savings of {formatCurrencyFull(savingsAtLoanEnd)}/year are yours to keep — and growing every year.
+            After year {selectedTermYears}, your finance payments end. Your electricity savings of {formatCurrencyFull(savingsAtLoanEnd)}/year are yours to keep — and growing every year.
           </p>
         </div>
       )}

@@ -54,7 +54,6 @@ function getLowDocRequirements(projectCost: number): { title: string; items: Low
   if (projectCost >= 250000) return null;
 
   const base: LowDocRequirement[] = [
-    { label: 'Invoice to be financed' },
     { label: "Directors Drivers Licence & Medicare card" },
     { label: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
     { label: 'Asset and Liability statement', url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
@@ -62,7 +61,6 @@ function getLowDocRequirements(projectCost: number): { title: string; items: Low
 
   if (projectCost >= 150000) {
     const withBankStatements: LowDocRequirement[] = [
-      { label: 'Invoice to be financed' },
       { label: "Directors Drivers Licence & Medicare card" },
       { label: '6 months Bank Statements', url: 'https://scv.bankstatements.com.au/HSHV' },
       { label: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
@@ -246,7 +244,7 @@ export function OnlineQuote() {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Project Summary</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #28AA48, #7DC241)' }}>
-                  <p className="text-white/80 text-xs mb-1">Project Cost</p>
+                  <p className="text-white/80 text-xs mb-1">Project Cost (Inc. GST)</p>
                   <p className="text-white font-extrabold text-lg">{formatCurrency(projectCost)}</p>
                 </div>
                 <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
@@ -296,19 +294,13 @@ export function OnlineQuote() {
             )}
 
             <div className="px-8 py-6 border-b border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Repayment Options</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
               <div className="overflow-hidden rounded-xl border border-gray-200">
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
-                      <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Repayment</th>
-                      {sortedTerms[0]?.totalFinanced !== undefined && (
-                        <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide hidden sm:table-cell">Total Financed</th>
-                      )}
-                      {sortedTerms[0]?.interestRate !== undefined && (
-                        <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide hidden sm:table-cell">Interest Rate</th>
-                      )}
+                      <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -324,23 +316,13 @@ export function OnlineQuote() {
                           {formatCurrencyDecimals(t.monthlyPayment)}
                           <span className="text-xs text-gray-400 font-normal">/mo</span>
                         </td>
-                        {sortedTerms[0]?.totalFinanced !== undefined && (
-                          <td className="px-4 py-3.5 text-right text-gray-600 hidden sm:table-cell">
-                            {t.totalFinanced !== undefined ? formatCurrency(t.totalFinanced) : '—'}
-                          </td>
-                        )}
-                        {sortedTerms[0]?.interestRate !== undefined && (
-                          <td className="px-4 py-3.5 text-right text-gray-600 hidden sm:table-cell">
-                            {t.interestRate !== undefined ? `${(t.interestRate * 100).toFixed(2)}%` : '—'}
-                          </td>
-                        )}
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                * All repayments include GST. Quote valid for 30 days from {quoteDate}.
+                * All payments include GST. Quote valid for 30 days from {quoteDate}.
               </p>
             </div>
 
@@ -353,7 +335,7 @@ export function OnlineQuote() {
               <PageHeader quoteNumber={quoteNumber} quoteDate={quoteDate} />
 
               <div className="px-8 py-6">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Energy Savings Analysis</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
                 <SavingsChart
                   annualSavings={energySavings}
                   selectedTermYears={firstTerm?.years}

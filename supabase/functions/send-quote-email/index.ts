@@ -345,7 +345,7 @@ async function generateQuotePdf(
     const cardW = (CW - cardGap * (cardCount - 1)) / cardCount;
     const cardH = 52;
 
-    drawInfoCard(page, PL, y, cardW, cardH, 'Project Cost', formatCurrencyAU(projectCost), true, C.GREEN, { r: 1, g: 1, b: 1 }, C.WHITE);
+    drawInfoCard(page, PL, y, cardW, cardH, 'Project Cost (Inc. GST)', formatCurrencyAU(projectCost), true, C.GREEN, { r: 1, g: 1, b: 1 }, C.WHITE);
 
     const assetText = assetNames.join(', ') || 'N/A';
     drawInfoCard(page, PL + cardW + cardGap, y, cardW, cardH, 'Equipment', assetText, false, C.GRAY_BG2, C.GRAY_TEXT, C.DARK_TEXT, C.BORDER2);
@@ -388,28 +388,17 @@ async function generateQuotePdf(
       y -= solCardH + 18;
     }
 
-    drawSectionLabel(page, 'Repayment Options', PL, y);
+    drawSectionLabel(page, 'Payment Options', PL, y);
     y -= 14;
 
     const tableHeaderH = 28;
-    const hasInterest = sortedTerms.some(t => t.interestRate !== undefined);
-    const hasTotalFinanced = sortedTerms.some(t => t.totalFinanced !== undefined);
-
     const col1W = 130;
-    const col2W = hasTotalFinanced || hasInterest ? (CW - col1W) / 3 : CW - col1W;
-    const col3W = hasTotalFinanced ? (CW - col1W) / 3 : 0;
-    const col4W = hasInterest ? (CW - col1W) / 3 : 0;
+    const col2W = CW - col1W;
 
     dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK);
 
     dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    dt(page, 'Monthly Repayment', PL + col1W + col2W - tw('Monthly Repayment', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    if (hasTotalFinanced && col3W > 0) {
-      dt(page, 'Total Financed', PL + col1W + col2W + col3W - tw('Total Financed', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    }
-    if (hasInterest && col4W > 0) {
-      dt(page, 'Interest Rate', W - PR - tw('Interest Rate', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    }
+    dt(page, 'Monthly Payment', W - PR - tw('Monthly Payment', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
 
     y -= tableHeaderH;
 
@@ -432,26 +421,14 @@ async function generateQuotePdf(
 
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
       const amtW = tw(amtText, true, 11);
-      dt(page, amtText, PL + col1W + col2W - amtW - 10, rowY - rowH / 2 - 4, 11, true, C.GREEN);
+      dt(page, amtText, W - PR - amtW - 10, rowY - rowH / 2 - 4, 11, true, C.GREEN);
       const moLabel = '/mo';
-      dt(page, moLabel, PL + col1W + col2W - 10, rowY - rowH / 2 - 3, 7, false, C.GRAY_LIGHT);
-
-      if (hasTotalFinanced && t.totalFinanced !== undefined && col3W > 0) {
-        const tfText = formatCurrencyAU(t.totalFinanced);
-        const tfW = tw(tfText, false, 8.5);
-        dt(page, tfText, PL + col1W + col2W + col3W - tfW - 10, rowY - rowH / 2 - 4, 8.5, false, C.GRAY_TEXT);
-      }
-
-      if (hasInterest && t.interestRate !== undefined && col4W > 0) {
-        const irText = `${(t.interestRate * 100).toFixed(2)}%`;
-        const irW = tw(irText, false, 8.5);
-        dt(page, irText, W - PR - irW - 10, rowY - rowH / 2 - 4, 8.5, false, C.GRAY_TEXT);
-      }
+      dt(page, moLabel, W - PR - 10, rowY - rowH / 2 - 3, 7, false, C.GRAY_LIGHT);
     });
 
     y -= tableHeaderH * sortedTerms.length;
 
-    const noteText = `* All repayments include GST. Quote valid for 30 days from ${quoteDate}.`;
+    const noteText = `* All payments include GST. Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
     y -= 28;
 
@@ -466,7 +443,7 @@ async function generateQuotePdf(
     y = drawMiniHeader(page, y);
     y -= 20;
 
-    drawSectionLabel(page, 'Energy Savings Analysis', PL, y);
+    drawSectionLabel(page, 'Savings Thanks to Solar', PL, y);
     y -= 18;
 
     const YEARS = 25;
@@ -513,7 +490,7 @@ async function generateQuotePdf(
 
     // Card 3: annual repayments (green bg)
     dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3, 6);
-    const c3Label = firstTermYears ? `Annual repayments (${firstTermYears} yr)` : '25-Year Net Savings';
+    const c3Label = firstTermYears ? `Annual payments (${firstTermYears} yr)` : '25-Year Net Savings';
     const c3LabelW = tw(c3Label, false, 6.5);
     dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 12, 6.5, false, C.GREEN);
     const c3Val = firstTermYears ? formatCurrencyAU(annualLoanCost) + '/yr' : formatCurrencyAU(chartData[YEARS - 1].cumulativeSavings);
@@ -607,7 +584,7 @@ async function generateQuotePdf(
     // Post-loan note
     if (firstTermYears) {
       const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? energySavings;
-      const noteText = `After year ${firstTermYears}, your finance repayments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
+      const noteText = `After year ${firstTermYears}, your finance payments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
       const noteH = 28;
       dr(page, PL, y - noteH, CW, noteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
       dtWrapped(page, noteText, PL + 10, y - 10, 7.5, false, C.GREEN, CW - 20, 11);
@@ -680,7 +657,6 @@ async function generateQuotePdf(
       if (projectCost >= 150000) {
         lowDocTitle = 'Low Doc Requirements ($150k\u2013$250k)';
         lowDocItems = [
-          { label: 'Invoice to be financed' },
           { label: "Directors Drivers Licence & Medicare card" },
           { label: '6 months Bank Statements', url: 'scv.bankstatements.com.au/HSHV' },
           { label: 'Privacy Consent', url: 'drive.google.com' },
@@ -689,7 +665,6 @@ async function generateQuotePdf(
       } else {
         lowDocTitle = 'Low Doc Requirements (up to $150k)';
         lowDocItems = [
-          { label: 'Invoice to be financed' },
           { label: "Directors Drivers Licence & Medicare card" },
           { label: 'Privacy Consent', url: 'drive.google.com' },
           { label: 'Asset and Liability statement', url: 'drive.google.com' },
