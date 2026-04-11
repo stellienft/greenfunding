@@ -293,6 +293,17 @@ export function OnlineQuote() {
               </div>
             )}
 
+            {hasSavings && energySavings && (
+              <div className="px-8 py-6 border-b border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
+                <SavingsChart
+                  annualSavings={energySavings}
+                  selectedTermYears={firstTerm?.years}
+                  monthlyPayment={firstTerm?.monthlyPayment}
+                />
+              </div>
+            )}
+
             <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
               <div className="overflow-hidden rounded-xl border border-gray-200">
@@ -300,7 +311,7 @@ export function OnlineQuote() {
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
-                      <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment</th>
+                      <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -322,36 +333,18 @@ export function OnlineQuote() {
                 </table>
               </div>
               <p className="text-xs text-gray-400 mt-2">
-                * All payments include GST. Quote valid for 30 days from {quoteDate}.
+                * Quote valid for 30 days from {quoteDate}.
               </p>
             </div>
 
+            {disclaimerText && (
+              <div className="mx-8 mb-6 mt-4 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
+                <p className="text-xs text-amber-800">{disclaimerText}</p>
+              </div>
+            )}
+
             <PageFooter />
           </div>
-
-          {/* PAGE 2 — Energy Savings (only if applicable) */}
-          {hasSavings && energySavings && (
-            <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
-              <PageHeader quoteNumber={quoteNumber} quoteDate={quoteDate} />
-
-              <div className="px-8 py-6">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
-                <SavingsChart
-                  annualSavings={energySavings}
-                  selectedTermYears={firstTerm?.years}
-                  monthlyPayment={firstTerm?.monthlyPayment}
-                />
-              </div>
-
-              {disclaimerText && (
-                <div className="mx-8 mb-6 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
-                  <p className="text-xs text-amber-800">{disclaimerText}</p>
-                </div>
-              )}
-
-              <PageFooter />
-            </div>
-          )}
 
           {/* PAGE 3 (or 2) — Requirements */}
           <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -449,11 +442,6 @@ export function OnlineQuote() {
               </div>
             </div>
 
-            {!hasSavings && disclaimerText && (
-              <div className="mx-8 mb-6 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
-                <p className="text-xs text-amber-800">{disclaimerText}</p>
-              </div>
-            )}
 
             <PageFooter />
           </div>
