@@ -9,16 +9,16 @@ import { AssetsManager } from '../components/admin/AssetsManager';
 import { DocumentsManager } from '../components/admin/DocumentsManager';
 import { ApplicationsList } from '../components/admin/ApplicationsList';
 import { AdminQuotesList } from '../components/admin/AdminQuotesList';
-import { PreviewTool } from '../components/admin/PreviewTool';
+import { CalculatorDashboard } from './CalculatorDashboard';
 import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
 import { PlatformDashboard } from '../components/admin/PlatformDashboard';
-import { LogOut, Settings, Package, FileText, Inbox, Eye, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Inbox, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
 
-type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'preview' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
   {
@@ -32,7 +32,7 @@ const NAV_GROUPS = [
     items: [
       { id: 'config' as Tab, label: 'Calculator Config', icon: Settings },
       { id: 'assets' as Tab, label: 'Assets', icon: Package },
-      { id: 'preview' as Tab, label: 'Preview Tool', icon: Eye },
+      { id: 'calculator' as Tab, label: 'Calculator', icon: Calculator },
     ],
   },
   {
@@ -223,8 +223,8 @@ export function AdminDashboard() {
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}
-                {activeTab === 'preview' && config && (
-                  <PreviewTool config={config} />
+                {activeTab === 'calculator' && (
+                  <CalculatorDashboard />
                 )}
                 {activeTab === 'account' && <AdminAccount />}
               </>
