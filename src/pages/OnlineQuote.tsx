@@ -293,17 +293,6 @@ export function OnlineQuote() {
               </div>
             )}
 
-            {hasSavings && energySavings && (
-              <div className="px-8 py-6 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
-                <SavingsChart
-                  annualSavings={energySavings}
-                  selectedTermYears={firstTerm?.years}
-                  monthlyPayment={firstTerm?.monthlyPayment}
-                />
-              </div>
-            )}
-
             <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
               <div className="overflow-hidden rounded-xl border border-gray-200">
@@ -311,6 +300,7 @@ export function OnlineQuote() {
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
+                      <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Cost per kWh</th>
                       <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
                     </tr>
                   </thead>
@@ -322,6 +312,13 @@ export function OnlineQuote() {
                             <div className="w-2 h-2 rounded-full bg-[#28AA48]" />
                             {t.years} Year{t.years !== 1 ? 's' : ''}
                           </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {t.costPerKwhCents && t.costPerKwhCents > 0 ? (
+                            <span className="font-semibold text-blue-700">{t.costPerKwhCents.toFixed(2)}¢</span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 text-right font-bold text-[#28AA48] text-base">
                           {formatCurrencyDecimals(t.monthlyPayment)}
@@ -336,6 +333,17 @@ export function OnlineQuote() {
                 * Quote valid for 30 days from {quoteDate}.
               </p>
             </div>
+
+            {hasSavings && energySavings && (
+              <div className="px-8 py-6 border-b border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
+                <SavingsChart
+                  annualSavings={energySavings}
+                  selectedTermYears={firstTerm?.years}
+                  monthlyPayment={firstTerm?.monthlyPayment}
+                />
+              </div>
+            )}
 
             {disclaimerText && (
               <div className="mx-8 mb-6 mt-4 px-5 py-4 rounded-xl bg-amber-50 border border-amber-100">
