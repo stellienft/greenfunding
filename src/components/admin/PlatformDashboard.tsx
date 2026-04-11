@@ -435,6 +435,16 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={valuePrev30}
         />
         <StatCard
+          label="Active Installers"
+          value={activeInstallers.toString()}
+          sub={`of ${totalInstallers} total`}
+          icon={Users}
+          iconBg="bg-orange-50 text-orange-600"
+          current={activeInstallers}
+          previous={totalInstallers}
+          onClick={() => onNavigate?.('users')}
+        />
+        <StatCard
           label="Avg Deal Size (30d)"
           value={fmt(avgDealSize)}
           sub="Per quote"
@@ -444,13 +454,11 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={prevAvgDeal}
         />
         <StatCard
-          label="Active Installers"
-          value={activeInstallers.toString()}
-          sub={`of ${totalInstallers} total`}
+          label="Most Active Installer"
+          value={topInstallers[0] ? (topInstallers[0].company_name || topInstallers[0].full_name) : '—'}
+          sub={topInstallers[0] ? `${topInstallers[0].recentQuotes} quotes (30d)` : 'No activity yet'}
           icon={Users}
-          iconBg="bg-orange-50 text-orange-600"
-          current={activeInstallers}
-          previous={totalInstallers}
+          iconBg="bg-orange-50 text-orange-500"
           onClick={() => onNavigate?.('users')}
         />
       </div>
