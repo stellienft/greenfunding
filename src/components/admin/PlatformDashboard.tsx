@@ -4,6 +4,12 @@ import {
   DollarSign, Activity, ArrowRight, RefreshCw, Zap, AlertCircle,
 } from 'lucide-react';
 
+interface TermOption {
+  years: number;
+  monthlyPayment: number;
+  interestRate: number;
+}
+
 interface Quote {
   id: string;
   created_at: string;
@@ -14,6 +20,8 @@ interface Quote {
   recipient_name: string | null;
   recipient_company: string | null;
   asset_names: string[];
+  term_options: TermOption[] | null;
+  payment_timing: string | null;
 }
 
 interface Installer {
@@ -58,11 +66,13 @@ function daysAgo(n: number) {
 
 function Trend({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0) return null;
-  if (previous === 0) return (
-    <span className="flex items-center gap-0.5 text-emerald-600 text-xs font-semibold">
-      <TrendingUp className="w-3 h-3" /> New
-    </span>
-  );
+  if (previous === 0) {
+    return (
+      <span className="flex items-center gap-0.5 text-emerald-600 text-xs font-semibold">
+        <TrendingUp className="w-3 h-3" /> +100% vs prev period
+      </span>
+    );
+  }
   const pct = Math.round(((current - previous) / previous) * 100);
   if (pct === 0) return (
     <span className="flex items-center gap-0.5 text-gray-400 text-xs font-medium">
@@ -211,6 +221,55 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
   const avgDealSize = quotesLast30 > 0 ? valueLast30 / quotesLast30 : 0;
   const prevAvgDeal = quotesPrev30 > 0 ? valuePrev30 / quotesPrev30 : 0;
+
+  const quotesLast30List = quotes.filter(q => new Date(q.created_at) >= last30);
+
+  const termCounts: Record<number, number> = {};
+  let totalRateSum = 0;
+  let totalRateCount = 0;
+  let advanceCount = 0;
+  let arrearsCount = 0;
+
+  for (const q of quotesLast30List) {
+    if (q.payment_timing === 'advance') advanceCount++;
+    else arrearsCount++;
+
+    if (q.term_options && q.term_options.length > 0) {
+      const avgRate = q.term_options.reduce((s, t) => s + t.interestRate, 0) / q.term_options.length;
+      totalRateSum += avgRate;
+      totalRateCount++;
+      q.term_options.forEach(t => {
+        termCounts[t.years] = (termCounts[t.years] ?? 0) + 1;
+      });
+    }
+  }
+
+  const termEntries = Object.entries(termCounts)
+    .map(([y, c]) => ({ years: Number(y), count: c }))
+    .sort((a, b) => b.count - a.count);
+  const topTerm = termEntries[0]?.years ?? null;
+  const avgInterestRate = totalRateCount > 0 ? totalRateSum / totalRateCount : null;
+  const avgFinancedAmount = quotesLast30 > 0 ? valueLast30 / quotesLast30 : null;
+  const totalPaymentCount = advanceCount + arrearsCount;
+  const advancePct = totalPaymentCount > 0 ? Math.round((advanceCount / totalPaymentCount) * 100) : 0;
+  const arrearsPct = totalPaymentCount > 0 ? 100 - advancePct : 0;
+
+  const installerQuoteCounts = installers.map(i => ({
+    ...i,
+    allTimeQuotes: quotes.filter(q => q.installer_id === i.id).length,
+  }));
+  const installersWithQuotes = installerQuoteCounts.filter(i => i.allTimeQuotes > 0);
+  const avgQuotesPerInstaller = installersWithQuotes.length > 0
+    ? (installersWithQuotes.reduce((s, i) => s + i.allTimeQuotes, 0) / installersWithQuotes.length)
+    : 0;
+  const repeatUsers = installersWithQuotes.filter(i => i.allTimeQuotes > 1).length;
+  const repeatUsersPct = installersWithQuotes.length > 0
+    ? Math.round((repeatUsers / installersWithQuotes.length) * 100)
+    : 0;
+  const powerUsers = installersWithQuotes.filter(i => i.allTimeQuotes >= 3).length;
+  const powerUsersPct = installersWithQuotes.length > 0
+    ? Math.round((powerUsers / installersWithQuotes.length) * 100)
+    : 0;
 
   const daily7 = Array.from({ length: 7 }, (_, i) => {
     const from = daysAgo(6 - i);
@@ -557,6 +616,133 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-[#3A475B]">Loan Structure Insights</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Based on quotes in last 30 days</p>
+          </div>
+          {quotesLast30 === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No data</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Most Popular Loan Term</p>
+                  <p className="text-lg font-bold text-[#3A475B] mt-0.5">
+                    {topTerm !== null ? `${topTerm} years` : '—'}
+                  </p>
+                  {termEntries.length > 0 && (
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {termEntries.map(({ years, count }) => (
+                        <span
+                          key={years}
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${years === topTerm ? 'bg-[#28AA48]/10 text-[#28AA48] border-[#28AA48]/20' : 'bg-gray-50 text-gray-500 border-gray-100'}`}
+                        >
+                          {years}yr: {count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-500 mb-2">Advance vs Arrears</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-[#28AA48] rounded-l-full transition-all" style={{ width: `${arrearsPct}%` }} />
+                      <div className="h-full bg-blue-400 rounded-r-full transition-all" style={{ width: `${advancePct}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mt-1.5">
+                    <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                      <span className="w-2 h-2 rounded-full bg-[#28AA48] inline-block" />
+                      Arrears {arrearsPct}% ({arrearsCount})
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
+                      Advance {advancePct}% ({advanceCount})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                <p className="text-xs font-medium text-gray-500">Avg Interest Rate</p>
+                <p className="text-sm font-bold text-[#3A475B]">
+                  {avgInterestRate !== null ? `${avgInterestRate.toFixed(2)}%` : '—'}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between py-2">
+                <p className="text-xs font-medium text-gray-500">Avg Financed Amount</p>
+                <p className="text-sm font-bold text-[#3A475B]">
+                  {avgFinancedAmount !== null ? fmt(avgFinancedAmount) : '—'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-[#3A475B]">User Behaviour Patterns</h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">All-time installer activity</p>
+          </div>
+          {installersWithQuotes.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No data</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                <p className="text-xs font-medium text-gray-500">Avg Quotes per Installer</p>
+                <p className="text-sm font-bold text-[#3A475B]">{avgQuotesPerInstaller.toFixed(1)}</p>
+              </div>
+
+              <div className="py-2.5 border-b border-gray-50">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-medium text-gray-500">Repeat Users (2+ quotes)</p>
+                  <p className="text-sm font-bold text-[#3A475B]">{repeatUsersPct}%</p>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#28AA48] rounded-full transition-all" style={{ width: `${repeatUsersPct}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">{repeatUsers} of {installersWithQuotes.length} active installers</p>
+              </div>
+
+              <div className="py-2.5 border-b border-gray-50">
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-medium text-gray-500">Power Users (3+ quotes)</p>
+                  <p className="text-sm font-bold text-[#3A475B]">{powerUsersPct}%</p>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${powerUsersPct}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">{powerUsers} of {installersWithQuotes.length} active installers</p>
+              </div>
+
+              <div className="pt-1">
+                <p className="text-xs font-medium text-gray-500 mb-2">Quote Distribution</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: '1 quote', count: installersWithQuotes.filter(i => i.allTimeQuotes === 1).length, color: 'bg-gray-100 text-gray-600' },
+                    { label: '2–4 quotes', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 2 && i.allTimeQuotes <= 4).length, color: 'bg-blue-50 text-blue-700' },
+                    { label: '5+ quotes', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 5).length, color: 'bg-[#28AA48]/10 text-[#28AA48]' },
+                  ].map(({ label, count, color }) => (
+                    <div key={label} className={`rounded-lg p-2.5 text-center ${color}`}>
+                      <p className="text-base font-bold">{count}</p>
+                      <p className="text-[10px] font-medium mt-0.5">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
