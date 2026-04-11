@@ -620,9 +620,6 @@ async function generateQuotePdf(
     y = drawMiniHeader(page, y);
     y -= 20;
 
-    drawSectionLabel(page, "What You'll Need to Apply", PL, y);
-    y -= 16;
-
     const hasSolarStats = (annualSolarGenerationKwh && annualSolarGenerationKwh > 0) || (energySavings && energySavings > 0) || (sortedTerms[0]?.costPerKwhCents && sortedTerms[0].costPerKwhCents > 0);
     if (hasSolarStats) {
       const statBoxes = [
@@ -659,8 +656,11 @@ async function generateQuotePdf(
         const valW = tw(box.value, true, 13);
         dt(page, box.value, bx + (boxW - valW) / 2, y - 34, 13, true, box.textColor);
       }
-      y -= boxH + 14;
+      y -= boxH + 22;
     }
+
+    drawSectionLabel(page, "What You'll Need to Apply", PL, y);
+    y -= 24;
 
     if (isLowDoc) {
       let lowDocTitle: string;
