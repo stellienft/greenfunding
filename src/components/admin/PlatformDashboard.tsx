@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
 import {
-  TrendingUp, TrendingDown, Minus, FileText, ClipboardList, Users,
-  DollarSign, Activity, Calendar, ArrowRight, RefreshCw, Zap, AlertCircle,
+  TrendingUp, TrendingDown, Minus, FileText, Users,
+  DollarSign, Activity, ArrowRight, RefreshCw, Zap, AlertCircle,
 } from 'lucide-react';
 
 interface Quote {
@@ -15,14 +14,6 @@ interface Quote {
   recipient_name: string | null;
   recipient_company: string | null;
   asset_names: string[];
-}
-
-interface Application {
-  id: string;
-  created_at: string;
-  installer_id: string | null;
-  project_cost: number;
-  full_name: string;
 }
 
 interface Installer {
@@ -148,7 +139,6 @@ const CALC_LABELS: Record<string, string> = {
 
 export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
   const [installers, setInstallers] = useState<Installer[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -156,22 +146,15 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [quotesJson, appsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes`, {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }).then(r => r.json()),
-        supabase
-          .from('applications')
-          .select('id, created_at, installer_id, project_cost, full_name')
-          .order('created_at', { ascending: false }),
-      ]);
+      const quotesJson = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes`, {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }).then(r => r.json());
 
       setQuotes(quotesJson.quotes ?? []);
       setInstallers(quotesJson.installers ?? []);
-      setApplications((appsRes.data ?? []) as Application[]);
       setLastRefresh(new Date());
     } catch (e) {
       console.error('Dashboard load error:', e);
@@ -221,19 +204,10 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
     })
     .reduce((s, q) => s + Number(q.project_cost), 0);
 
-  const appsLast30 = applications.filter(a => new Date(a.created_at) >= last30).length;
-  const appsPrev30 = applications.filter(a => {
-    const d = new Date(a.created_at);
-    return d >= prev30 && d < last30;
-  }).length;
-
   const totalInstallers = installers.length;
   const activeInstallers = new Set(
     quotes.filter(q => new Date(q.created_at) >= last30).map(q => q.installer_id).filter(Boolean)
   ).size;
-
-  const conversionRate = quotesLast30 > 0 ? Math.round((appsLast30 / quotesLast30) * 100) : 0;
-  const prevConversion = quotesPrev30 > 0 ? Math.round((appsPrev30 / quotesPrev30) * 100) : 0;
 
   const avgDealSize = quotesLast30 > 0 ? valueLast30 / quotesLast30 : 0;
   const prevAvgDeal = quotesPrev30 > 0 ? valuePrev30 / quotesPrev30 : 0;
@@ -269,30 +243,16 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
     .sort((a, b) => b.recentQuotes - a.recentQuotes)
     .slice(0, 5);
 
-  const recentItems: RecentItem[] = [
-    ...quotes.slice(0, 15).map(q => ({
-      id: q.id,
-      type: 'quote' as const,
-      title: q.recipient_name || q.recipient_company || 'Unnamed Client',
-      subtitle: CALC_LABELS[q.calculator_type] ?? q.calculator_type,
-      value: Number(q.project_cost),
-      created_at: q.created_at,
-      tag: 'Quote',
-      tagColor: 'bg-blue-50 text-blue-700 border-blue-100',
-    })),
-    ...applications.slice(0, 10).map(a => ({
-      id: a.id,
-      type: 'application' as const,
-      title: a.full_name || 'Unnamed',
-      subtitle: 'Finance Application',
-      value: Number(a.project_cost),
-      created_at: a.created_at,
-      tag: 'Application',
-      tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    })),
-  ]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 10);
+  const recentItems: RecentItem[] = quotes.slice(0, 10).map(q => ({
+    id: q.id,
+    type: 'quote' as const,
+    title: q.recipient_name || q.recipient_company || 'Unnamed Client',
+    subtitle: CALC_LABELS[q.calculator_type] ?? q.calculator_type,
+    value: Number(q.project_cost),
+    created_at: q.created_at,
+    tag: 'Quote',
+    tagColor: 'bg-blue-50 text-blue-700 border-blue-100',
+  }));
 
   function timeAgo(iso: string) {
     const diff = Date.now() - new Date(iso).getTime();
@@ -407,16 +367,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesPrev30}
         />
         <StatCard
-          label="Applications (30 days)"
-          value={appsLast30.toString()}
-          sub="vs prior 30 days"
-          icon={ClipboardList}
-          iconBg="bg-emerald-50 text-emerald-600"
-          current={appsLast30}
-          previous={appsPrev30}
-          onClick={() => onNavigate?.('applications')}
-        />
-        <StatCard
           label="Pipeline Value (30d)"
           value={fmt(valueLast30)}
           sub={fmtFull(valueLast30)}
@@ -433,15 +383,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           iconBg="bg-teal-50 text-teal-600"
           current={avgDealSize}
           previous={prevAvgDeal}
-        />
-        <StatCard
-          label="Conversion Rate (30d)"
-          value={`${conversionRate}%`}
-          sub="Quote → Application"
-          icon={TrendingUp}
-          iconBg="bg-rose-50 text-rose-500"
-          current={conversionRate}
-          previous={prevConversion}
         />
         <StatCard
           label="Active Installers"
@@ -547,15 +488,9 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-[#3A475B]">Recent Activity</h3>
-            <div className="flex items-center gap-2">
-              <button onClick={() => onNavigate?.('quotes')} className="text-xs text-[#28AA48] hover:underline flex items-center gap-0.5">
-                Quotes <ArrowRight className="w-3 h-3" />
-              </button>
-              <span className="text-gray-200">|</span>
-              <button onClick={() => onNavigate?.('applications')} className="text-xs text-[#28AA48] hover:underline flex items-center gap-0.5">
-                Apps <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
+            <button onClick={() => onNavigate?.('quotes')} className="text-xs text-[#28AA48] hover:underline flex items-center gap-0.5">
+              View all <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
           {recentItems.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No recent activity</p>
@@ -593,12 +528,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                 color: 'text-blue-500 bg-blue-50',
               },
               {
-                label: 'Total Applications All Time',
-                value: applications.length.toLocaleString(),
-                icon: ClipboardList,
-                color: 'text-emerald-600 bg-emerald-50',
-              },
-              {
                 label: 'Total Pipeline Value (All Time)',
                 value: fmt(quotes.reduce((s, q) => s + Number(q.project_cost), 0)),
                 icon: DollarSign,
@@ -609,12 +538,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                 value: totalInstallers.toLocaleString(),
                 icon: Users,
                 color: 'text-orange-500 bg-orange-50',
-              },
-              {
-                label: 'Overall Conversion Rate',
-                value: `${quotes.length > 0 ? Math.round((applications.length / quotes.length) * 100) : 0}%`,
-                icon: TrendingUp,
-                color: 'text-teal-600 bg-teal-50',
               },
               {
                 label: 'Avg All-Time Deal Size',

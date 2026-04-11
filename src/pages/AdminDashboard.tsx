@@ -7,7 +7,6 @@ import { CalculatorConfig } from '../calculator';
 import { ConfigEditor } from '../components/admin/ConfigEditor';
 import { AssetsManager } from '../components/admin/AssetsManager';
 import { DocumentsManager } from '../components/admin/DocumentsManager';
-import { ApplicationsList } from '../components/admin/ApplicationsList';
 import { AdminQuotesList } from '../components/admin/AdminQuotesList';
 import { AdminCalculatorPicker } from '../components/admin/AdminCalculatorPicker';
 import { UserManagement } from '../components/admin/UserManagement';
@@ -20,11 +19,11 @@ import { Step1 } from './Step1';
 import { ServicedRentalStep1 } from './ServicedRentalStep1';
 import { Step3 } from './Step3';
 import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
-import { LogOut, Settings, Package, FileText, Inbox, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
 
 type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
-type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'applications' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
   {
@@ -51,7 +50,6 @@ const NAV_GROUPS = [
     label: 'Activity',
     items: [
       { id: 'quotes' as Tab, label: 'Quotes', icon: Send },
-      { id: 'applications' as Tab, label: 'Applications', icon: Inbox },
       { id: 'documents' as Tab, label: 'Documents', icon: FileText },
     ],
   },
@@ -242,7 +240,6 @@ export function AdminDashboard() {
                 {activeTab === 'assets' && <AssetsManager />}
                 {activeTab === 'documents' && <DocumentsManager />}
                 {activeTab === 'quotes' && <AdminQuotesList />}
-                {activeTab === 'applications' && <ApplicationsList />}
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}
