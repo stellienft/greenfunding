@@ -398,7 +398,7 @@ async function generateQuotePdf(
     dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK);
 
     dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    dt(page, 'Monthly Payment', W - PR - tw('Monthly Payment', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
 
     y -= tableHeaderH;
 
@@ -428,213 +428,186 @@ async function generateQuotePdf(
 
     y -= tableHeaderH * sortedTerms.length;
 
-    const noteText = `* All payments include GST. Quote valid for 30 days from ${quoteDate}.`;
+    const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
-    y -= 28;
-
-    drawPageFooter(page);
-  }
-
-  function drawSavingsPage() {
-    if (!hasSavings || !energySavings) return;
-
-    const page = pdfDoc.addPage([W, H]);
-    let y = H;
-    y = drawMiniHeader(page, y);
-    y -= 20;
-
-    drawSectionLabel(page, 'Savings Thanks to Solar', PL, y);
-    y -= 18;
-
-    const YEARS = 25;
-    const GROWTH_RATE = 0.03;
-    const annualLoanCost = sortedTerms[0]?.monthlyPayment ? sortedTerms[0].monthlyPayment * 12 : 0;
-    const electricityBillWithSolar = energySavings * 0.05;
-    const firstTermYears = sortedTerms[0]?.years ?? 0;
-
-    const chartData: Array<{ year: number; billWithoutSolar: number; billWithSolar: number; loanCost: number; cumulativeSavings: number }> = [];
-    let currentBill = energySavings;
-    let cumSavings = 0;
-    for (let yr = 1; yr <= YEARS; yr++) {
-      const loanCostThisYear = (firstTermYears && annualLoanCost && yr <= firstTermYears) ? annualLoanCost : 0;
-      const billWithSolar = electricityBillWithSolar * Math.pow(1 + GROWTH_RATE, yr - 1);
-      const netSaving = currentBill - billWithSolar - loanCostThisYear;
-      cumSavings += netSaving;
-      chartData.push({ year: yr, billWithoutSolar: currentBill, billWithSolar, loanCost: loanCostThisYear, cumulativeSavings: cumSavings });
-      currentBill *= (1 + GROWTH_RATE);
-    }
-
-    // Summary cards row
-    const sCardH = 44;
-    const sCardGap = 6;
-    const sCardCount = 3;
-    const sCardW = (CW - sCardGap * (sCardCount - 1)) / sCardCount;
-
-    // Card 1: bill without solar (dark bg)
-    dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, C.BORDER, 0.5, 6);
-    const c1Label = 'Electricity bill without solar';
-    const c1LabelW = tw(c1Label, false, 6.5);
-    dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 12, 6.5, false, C.WHITE, 0.7);
-    const c1Val = formatCurrencyAU(energySavings) + '/yr';
-    const c1ValW = tw(c1Val, true, 9);
-    dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 28, 9, true, C.WHITE);
-
-    // Card 2: bill with solar (teal bg)
-    dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.15, C.TEAL, 0.4, 6);
-    const c2Label = 'Electricity bill with solar';
-    const c2LabelW = tw(c2Label, false, 6.5);
-    dt(page, c2Label, PL + sCardW + sCardGap + (sCardW - c2LabelW) / 2, y - 12, 6.5, false, C.TEAL);
-    const c2Val = formatCurrencyAU(electricityBillWithSolar) + '/yr';
-    const c2ValW = tw(c2Val, true, 9);
-    dt(page, c2Val, PL + sCardW + sCardGap + (sCardW - c2ValW) / 2, y - 28, 9, true, C.TEAL);
-
-    // Card 3: annual repayments (green bg)
-    dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3, 6);
-    const c3Label = firstTermYears ? `Annual payments (${firstTermYears} yr)` : '25-Year Net Savings';
-    const c3LabelW = tw(c3Label, false, 6.5);
-    dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 12, 6.5, false, C.GREEN);
-    const c3Val = firstTermYears ? formatCurrencyAU(annualLoanCost) + '/yr' : formatCurrencyAU(chartData[YEARS - 1].cumulativeSavings);
-    const c3ValW = tw(c3Val, true, 9);
-    dt(page, c3Val, PL + (sCardW + sCardGap) * 2 + (sCardW - c3ValW) / 2, y - 28, 9, true, C.GREEN);
-
-    y -= sCardH + 12;
-
-    // Legend
-    const legendItems = [
-      { label: 'Electricity bill without solar', color: C.DARK },
-      { label: 'Electricity bill with solar', color: C.TEAL },
-      ...(firstTermYears ? [{ label: 'Payment plan instalments', color: C.GREEN }] : []),
-    ];
-    let lx = PL;
-    for (const li of legendItems) {
-      dr(page, lx, y - 8, 10, 10, li.color);
-      dt(page, li.label, lx + 14, y - 1, 7, false, C.GRAY_TEXT);
-      lx += 14 + tw(li.label, false, 7) + 16;
-    }
-    y -= 18;
-
-    // Bar chart
-    const chartH = 160;
-    const chartPL = 52;
-    const chartPR = 10;
-    const chartPTop = 10;
-    const chartPBot = 28;
-    const plotW = CW - chartPL - chartPR;
-    const plotH = chartH - chartPTop - chartPBot;
-
-    const maxVal = Math.max(...chartData.map(d => Math.max(d.billWithoutSolar, d.billWithSolar, d.loanCost)));
-    const rawYMax = Math.ceil(maxVal / 1000) * 1000 || 1;
-    const yMax = Math.ceil(rawYMax / 5) * 5 || 1;
-    const yTicks = [0, 1, 2, 3, 4, 5].map(i => (yMax / 5) * i);
-
-    const chartBaseX = PL + chartPL;
-    const chartBaseY = y - chartH + chartPBot;
-
-    // Grid lines and y-axis labels
-    for (const tick of yTicks) {
-      const tickY = chartBaseY + (tick / yMax) * plotH;
-      dl(page, chartBaseX, tickY, chartBaseX + plotW, tickY, C.BORDER, 0.5);
-      const tickLabel = tick >= 1000 ? `$${(tick / 1000).toFixed(0)}k` : `$${tick}`;
-      const tlW = tw(tickLabel, false, 6);
-      dt(page, tickLabel, chartBaseX - tlW - 3, tickY - 2, 6, false, C.GRAY_LIGHT);
-    }
-
-    // Bars
-    const barGroupW = plotW / YEARS;
-    const numBars = firstTermYears ? 3 : 2;
-    const totalBarSpace = barGroupW * 0.78;
-    const barW = totalBarSpace / numBars;
-    const barGap = barGroupW * 0.04;
-
-    for (let i = 0; i < chartData.length; i++) {
-      const d = chartData[i];
-      const groupStartX = chartBaseX + i * barGroupW + (barGroupW - totalBarSpace) / 2;
-
-      // bar 0: bill without solar
-      const bh0 = Math.max(0, (d.billWithoutSolar / yMax) * plotH);
-      dr(page, groupStartX, chartBaseY + (d.billWithoutSolar / yMax) * plotH - bh0, barW, bh0, C.DARK, 0.9);
-
-      // bar 1: bill with solar
-      const bh1 = Math.max(0, (d.billWithSolar / yMax) * plotH);
-      dr(page, groupStartX + barW + barGap, chartBaseY + (d.billWithSolar / yMax) * plotH - bh1, barW, bh1, C.TEAL, 0.85);
-
-      // bar 2: loan cost
-      if (firstTermYears && d.loanCost > 0) {
-        const bh2 = Math.max(0, (d.loanCost / yMax) * plotH);
-        dr(page, groupStartX + (barW + barGap) * 2, chartBaseY + (d.loanCost / yMax) * plotH - bh2, barW, bh2, C.GREEN, 0.9);
-      }
-
-      // x-axis labels at yr 1, 5, 10, 15, 20, 25
-      if (d.year === 1 || d.year % 5 === 0) {
-        const labelX = chartBaseX + i * barGroupW + barGroupW / 2;
-        const lyW = tw(String(d.year), false, 7);
-        dt(page, String(d.year), labelX - lyW / 2, chartBaseY - 14, 7, false, C.GRAY_TEXT);
-      }
-    }
-
-    // x-axis baseline
-    dl(page, chartBaseX, chartBaseY, chartBaseX + plotW, chartBaseY, C.BORDER2, 0.75);
-
-    // "Years" label
-    const yearsLabelW = tw('Years', false, 7);
-    dt(page, 'Years', chartBaseX + plotW / 2 - yearsLabelW / 2, chartBaseY - 22, 7, false, C.GRAY_LIGHT);
-
-    y -= chartH + 12;
-
-    // Post-loan note
-    if (firstTermYears) {
-      const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? energySavings;
-      const noteText = `After year ${firstTermYears}, your finance payments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
-      const noteH = 28;
-      dr(page, PL, y - noteH, CW, noteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
-      dtWrapped(page, noteText, PL + 10, y - 10, 7.5, false, C.GREEN, CW - 20, 11);
-      y -= noteH + 12;
-    }
-
-    // Cumulative savings table
-    const cumH = 56;
-    dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, undefined, 0, 8);
-
-    const cumLabelY = y - 14;
-    dt(page, 'Estimated Cumulative Savings', PL + 14, cumLabelY, 8, true, C.WHITE);
-    dl(page, PL, y - 22, PL + CW, y - 22, { r: 1, g: 1, b: 1 }, 0.1);
-
-    const colBoxes = [
-      {
-        label: firstTermYears ? `Over ${firstTermYears} years` : 'Over 25 years',
-        sublabel: firstTermYears ? 'Period of facility' : '25-year projection',
-        value: chartData[(firstTermYears ?? YEARS) - 1]?.cumulativeSavings ?? 0,
-      },
-      { label: 'Over 15 years', sublabel: '15-year projection', value: chartData[14]?.cumulativeSavings ?? 0 },
-      { label: 'Over 25 years', sublabel: '25-year projection', value: chartData[24]?.cumulativeSavings ?? 0 },
-    ];
-
-    const colW3 = CW / 3;
-    for (let ci = 0; ci < colBoxes.length; ci++) {
-      const box = colBoxes[ci];
-      const cx = PL + colW3 * ci;
-      if (ci > 0) dl(page, cx, y - 22, cx, y - cumH, { r: 1, g: 1, b: 1 }, 0.1);
-      const subLabelW = tw(box.sublabel, false, 6.5);
-      dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, y - 28, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
-      const mainLabelW = tw(box.label, true, 7.5);
-      dt(page, box.label, cx + (colW3 - mainLabelW) / 2, y - 38, 7.5, true, C.WHITE);
-      const valColor = box.value >= 0 ? C.GREEN : hexToRgb('#ef4444');
-      const valText = formatCurrencyAU(box.value);
-      const valW = tw(valText, true, 11);
-      dt(page, valText, cx + (colW3 - valW) / 2, y - 52, 11, true, valColor);
-    }
-
-    y -= cumH + 10;
-
-    const disclaimerNote = '* Indicative only. Based on 3% annual energy price growth.';
-    const dnW = tw(disclaimerNote, false, 6.5);
-    dt(page, disclaimerNote, PL + CW - dnW, y - 4, 6.5, false, C.GRAY_LIGHT);
+    y -= 24;
 
     if (disclaimerText) {
-      y -= 20;
       const dH = 28;
       dr(page, PL, y - dH, CW, dH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75, 6);
       dtWrapped(page, disclaimerText, PL + 10, y - 10, 7.5, false, C.AMBER_TEXT, CW - 20, 11);
+      y -= dH + 12;
+    }
+
+    if (hasSavings && energySavings) {
+      drawSectionLabel(page, 'Savings Thanks to Solar', PL, y);
+      y -= 18;
+
+      const YEARS = 25;
+      const GROWTH_RATE = 0.03;
+      const annualLoanCost = sortedTerms[0]?.monthlyPayment ? sortedTerms[0].monthlyPayment * 12 : 0;
+      const electricityBillWithSolar = energySavings * 0.05;
+      const firstTermYears = sortedTerms[0]?.years ?? 0;
+
+      const chartData: Array<{ year: number; billWithoutSolar: number; billWithSolar: number; loanCost: number; cumulativeSavings: number }> = [];
+      let currentBill = energySavings;
+      let cumSavings = 0;
+      for (let yr = 1; yr <= YEARS; yr++) {
+        const loanCostThisYear = (firstTermYears && annualLoanCost && yr <= firstTermYears) ? annualLoanCost : 0;
+        const billWithSolar = electricityBillWithSolar * Math.pow(1 + GROWTH_RATE, yr - 1);
+        const netSaving = currentBill - billWithSolar - loanCostThisYear;
+        cumSavings += netSaving;
+        chartData.push({ year: yr, billWithoutSolar: currentBill, billWithSolar, loanCost: loanCostThisYear, cumulativeSavings: cumSavings });
+        currentBill *= (1 + GROWTH_RATE);
+      }
+
+      const sCardH = 44;
+      const sCardGap = 6;
+      const sCardCount = 3;
+      const sCardW = (CW - sCardGap * (sCardCount - 1)) / sCardCount;
+
+      dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, C.BORDER, 0.5, 6);
+      const c1Label = 'Electricity bill without solar';
+      const c1LabelW = tw(c1Label, false, 6.5);
+      dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 12, 6.5, false, C.WHITE, 0.7);
+      const c1Val = formatCurrencyAU(energySavings) + '/yr';
+      const c1ValW = tw(c1Val, true, 9);
+      dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 28, 9, true, C.WHITE);
+
+      dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.15, C.TEAL, 0.4, 6);
+      const c2Label = 'Electricity bill with solar';
+      const c2LabelW = tw(c2Label, false, 6.5);
+      dt(page, c2Label, PL + sCardW + sCardGap + (sCardW - c2LabelW) / 2, y - 12, 6.5, false, C.TEAL);
+      const c2Val = formatCurrencyAU(electricityBillWithSolar) + '/yr';
+      const c2ValW = tw(c2Val, true, 9);
+      dt(page, c2Val, PL + sCardW + sCardGap + (sCardW - c2ValW) / 2, y - 28, 9, true, C.TEAL);
+
+      dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3, 6);
+      const c3Label = firstTermYears ? `Annual payments (${firstTermYears} yr)` : '25-Year Net Savings';
+      const c3LabelW = tw(c3Label, false, 6.5);
+      dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 12, 6.5, false, C.GREEN);
+      const c3Val = firstTermYears ? formatCurrencyAU(annualLoanCost) + '/yr' : formatCurrencyAU(chartData[YEARS - 1].cumulativeSavings);
+      const c3ValW = tw(c3Val, true, 9);
+      dt(page, c3Val, PL + (sCardW + sCardGap) * 2 + (sCardW - c3ValW) / 2, y - 28, 9, true, C.GREEN);
+
+      y -= sCardH + 12;
+
+      const legendItems = [
+        { label: 'Electricity bill without solar', color: C.DARK },
+        { label: 'Electricity bill with solar', color: C.TEAL },
+        ...(firstTermYears ? [{ label: 'Payment plan instalments', color: C.GREEN }] : []),
+      ];
+      let lx = PL;
+      for (const li of legendItems) {
+        dr(page, lx, y - 8, 10, 10, li.color);
+        dt(page, li.label, lx + 14, y - 1, 7, false, C.GRAY_TEXT);
+        lx += 14 + tw(li.label, false, 7) + 16;
+      }
+      y -= 18;
+
+      const chartH = 160;
+      const chartPL = 52;
+      const chartPR = 10;
+      const chartPTop = 10;
+      const chartPBot = 28;
+      const plotW = CW - chartPL - chartPR;
+      const plotH = chartH - chartPTop - chartPBot;
+
+      const maxVal = Math.max(...chartData.map(d => Math.max(d.billWithoutSolar, d.billWithSolar, d.loanCost)));
+      const rawYMax = Math.ceil(maxVal / 1000) * 1000 || 1;
+      const yMax = Math.ceil(rawYMax / 5) * 5 || 1;
+      const yTicks = [0, 1, 2, 3, 4, 5].map(i => (yMax / 5) * i);
+
+      const chartBaseX = PL + chartPL;
+      const chartBaseY = y - chartH + chartPBot;
+
+      for (const tick of yTicks) {
+        const tickY = chartBaseY + (tick / yMax) * plotH;
+        dl(page, chartBaseX, tickY, chartBaseX + plotW, tickY, C.BORDER, 0.5);
+        const tickLabel = tick >= 1000 ? `$${(tick / 1000).toFixed(0)}k` : `$${tick}`;
+        const tlW = tw(tickLabel, false, 6);
+        dt(page, tickLabel, chartBaseX - tlW - 3, tickY - 2, 6, false, C.GRAY_LIGHT);
+      }
+
+      const barGroupW = plotW / YEARS;
+      const numBars = firstTermYears ? 3 : 2;
+      const totalBarSpace = barGroupW * 0.78;
+      const barW = totalBarSpace / numBars;
+      const barGap = barGroupW * 0.04;
+
+      for (let i = 0; i < chartData.length; i++) {
+        const d = chartData[i];
+        const groupStartX = chartBaseX + i * barGroupW + (barGroupW - totalBarSpace) / 2;
+
+        const bh0 = Math.max(0, (d.billWithoutSolar / yMax) * plotH);
+        dr(page, groupStartX, chartBaseY + (d.billWithoutSolar / yMax) * plotH - bh0, barW, bh0, C.DARK, 0.9);
+
+        const bh1 = Math.max(0, (d.billWithSolar / yMax) * plotH);
+        dr(page, groupStartX + barW + barGap, chartBaseY + (d.billWithSolar / yMax) * plotH - bh1, barW, bh1, C.TEAL, 0.85);
+
+        if (firstTermYears && d.loanCost > 0) {
+          const bh2 = Math.max(0, (d.loanCost / yMax) * plotH);
+          dr(page, groupStartX + (barW + barGap) * 2, chartBaseY + (d.loanCost / yMax) * plotH - bh2, barW, bh2, C.GREEN, 0.9);
+        }
+
+        if (d.year === 1 || d.year % 5 === 0) {
+          const labelX = chartBaseX + i * barGroupW + barGroupW / 2;
+          const lyW = tw(String(d.year), false, 7);
+          dt(page, String(d.year), labelX - lyW / 2, chartBaseY - 14, 7, false, C.GRAY_TEXT);
+        }
+      }
+
+      dl(page, chartBaseX, chartBaseY, chartBaseX + plotW, chartBaseY, C.BORDER2, 0.75);
+
+      const yearsLabelW = tw('Years', false, 7);
+      dt(page, 'Years', chartBaseX + plotW / 2 - yearsLabelW / 2, chartBaseY - 22, 7, false, C.GRAY_LIGHT);
+
+      y -= chartH + 12;
+
+      if (firstTermYears) {
+        const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? energySavings;
+        const postLoanNote = `After year ${firstTermYears}, your finance payments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
+        const postNoteH = 28;
+        dr(page, PL, y - postNoteH, CW, postNoteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
+        dtWrapped(page, postLoanNote, PL + 10, y - 10, 7.5, false, C.GREEN, CW - 20, 11);
+        y -= postNoteH + 12;
+      }
+
+      const cumH = 56;
+      dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, undefined, 0, 8);
+      dt(page, 'Estimated Cumulative Savings', PL + 14, y - 14, 8, true, C.WHITE);
+      dl(page, PL, y - 22, PL + CW, y - 22, { r: 1, g: 1, b: 1 }, 0.1);
+
+      const colBoxes = [
+        {
+          label: firstTermYears ? `Over ${firstTermYears} years` : 'Over 25 years',
+          sublabel: firstTermYears ? 'Period of facility' : '25-year projection',
+          value: chartData[(firstTermYears ?? YEARS) - 1]?.cumulativeSavings ?? 0,
+        },
+        { label: 'Over 15 years', sublabel: '15-year projection', value: chartData[14]?.cumulativeSavings ?? 0 },
+        { label: 'Over 25 years', sublabel: '25-year projection', value: chartData[24]?.cumulativeSavings ?? 0 },
+      ];
+
+      const colW3 = CW / 3;
+      for (let ci = 0; ci < colBoxes.length; ci++) {
+        const box = colBoxes[ci];
+        const cx = PL + colW3 * ci;
+        if (ci > 0) dl(page, cx, y - 22, cx, y - cumH, { r: 1, g: 1, b: 1 }, 0.1);
+        const subLabelW = tw(box.sublabel, false, 6.5);
+        dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, y - 28, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
+        const mainLabelW = tw(box.label, true, 7.5);
+        dt(page, box.label, cx + (colW3 - mainLabelW) / 2, y - 38, 7.5, true, C.WHITE);
+        const valColor = box.value >= 0 ? C.GREEN : hexToRgb('#ef4444');
+        const valText = formatCurrencyAU(box.value);
+        const valW = tw(valText, true, 11);
+        dt(page, valText, cx + (colW3 - valW) / 2, y - 52, 11, true, valColor);
+      }
+
+      y -= cumH + 10;
+
+      const indicativeNote = '* Indicative only. Based on 3% annual energy price growth.';
+      const inW = tw(indicativeNote, false, 6.5);
+      dt(page, indicativeNote, PL + CW - inW, y - 4, 6.5, false, C.GRAY_LIGHT);
     }
 
     drawPageFooter(page);
@@ -765,17 +738,10 @@ async function generateQuotePdf(
 
     y -= getStartedH + 16;
 
-    if (disclaimerText) {
-      const disclaimerH = 36 + dtWrapped(page, disclaimerText, PL + 12, y - 20, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
-      dr(page, PL, y - disclaimerH, CW, disclaimerH, C.AMBER_BG, 1, C.AMBER_BORDER, 0.75, 6);
-      dtWrapped(page, disclaimerText, PL + 12, y - 14, 7.5, false, C.AMBER_TEXT, CW - 24, 11);
-    }
-
     drawPageFooter(page);
   }
 
   drawPage1();
-  drawSavingsPage();
   drawPage2();
 
   return await pdfDoc.save();
