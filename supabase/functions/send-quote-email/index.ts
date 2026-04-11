@@ -522,7 +522,7 @@ async function generateQuotePdf(
       const cumHeaderH = 30;
       const cumBodyH = 58;
       const cumH = cumHeaderH + cumBodyH;
-      dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, undefined, 0, 8);
+      dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, C.BORDER, 0.3, 8);
       dt(page, 'Estimated Cumulative Savings', PL + 14, y - 11, 9, true, C.WHITE);
       dl(page, PL, y - cumHeaderH, PL + CW, y - cumHeaderH, { r: 1, g: 1, b: 1 }, 0.12);
 
@@ -572,7 +572,7 @@ async function generateQuotePdf(
     const tableTotalH = tableHeaderH + tableBodyH;
     dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
     dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2 + 2, C.DARK);
 
     dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
     dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
@@ -622,6 +622,45 @@ async function generateQuotePdf(
 
     drawSectionLabel(page, "What You'll Need to Apply", PL, y);
     y -= 16;
+
+    const hasSolarStats = (annualSolarGenerationKwh && annualSolarGenerationKwh > 0) || (energySavings && energySavings > 0) || (sortedTerms[0]?.costPerKwhCents && sortedTerms[0].costPerKwhCents > 0);
+    if (hasSolarStats) {
+      const statBoxes = [
+        {
+          label: 'Annual Generation',
+          value: annualSolarGenerationKwh && annualSolarGenerationKwh > 0 ? `${Math.round(annualSolarGenerationKwh).toLocaleString('en-AU')} kWh` : '—',
+          color: C.DARK,
+          textColor: C.WHITE,
+          subColor: { r: 1, g: 1, b: 1 } as { r: number; g: number; b: number },
+        },
+        {
+          label: 'Est. Annual Savings',
+          value: energySavings && energySavings > 0 ? formatCurrencyAU(energySavings) : '—',
+          color: C.GREEN,
+          textColor: C.WHITE,
+          subColor: { r: 1, g: 1, b: 1 } as { r: number; g: number; b: number },
+        },
+        {
+          label: 'Cost per kWh',
+          value: sortedTerms[0]?.costPerKwhCents && sortedTerms[0].costPerKwhCents > 0 ? `${sortedTerms[0].costPerKwhCents.toFixed(2)}c` : '—',
+          color: C.BLUE_BG,
+          textColor: C.BLUE_TEXT,
+          subColor: hexToRgb('#3B82F6'),
+        },
+      ];
+      const boxW = (CW - 12) / 3;
+      const boxH = 52;
+      for (let bi = 0; bi < statBoxes.length; bi++) {
+        const bx = PL + bi * (boxW + 6);
+        const box = statBoxes[bi];
+        dr(page, bx, y - boxH, boxW, boxH, box.color, 1, undefined, 0, 8);
+        const labelW = tw(box.label, false, 7);
+        dt(page, box.label, bx + (boxW - labelW) / 2, y - 14, 7, false, box.subColor, 0.8);
+        const valW = tw(box.value, true, 13);
+        dt(page, box.value, bx + (boxW - valW) / 2, y - 34, 13, true, box.textColor);
+      }
+      y -= boxH + 14;
+    }
 
     if (isLowDoc) {
       let lowDocTitle: string;
@@ -680,7 +719,7 @@ async function generateQuotePdf(
       const docTotalH = tableHeaderH + docBodyH;
       dr(page, PL, y - docTotalH, CW, docTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
       dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
-      dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
+      dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2 + 2, C.DARK);
 
       const docColW = CW * 0.55;
       const checkColW = (CW - docColW) / 3;
