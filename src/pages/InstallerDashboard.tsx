@@ -8,6 +8,7 @@ import {
   FileText, TrendingUp, ArrowRight,
   DollarSign, Tag, MapPin, Calculator, Users
 } from 'lucide-react';
+import { InstallerEmailTemplates } from '../components/installer/EmailTemplates';
 
 interface QuoteSummary {
   id: string;
@@ -338,6 +339,8 @@ export function InstallerDashboard() {
             </div>
           )}
         </div>
+
+        <InstallerEmailTemplates />
       </div>
     </InstallerLayout>
   );
