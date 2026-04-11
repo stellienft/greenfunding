@@ -14,6 +14,7 @@ import { MyAccount } from './pages/MyAccount';
 import { Contacts } from './pages/Contacts';
 import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
+import { OnlineQuote } from './pages/OnlineQuote';
 import { Setup2FA } from './pages/Setup2FA';
 import { Verify2FA } from './pages/Verify2FA';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -146,6 +147,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <QuoteDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/quote-preview"
+                element={
+                  <ProtectedRoute>
+                    <OnlineQuote />
                   </ProtectedRoute>
                 }
               />

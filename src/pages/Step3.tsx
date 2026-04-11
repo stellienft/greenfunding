@@ -355,12 +355,41 @@ export function Step3() {
       });
       const result = await response.json();
       if (!response.ok || result.error) throw new Error(result.error || 'Failed to generate quote');
-      const link = document.createElement('a');
-      link.href = `data:application/pdf;base64,${result.pdfBase64}`;
-      link.download = result.filename || `GreenFunding-Quote-${result.quoteNumber}.pdf`;
-      link.click();
+
       setGeneratedQuoteNumber(result.quoteNumber);
       setPdfGenerated(true);
+
+      const quoteDate = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      navigate('/quote-preview', {
+        state: {
+          quoteNumber: result.quoteNumber,
+          quoteDate,
+          clientName: quoteClientFields.clientName.trim(),
+          clientAddress: quoteClientFields.clientAddress.trim(),
+          clientEmail: quoteClientFields.clientEmail.trim() || undefined,
+          clientPhone: quoteClientFields.companyPhone.trim() || undefined,
+          systemSize: quoteClientFields.systemSize.trim() || undefined,
+          projectCost: state.projectCost,
+          assetNames: result.assetNames || [],
+          termOptions: filteredTerms.map(t => ({
+            years: t.years,
+            monthlyPayment: t.monthlyPayment,
+            interestRate: t.interestRate,
+            totalFinanced: t.totalFinanced,
+            costPerKwhCents: t.costPerKwh ?? undefined,
+          })),
+          paymentTiming: state.paymentTiming,
+          calculatorType: state.calculatorType,
+          installerName: installerProfile?.full_name || user?.user_metadata?.full_name || undefined,
+          installerCompany: installerProfile?.company_name || user?.user_metadata?.company_name || undefined,
+          installerEmail: installerProfile?.email || user?.email || undefined,
+          installerPhone: installerProfile?.phone_number || undefined,
+          annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
+          energySavings: state.energySavings || undefined,
+          disclaimerText: undefined,
+        },
+      });
     } catch (err: any) {
       setQuoteError(err.message || 'Failed to generate quote. Please try again.');
     } finally {
