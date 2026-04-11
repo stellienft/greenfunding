@@ -101,7 +101,7 @@ const C = {
 
 // SVG logo paths from green-funding-invertedlogo.svg (white text + gradient GG icon)
 // Scale factor to fit in header: original viewBox 366x66, we render at ~110x20 pts
-const LOGO_SCALE = 0.28;
+const LOGO_SCALE = 0.38;
 const LOGO_PATHS_WHITE = [
   "M22.0898 45.9182C29.407 45.9182 34.2823 47.4915 34.2823 53.7162C34.2823 61.3 26.9651 65.5913 16.7073 65.5184C6.81065 65.4455 0.925104 61.5143 0.925104 54.3593C0.925104 52.2158 1.64306 50.2095 2.79094 48.5675C0.99819 46.8527 -0.0078125 44.5635 -0.0078125 42.1284C-0.0078125 39.3376 1.42811 36.0494 4.65247 34.4032C3.5046 32.4741 2.85972 30.2534 2.85972 27.7498C2.85972 20.3847 9.24397 14.7344 17.1329 14.7344H33.4138V19.8145H27.8206C29.4715 21.8894 30.4732 24.5345 30.4732 27.7541C30.4732 35.2649 24.4501 40.9152 16.703 40.9152C13.7624 40.9152 11.0367 40.1264 8.81405 38.6988C6.94822 39.269 5.87343 40.4136 5.87343 42.1327C5.87343 44.422 8.0961 45.9224 10.9679 45.9224H22.0855L22.0898 45.9182ZM28.4741 54.2135C28.4741 51.4956 26.1096 51.2083 20.8001 51.2083H9.68248C9.1107 51.2083 8.53461 51.1355 7.96282 51.0669C7.10299 52.07 6.67308 53.1418 6.67308 54.355C6.67308 58.2905 10.1855 60.1468 16.7159 60.1468C23.6719 60.1468 28.4784 57.7846 28.4784 54.2092L28.4741 54.2135ZM8.46152 27.7498C8.46152 32.2554 11.9051 35.6893 16.7116 35.6893C21.5181 35.6893 24.9617 32.3283 24.9617 27.7498C24.9617 23.4585 21.733 20.1703 16.7847 20.1703C11.8364 20.1703 8.46582 23.5313 8.46582 27.7498H8.46152Z",
   "M58.672 16.0205L56.3032 21.3835C55.2284 21.0277 53.8656 20.7405 52.6446 20.7405C47.5501 20.7405 43.5347 24.1744 43.5347 31.1108V51.2083H37.7266V15.5918H42.1719L43.0317 19.5273C45.3275 16.3077 49.201 14.7344 53.1433 14.7344C55.2241 14.7344 57.2318 15.3774 58.6678 16.0205H58.672Z",
@@ -221,41 +221,43 @@ async function generateQuotePdf(
   }
 
   function drawPageHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 72;
+    const headerH = 84;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    // Logo SVG: scale 0.28, rendered height ~18.5pt. Centre vertically in header.
-    // drawLogo baseY param: the logo's bottom-left anchor = baseY, top = baseY + svgH*scale
-    const logoRenderH = 66 * LOGO_SCALE; // ~18.5
+    // Logo rendered height = svgH * scale = 66 * 0.38 ≈ 25pt
+    const logoRenderH = 66 * LOGO_SCALE;
     const logoCentreY = topY - headerH / 2;
-    const logoBaseY = logoCentreY - logoRenderH / 2 - 4;
+    const logoBaseY = logoCentreY - logoRenderH / 2 + 2;
     drawLogo(page, PL, logoBaseY, LOGO_SCALE);
     const subText = 'Finance Solutions for Clean Energy';
-    dt(page, subText, PL, logoBaseY - 2, 7, false, { r: 1, g: 1, b: 1 }, 0.5);
+    dt(page, subText, PL, logoBaseY - 4, 7.5, false, { r: 1, g: 1, b: 1 }, 0.5);
 
     const qnLabel = 'Finance Quote';
-    const qnLabelW = tw(qnLabel, false, 7);
-    dt(page, qnLabel, W - PR - qnLabelW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
-    const qnW = tw(quoteNumber, true, 14);
-    dt(page, quoteNumber, W - PR - qnW, topY - 32, 14, true, C.WHITE);
-    const qdW = tw(quoteDate, false, 8);
-    dt(page, quoteDate, W - PR - qdW, topY - 50, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
+    const qnLabelW = tw(qnLabel, false, 7.5);
+    dt(page, qnLabel, W - PR - qnLabelW, topY - 20, 7.5, false, { r: 1, g: 1, b: 1 }, 0.55);
+    const qnW = tw(quoteNumber, true, 15);
+    dt(page, quoteNumber, W - PR - qnW, topY - 36, 15, true, C.WHITE);
+    const qdW = tw(quoteDate, false, 8.5);
+    dt(page, quoteDate, W - PR - qdW, topY - 56, 8.5, false, { r: 1, g: 1, b: 1 }, 0.5);
 
     return topY - headerH;
   }
 
   function drawMiniHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 48;
+    const headerH = 56;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    const logoRenderH2 = 66 * 0.24;
+    const miniScale = 0.32;
+    const logoRenderH2 = 66 * miniScale;
     const logoCentreY2 = topY - headerH / 2;
-    const logoBaseY2 = logoCentreY2 - logoRenderH2 / 2 - 2;
-    drawLogo(page, PL, logoBaseY2, 0.24);
-    const qnW = tw(quoteNumber, false, 7);
-    dt(page, quoteNumber, W - PR - qnW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    const logoBaseY2 = logoCentreY2 - logoRenderH2 / 2 + 2;
+    drawLogo(page, PL, logoBaseY2, miniScale);
+    const subText2 = 'Finance Solutions for Clean Energy';
+    dt(page, subText2, PL, logoBaseY2 - 3, 6.5, false, { r: 1, g: 1, b: 1 }, 0.45);
+    const qnW = tw(quoteNumber, false, 7.5);
+    dt(page, quoteNumber, W - PR - qnW, topY - 20, 7.5, false, { r: 1, g: 1, b: 1 }, 0.55);
     const qdW = tw(quoteDate, false, 7);
-    dt(page, quoteDate, W - PR - qdW, topY - 30, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
+    dt(page, quoteDate, W - PR - qdW, topY - 33, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
 
     return topY - headerH;
   }
@@ -355,7 +357,7 @@ async function generateQuotePdf(
     const cardCount = 2 + (systemSize ? 1 : 0) + (hasSolar && annualSolarGenerationKwh ? 1 : 0);
     const cardGap = 6;
     const cardW = (CW - cardGap * (cardCount - 1)) / cardCount;
-    const cardH = 52;
+    const cardH = 64;
 
     drawInfoCard(page, PL, y, cardW, cardH, 'Project Cost (Inc. GST)', formatCurrencyAU(projectCost), true, C.GREEN, { r: 1, g: 1, b: 1 }, C.WHITE);
 
@@ -380,7 +382,7 @@ async function generateQuotePdf(
       const solCardGap = 6;
       const solCardCount = 1 + (hasSavings ? 1 : 0) + sortedTerms.filter(t => t.costPerKwhCents && t.costPerKwhCents > 0).length;
       const solCardW = (CW - solCardGap * (solCardCount - 1)) / solCardCount;
-      const solCardH = 52;
+      const solCardH = 64;
 
       drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER, 'per year');
 
@@ -399,58 +401,6 @@ async function generateQuotePdf(
 
       y -= solCardH + 18;
     }
-
-    drawSectionLabel(page, 'Payment Options', PL, y);
-    y -= 14;
-
-    const tableHeaderH = 28;
-    const col1W = 130;
-    const col2W = CW - col1W;
-
-    const tableBodyH = 32 * sortedTerms.length;
-    const tableTotalH = tableHeaderH + tableBodyH;
-    dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
-
-    dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-
-    y -= tableHeaderH;
-
-    sortedTerms.forEach((t, i) => {
-      const rowH = 32;
-      const rowY = y - rowH * i;
-      const isLast = i === sortedTerms.length - 1;
-      if (i % 2 !== 0) {
-        if (isLast) {
-          dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2, 1, undefined, 0, 0);
-          dr(page, PL, rowY - rowH, CW, rowH / 2, C.GRAY_BG2);
-        } else {
-          dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
-        }
-      }
-      if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
-
-      const dotX = PL + 16;
-      const dotY = rowY - rowH / 2 - 1;
-      page.drawCircle({ x: dotX, y: dotY, size: 3.5, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
-
-      const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
-
-      const amtText = formatCurrencyDecimals(t.monthlyPayment);
-      const amtW = tw(amtText, true, 12);
-      dt(page, amtText, W - PR - amtW - 32, rowY - rowH / 2 - 4, 12, true, C.GREEN);
-      const moLabel = '/mo';
-      dt(page, moLabel, W - PR - 28, rowY - rowH / 2 - 3, 7.5, false, C.GRAY_LIGHT);
-    });
-
-    y -= 32 * sortedTerms.length;
-
-    const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
-    dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
-    y -= 24;
 
     if (disclaimerText) {
       const dH = 28;
@@ -519,7 +469,7 @@ async function generateQuotePdf(
       ];
       let lx = PL;
       for (const li of legendItems) {
-        dr(page, lx, y - 8, 10, 10, li.color);
+        dr(page, lx, y - 8, 10, 10, li.color, 1, undefined, 0, 3);
         dt(page, li.label, lx + 14, y - 1, 7, false, C.GRAY_TEXT);
         lx += 14 + tw(li.label, false, 7) + 16;
       }
@@ -633,12 +583,59 @@ async function generateQuotePdf(
     drawPageFooter(page);
   }
 
+  function drawPaymentOptionsSection(page: ReturnType<typeof pdfDoc.addPage>, y: number): number {
+    drawSectionLabel(page, 'Payment Options', PL, y);
+    y -= 14;
+
+    const tableHeaderH = 28;
+    const tableBodyH = 36 * sortedTerms.length;
+    const tableTotalH = tableHeaderH + tableBodyH;
+    dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
+
+    dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+
+    y -= tableHeaderH;
+
+    sortedTerms.forEach((t, i) => {
+      const rowH = 36;
+      const rowY = y - rowH * i;
+      if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
+      if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
+
+      const dotX = PL + 16;
+      const dotY = rowY - rowH / 2 - 1;
+      page.drawCircle({ x: dotX, y: dotY, size: 4, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
+
+      const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
+      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
+
+      const amtText = formatCurrencyDecimals(t.monthlyPayment);
+      const amtW = tw(amtText, true, 13);
+      dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
+      dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
+    });
+
+    y -= 36 * sortedTerms.length;
+
+    const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
+    dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
+    y -= 26;
+
+    return y;
+  }
+
   function drawPage2() {
     const page = pdfDoc.addPage([W, H]);
     let y = H;
 
     y = drawMiniHeader(page, y);
     y -= 20;
+
+    y = drawPaymentOptionsSection(page, y);
+    y -= 8;
 
     drawSectionLabel(page, "What You'll Need to Apply", PL, y);
     y -= 16;
