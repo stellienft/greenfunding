@@ -383,6 +383,8 @@ async function generateQuotePdf(
       y -= dH + 12;
     }
 
+    y = drawPaymentOptionsSection(page, y);
+
     if (hasSavings && energySavings) {
       drawSectionLabel(page, 'Savings Thanks to Solar', PL, y);
       y -= 18;
@@ -556,8 +558,6 @@ async function generateQuotePdf(
       const inW = tw(indicativeNote, false, 6.5);
       dt(page, indicativeNote, PL + CW - inW, y - 4, 6.5, false, C.GRAY_LIGHT);
       y -= 18;
-
-      y = drawPaymentOptionsSection(page, y);
     }
 
     drawPageFooter(page);
@@ -568,7 +568,7 @@ async function generateQuotePdf(
     y -= 14;
 
     const tableHeaderH = 28;
-    const tableBodyH = 44 * sortedTerms.length;
+    const tableBodyH = 36 * sortedTerms.length;
     const tableTotalH = tableHeaderH + tableBodyH;
     dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
     dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
@@ -580,7 +580,7 @@ async function generateQuotePdf(
     y -= tableHeaderH;
 
     sortedTerms.forEach((t, i) => {
-      const rowH = 44;
+      const rowH = 36;
       const rowY = y - rowH * i;
       if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
       if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
@@ -590,19 +590,21 @@ async function generateQuotePdf(
       page.drawCircle({ x: dotX, y: dotY, size: 4, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
 
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      dt(page, termLabel, PL + 28, rowY - 13, 10, true, C.DARK_TEXT);
+      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
 
       if (t.costPerKwhCents && t.costPerKwhCents > 0) {
-        dt(page, `${t.costPerKwhCents.toFixed(2)}c per kWh`, PL + 28, rowY - 27, 7.5, false, C.GRAY_TEXT);
+        const kwhText = `${t.costPerKwhCents.toFixed(2)}c per kWh`;
+        const kwhW = tw(kwhText, false, 8);
+        dt(page, kwhText, PL + CW / 2 - kwhW / 2, rowY - rowH / 2 - 4, 8, false, C.BLUE_TEXT);
       }
 
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
       const amtW = tw(amtText, true, 13);
-      dt(page, amtText, W - PR - amtW - 36, rowY - 15, 13, true, C.GREEN);
-      dt(page, '/mo', W - PR - 30, rowY - 13, 8, false, C.GRAY_LIGHT);
+      dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
+      dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
     });
 
-    y -= 44 * sortedTerms.length;
+    y -= 36 * sortedTerms.length;
 
     const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
