@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Save, AlertCircle, CheckCircle, Code } from 'lucide-react';
+import { DangerZone } from './DangerZone';
 
 export function SiteSettings() {
   const [googleAnalyticsCode, setGoogleAnalyticsCode] = useState('');
@@ -308,6 +309,8 @@ export function SiteSettings() {
           </div>
         </div>
       </div>
+
+      <DangerZone />
     </div>
   );
 }
