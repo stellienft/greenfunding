@@ -462,7 +462,7 @@ async function generateQuotePdf(
         const rowH = 28;
         dr(page, PL, y - rowH, CW, rowH, C.GRAY_BG, 1, C.BORDER, 0.75);
         page.drawCircle({ x: PL + 14, y: y - rowH / 2 - 1, size: 6, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
-        dt(page, '\u2713', PL + 10.5, y - rowH / 2 - 3.5, 7, true, C.WHITE);
+        dt(page, 'v', PL + 10.5, y - rowH / 2 - 3.5, 7, true, C.WHITE);
         const maxItemW = CW - 30 - (item.url ? 90 : 0);
         dtWrapped(page, item.label, PL + 26, y - rowH / 2 - 3, 8.5, false, C.DARK_TEXT, maxItemW, 12);
         if (item.url) {
@@ -520,7 +520,7 @@ async function generateQuotePdf(
           const r = 7;
           if (val) {
             page.drawCircle({ x: cx, y: cy, size: r, color: rgb(C.GREEN_LIGHT.r, C.GREEN_LIGHT.g, C.GREEN_LIGHT.b) });
-            dt(page, '\u2713', cx - 3.5, cy - 3, 8, true, C.GREEN);
+            dt(page, 'v', cx - 3.5, cy - 3, 8, true, C.GREEN);
           } else {
             page.drawCircle({ x: cx, y: cy, size: r, color: rgb(0.99, 0.9, 0.9) });
             dt(page, 'x', cx - 3, cy - 3.5, 8, true, { r: 0.8, g: 0.2, b: 0.2 });
