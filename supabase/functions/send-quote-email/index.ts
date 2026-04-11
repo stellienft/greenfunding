@@ -357,7 +357,7 @@ async function generateQuotePdf(
     const cardCount = 2 + (systemSize ? 1 : 0) + (hasSolar && annualSolarGenerationKwh ? 1 : 0);
     const cardGap = 6;
     const cardW = (CW - cardGap * (cardCount - 1)) / cardCount;
-    const cardH = 64;
+    const cardH = 56;
 
     drawInfoCard(page, PL, y, cardW, cardH, 'Project Cost (Inc. GST)', formatCurrencyAU(projectCost), true, C.GREEN, { r: 1, g: 1, b: 1 }, C.WHITE);
 
@@ -382,7 +382,7 @@ async function generateQuotePdf(
       const solCardGap = 6;
       const solCardCount = 1 + (hasSavings ? 1 : 0) + sortedTerms.filter(t => t.costPerKwhCents && t.costPerKwhCents > 0).length;
       const solCardW = (CW - solCardGap * (solCardCount - 1)) / solCardCount;
-      const solCardH = 64;
+      const solCardH = 56;
 
       drawInfoCard(page, PL, y, solCardW, solCardH, 'Annual Generation', `${annualSolarGenerationKwh.toLocaleString()} kWh`, true, C.AMBER_BG, C.AMBER_TEXT, C.AMBER_TEXT, C.AMBER_BORDER, 'per year');
 
@@ -543,10 +543,12 @@ async function generateQuotePdf(
         y -= postNoteH + 12;
       }
 
-      const cumH = 56;
+      const cumHeaderH = 30;
+      const cumBodyH = 58;
+      const cumH = cumHeaderH + cumBodyH;
       dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, undefined, 0, 8);
-      dt(page, 'Estimated Cumulative Savings', PL + 14, y - 14, 8, true, C.WHITE);
-      dl(page, PL, y - 22, PL + CW, y - 22, { r: 1, g: 1, b: 1 }, 0.1);
+      dt(page, 'Estimated Cumulative Savings', PL + 14, y - 11, 9, true, C.WHITE);
+      dl(page, PL, y - cumHeaderH, PL + CW, y - cumHeaderH, { r: 1, g: 1, b: 1 }, 0.12);
 
       const colBoxes = [
         {
@@ -559,18 +561,19 @@ async function generateQuotePdf(
       ];
 
       const colW3 = CW / 3;
+      const bodyTopY = y - cumHeaderH;
       for (let ci = 0; ci < colBoxes.length; ci++) {
         const box = colBoxes[ci];
         const cx = PL + colW3 * ci;
-        if (ci > 0) dl(page, cx, y - 22, cx, y - cumH, { r: 1, g: 1, b: 1 }, 0.1);
+        if (ci > 0) dl(page, cx, bodyTopY, cx, bodyTopY - cumBodyH, { r: 1, g: 1, b: 1 }, 0.12);
         const subLabelW = tw(box.sublabel, false, 6.5);
-        dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, y - 28, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
-        const mainLabelW = tw(box.label, true, 7.5);
-        dt(page, box.label, cx + (colW3 - mainLabelW) / 2, y - 38, 7.5, true, C.WHITE);
+        dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, bodyTopY - 10, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
+        const mainLabelW = tw(box.label, true, 8);
+        dt(page, box.label, cx + (colW3 - mainLabelW) / 2, bodyTopY - 22, 8, true, C.WHITE);
         const valColor = box.value >= 0 ? C.GREEN : hexToRgb('#ef4444');
         const valText = formatCurrencyAU(box.value);
-        const valW = tw(valText, true, 11);
-        dt(page, valText, cx + (colW3 - valW) / 2, y - 52, 11, true, valColor);
+        const valW = tw(valText, true, 13);
+        dt(page, valText, cx + (colW3 - valW) / 2, bodyTopY - 40, 13, true, valColor);
       }
 
       y -= cumH + 10;
