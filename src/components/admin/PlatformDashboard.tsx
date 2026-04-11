@@ -108,7 +108,7 @@ function StatCard({
           <Icon className="w-4 h-4" />
         </div>
       </div>
-      <p className="text-[1.65rem] font-bold text-[#1e293b] leading-tight tracking-tight">{value}</p>
+      <p className="text-xl font-bold text-[#1e293b] leading-tight tracking-tight">{value}</p>
       {sub && <p className="text-sm text-gray-400 mt-1">{sub}</p>}
       {current !== undefined && previous !== undefined && (
         <div className="mt-2">
@@ -448,30 +448,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           onClick={() => onNavigate?.('users')}
         />
         <StatCard
-          label="Quote → Application"
-          value={`${quoteToAppRate}%`}
-          sub={`${totalApplications} of ${quotes.length} quotes`}
-          icon={Percent}
-          iconBg="bg-emerald-50 text-emerald-500"
-        />
-        <StatCard
-          label="Application → Settlement"
-          value={`${appToSettlementRate}%`}
-          sub={`${totalApplications} application${totalApplications !== 1 ? 's' : ''}`}
-          icon={Percent}
-          iconBg="bg-emerald-50 text-emerald-500"
-        />
-        <StatCard
-          label="Repeat Quote Rate"
-          value={`${repeatUsersPct}%`}
-          sub={`${repeatUsers} of ${installersWithQuotes.length} installers`}
-          icon={RepeatIcon}
-          iconBg="bg-gray-100 text-gray-500"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
           label="Quotes Today"
           value={quotesToday.toString()}
           sub={`${quotesYesterday} yesterday`}
@@ -479,15 +455,6 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           iconBg="bg-amber-50 text-amber-500"
           current={quotesToday}
           previous={quotesYesterday}
-        />
-        <StatCard
-          label="Quotes This Week"
-          value={quotesLast7.toString()}
-          sub="Last 7 days"
-          icon={Activity}
-          iconBg="bg-blue-50 text-blue-500"
-          current={quotesLast7}
-          previous={quotesPrev7}
         />
         <StatCard
           label="Quotes (30 days)"
@@ -499,12 +466,11 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesPrev30}
         />
         <StatCard
-          label="Active Installers"
-          value={activeInstallers.toString()}
-          sub={`of ${totalInstallers} total`}
-          icon={Users}
-          iconBg="bg-orange-50 text-orange-500"
-          onClick={() => onNavigate?.('users')}
+          label="Repeat Quote Rate"
+          value={`${repeatUsersPct}%`}
+          sub={`${repeatUsers} of ${installersWithQuotes.length} installers`}
+          icon={RepeatIcon}
+          iconBg="bg-gray-100 text-gray-500"
         />
       </div>
 
