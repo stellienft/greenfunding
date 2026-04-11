@@ -217,7 +217,7 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
             <div key={idx} className="px-4 py-4 text-center">
               <p className="text-xs font-medium text-white/60 mb-0.5">{box.sublabel}</p>
               <p className="text-sm font-semibold text-white mb-2">{box.label}</p>
-              <p className="text-xl font-bold" style={{ color: '#28AA48' }}>{formatCurrencyFull(box.value)}</p>
+              <p className="text-xl font-bold" style={{ color: box.value >= 0 ? '#28AA48' : '#ef4444' }}>{formatCurrencyFull(box.value)}</p>
             </div>
           ))}
         </div>
