@@ -34,6 +34,7 @@ interface QuoteSectionProps {
   onGenerate: () => void;
   onReset: () => void;
   formatCurrency: (n: number) => string;
+  selectedTerm?: number | null;
 }
 
 export function QuoteSection({
@@ -49,6 +50,7 @@ export function QuoteSection({
   onGenerate,
   onReset,
   formatCurrency,
+  selectedTerm,
 }: QuoteSectionProps) {
   const [touched, setTouched] = useState(false);
 
@@ -185,6 +187,7 @@ export function QuoteSection({
               <div className="flex flex-wrap gap-2">
                 {[...allTerms].sort((a, b) => a.years - b.years).map(t => {
                   const checked = selectedQuoteTerms.includes(t.years);
+                  const isSelected = selectedTerm === t.years;
                   return (
                     <button
                       key={t.years}
@@ -194,7 +197,9 @@ export function QuoteSection({
                       )}
                       className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                         checked
-                          ? 'bg-[#28AA48]/10 border-[#28AA48] text-[#28AA48]'
+                          ? isSelected
+                            ? 'bg-[#28AA48]/15 border-[#28AA48] text-[#28AA48] ring-2 ring-[#28AA48]/40 shadow-sm'
+                            : 'bg-[#28AA48]/10 border-[#28AA48] text-[#28AA48]'
                           : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400'
                       }`}
                     >
@@ -227,7 +232,12 @@ export function QuoteSection({
               {generatingPdf ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                  Submitting Quote...
+                  Generating Quote...
+                </>
+              ) : selectedTerm !== null && selectedTerm !== undefined ? (
+                <>
+                  <Send className="w-4 h-4" />
+                  Generate Quote
                 </>
               ) : (
                 <>

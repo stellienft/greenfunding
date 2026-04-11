@@ -465,7 +465,7 @@ export function Step3() {
               {termOptions.map(option => (
                 <button
                   key={option.years}
-                  onClick={() => setSelectedTerm(option.years)}
+                  onClick={() => { setSelectedTerm(option.years); setSelectedQuoteTerms(() => [option.years]); }}
                   className={`
                     relative p-6 rounded-xl border-2 transition-all text-left hover:shadow-lg
                     ${
@@ -534,7 +534,7 @@ export function Step3() {
                     {additionalTermOptions.map(option => (
                       <button
                         key={option.years}
-                        onClick={() => setSelectedTerm(option.years)}
+                        onClick={() => { setSelectedTerm(option.years); setSelectedQuoteTerms(() => [option.years]); }}
                         className={`
                           relative p-6 rounded-xl border-2 transition-all text-left hover:shadow-lg
                           ${
@@ -827,6 +827,7 @@ export function Step3() {
               onGenerate={handleGenerateQuote}
               onReset={() => { setPdfGenerated(false); setQuoteError(null); setGeneratedQuoteNumber(null); }}
               formatCurrency={formatCurrency}
+              selectedTerm={selectedTerm}
             />
 
             <div className="mt-8 flex flex-col sm:flex-row justify-between gap-3">
