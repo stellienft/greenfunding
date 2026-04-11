@@ -221,34 +221,41 @@ async function generateQuotePdf(
   }
 
   function drawPageHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 64;
+    const headerH = 72;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    // Logo SVG at scale 0.28 → renders ~102x18 pts, positioned left-aligned
-    drawLogo(page, PL, topY - headerH + 10, LOGO_SCALE);
+    // Logo SVG: scale 0.28, rendered height ~18.5pt. Centre vertically in header.
+    // drawLogo baseY param: the logo's bottom-left anchor = baseY, top = baseY + svgH*scale
+    const logoRenderH = 66 * LOGO_SCALE; // ~18.5
+    const logoCentreY = topY - headerH / 2;
+    const logoBaseY = logoCentreY - logoRenderH / 2 - 4;
+    drawLogo(page, PL, logoBaseY, LOGO_SCALE);
     const subText = 'Finance Solutions for Clean Energy';
-    dt(page, subText, PL, topY - headerH + 8, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    dt(page, subText, PL, logoBaseY - 2, 7, false, { r: 1, g: 1, b: 1 }, 0.5);
 
     const qnLabel = 'Finance Quote';
     const qnLabelW = tw(qnLabel, false, 7);
     dt(page, qnLabel, W - PR - qnLabelW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
-    const qnW = tw(quoteNumber, true, 13);
-    dt(page, quoteNumber, W - PR - qnW, topY - 32, 13, true, C.WHITE);
+    const qnW = tw(quoteNumber, true, 14);
+    dt(page, quoteNumber, W - PR - qnW, topY - 32, 14, true, C.WHITE);
     const qdW = tw(quoteDate, false, 8);
-    dt(page, quoteDate, W - PR - qdW, topY - 46, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
+    dt(page, quoteDate, W - PR - qdW, topY - 50, 8, false, { r: 1, g: 1, b: 1 }, 0.5);
 
     return topY - headerH;
   }
 
   function drawMiniHeader(page: ReturnType<typeof pdfDoc.addPage>, topY: number): number {
-    const headerH = 44;
+    const headerH = 48;
     dr(page, 0, topY - headerH, W, headerH, C.DARK);
 
-    drawLogo(page, PL, topY - headerH + 8, 0.24);
+    const logoRenderH2 = 66 * 0.24;
+    const logoCentreY2 = topY - headerH / 2;
+    const logoBaseY2 = logoCentreY2 - logoRenderH2 / 2 - 2;
+    drawLogo(page, PL, logoBaseY2, 0.24);
     const qnW = tw(quoteNumber, false, 7);
-    dt(page, quoteNumber, W - PR - qnW, topY - 16, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
+    dt(page, quoteNumber, W - PR - qnW, topY - 18, 7, false, { r: 1, g: 1, b: 1 }, 0.55);
     const qdW = tw(quoteDate, false, 7);
-    dt(page, quoteDate, W - PR - qdW, topY - 27, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
+    dt(page, quoteDate, W - PR - qdW, topY - 30, 7, false, { r: 1, g: 1, b: 1 }, 0.4);
 
     return topY - headerH;
   }
@@ -273,12 +280,16 @@ async function generateQuotePdf(
 
   function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }, sublabel?: string) {
     dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0, 6);
+    const labelY = y - 13;
     const lW = tw(label, false, 7);
-    dt(page, label, x + (w - lW) / 2, y - 13, 7, false, labelColor);
+    dt(page, label, x + (w - lW) / 2, labelY, 7, false, labelColor);
     const valueSize = bold ? 11 : 9;
     const vLines = wrapText(value, bold, valueSize, w - 12);
-    const totalTextH = vLines.length * 14 + (sublabel ? 11 : 0);
-    const vStartY = y - h / 2 + totalTextH / 2 - (sublabel ? 5 : 0);
+    const contentAreaTop = labelY - 10;
+    const contentAreaBottom = y - h + (sublabel ? 14 : 8);
+    const contentAreaH = contentAreaTop - contentAreaBottom;
+    const totalTextH = vLines.length * 14 + (sublabel ? 12 : 0);
+    const vStartY = contentAreaBottom + contentAreaH / 2 + totalTextH / 2 - 4;
     for (let i = 0; i < vLines.length; i++) {
       const vW = tw(vLines[i], bold, valueSize);
       dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, valueSize, bold, valueColor);
@@ -297,45 +308,46 @@ async function generateQuotePdf(
     y -= 16;
 
     const colW = (CW - 8) / 2;
+    const infoBoxH = 88;
 
-    dr(page, PL, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
-    dr(page, PL + colW + 8, y - 80, colW, 80, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
+    dr(page, PL, y - infoBoxH, colW, infoBoxH, C.GRAY_BG, 1, C.BORDER, 0.75, 8);
+    dr(page, PL + colW + 8, y - infoBoxH, colW, infoBoxH, C.GRAY_BG, 1, C.BORDER, 0.75, 8);
 
-    drawSectionLabel(page, 'Prepared By', PL + 10, y - 10);
-    let byY = y - 24;
+    drawSectionLabel(page, 'Prepared By', PL + 12, y - 12);
+    let byY = y - 28;
     if (installerCompany) {
-      byY -= dtWrapped(page, installerCompany, PL + 10, byY, 9, true, C.DARK_TEXT, colW - 20, 13);
+      byY -= dtWrapped(page, installerCompany, PL + 12, byY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
     }
     if (installerName && installerCompany) {
-      dt(page, installerName, PL + 10, byY, 8, false, C.GRAY_TEXT);
-      byY -= 12;
+      dt(page, installerName, PL + 12, byY, 8, false, C.GRAY_TEXT);
+      byY -= 13;
     } else if (installerName) {
-      byY -= dtWrapped(page, installerName, PL + 10, byY, 9, true, C.DARK_TEXT, colW - 20, 13);
+      byY -= dtWrapped(page, installerName, PL + 12, byY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
     }
     if (installerEmail) {
-      dt(page, installerEmail, PL + 10, byY, 7.5, false, C.GRAY_TEXT);
-      byY -= 11;
+      dt(page, installerEmail, PL + 12, byY, 7.5, false, C.GRAY_TEXT);
+      byY -= 12;
     }
     if (installerPhone) {
-      dt(page, installerPhone, PL + 10, byY, 7.5, false, C.GRAY_TEXT);
+      dt(page, installerPhone, PL + 12, byY, 7.5, false, C.GRAY_TEXT);
     }
 
-    const forX = PL + colW + 18;
-    drawSectionLabel(page, 'Prepared For', forX, y - 10);
-    let forY = y - 24;
-    forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9, true, C.DARK_TEXT, colW - 20, 13);
+    const forX = PL + colW + 20;
+    drawSectionLabel(page, 'Prepared For', forX, y - 12);
+    let forY = y - 28;
+    forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
     if (siteAddress) {
-      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 20, 11);
+      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 24, 12);
     }
     if (clientEmail) {
       dt(page, clientEmail, forX, forY, 7.5, false, C.GRAY_TEXT);
-      forY -= 11;
+      forY -= 12;
     }
     if (clientPhone) {
       dt(page, clientPhone, forX, forY, 7.5, false, C.GRAY_TEXT);
     }
 
-    y -= 92;
+    y -= infoBoxH + 16;
 
     drawSectionLabel(page, 'Project Summary', PL, y);
     y -= 14;
@@ -395,38 +407,46 @@ async function generateQuotePdf(
     const col1W = 130;
     const col2W = CW - col1W;
 
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK);
+    const tableBodyH = 32 * sortedTerms.length;
+    const tableTotalH = tableHeaderH + tableBodyH;
+    dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
+    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
 
     dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
     dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
 
     y -= tableHeaderH;
 
-    dr(page, PL, y - tableHeaderH * sortedTerms.length, CW, tableHeaderH * sortedTerms.length, C.WHITE, 1, C.BORDER, 0.75, 0);
-
     sortedTerms.forEach((t, i) => {
-      const rowH = 28;
+      const rowH = 32;
       const rowY = y - rowH * i;
+      const isLast = i === sortedTerms.length - 1;
       if (i % 2 !== 0) {
-        dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
+        if (isLast) {
+          dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2, 1, undefined, 0, 0);
+          dr(page, PL, rowY - rowH, CW, rowH / 2, C.GRAY_BG2);
+        } else {
+          dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
+        }
       }
-      dl(page, PL, rowY, PL + CW, rowY, C.BORDER, 0.5);
+      if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
 
       const dotX = PL + 16;
       const dotY = rowY - rowH / 2 - 1;
-      page.drawCircle({ x: dotX, y: dotY, size: 3, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
+      page.drawCircle({ x: dotX, y: dotY, size: 3.5, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
 
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      dt(page, termLabel, PL + 26, rowY - rowH / 2 - 4, 9.5, true, C.DARK_TEXT);
+      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
 
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
-      const amtW = tw(amtText, true, 11);
-      dt(page, amtText, W - PR - amtW - 10, rowY - rowH / 2 - 4, 11, true, C.GREEN);
+      const amtW = tw(amtText, true, 12);
+      dt(page, amtText, W - PR - amtW - 32, rowY - rowH / 2 - 4, 12, true, C.GREEN);
       const moLabel = '/mo';
-      dt(page, moLabel, W - PR - 10, rowY - rowH / 2 - 3, 7, false, C.GRAY_LIGHT);
+      dt(page, moLabel, W - PR - 28, rowY - rowH / 2 - 3, 7.5, false, C.GRAY_LIGHT);
     });
 
-    y -= tableHeaderH * sortedTerms.length;
+    y -= 32 * sortedTerms.length;
 
     const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
@@ -674,26 +694,29 @@ async function generateQuotePdf(
         { document: 'Cashflow Projections', u500: false, m500: false, o1m: true },
       ];
 
-      const tableHeaderH = 26;
-      dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK);
+      const tableHeaderH = 28;
+      const docRowH = 26;
+      const docBodyH = docRowH * fullDocRows.length;
+      const docTotalH = tableHeaderH + docBodyH;
+      dr(page, PL, y - docTotalH, CW, docTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
+      dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
+      dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2, C.DARK);
 
       const docColW = CW * 0.55;
       const checkColW = (CW - docColW) / 3;
 
-      dt(page, 'Document', PL + 10, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-      dt(page, '<$500k', PL + docColW + checkColW / 2 - tw('<$500k', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-      dt(page, '$500k\u2013$1m', PL + docColW + checkColW * 1.5 - tw('$500k\u2013$1m', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-      dt(page, '$1m+', PL + docColW + checkColW * 2.5 - tw('$1m+', true, 7.5) / 2, y - 10, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, 'Document', PL + 12, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '<$500k', PL + docColW + checkColW / 2 - tw('<$500k', true, 7.5) / 2, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '$500k\u2013$1m', PL + docColW + checkColW * 1.5 - tw('$500k\u2013$1m', true, 7.5) / 2, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+      dt(page, '$1m+', PL + docColW + checkColW * 2.5 - tw('$1m+', true, 7.5) / 2, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
 
       y -= tableHeaderH;
 
-      dr(page, PL, y - 24 * fullDocRows.length, CW, 24 * fullDocRows.length, C.WHITE, 1, C.BORDER, 0.75, 0);
-
       fullDocRows.forEach((row, i) => {
-        const rowH = 24;
+        const rowH = docRowH;
         const rowY = y - rowH * i;
         if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
-        dl(page, PL, rowY, PL + CW, rowY, C.BORDER, 0.4);
+        if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.4);
 
         const isApplicable =
           (projectCost < 500000 && row.u500) ||
@@ -716,7 +739,7 @@ async function generateQuotePdf(
         });
       });
 
-      y -= 24 * fullDocRows.length;
+      y -= docRowH * fullDocRows.length;
     }
 
     y -= 20;
