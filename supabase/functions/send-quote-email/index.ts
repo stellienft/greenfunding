@@ -282,23 +282,24 @@ async function generateQuotePdf(
 
   function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }, sublabel?: string) {
     dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0, 6);
-    const labelY = y - 13;
+    const labelY = y - 11;
     const lW = tw(label, false, 7);
     dt(page, label, x + (w - lW) / 2, labelY, 7, false, labelColor);
+    const sublabelY = y - h + 9;
+    if (sublabel) {
+      const slW = tw(sublabel, false, 6.5);
+      dt(page, sublabel, x + (w - slW) / 2, sublabelY, 6.5, false, labelColor, 0.7);
+    }
     const valueSize = bold ? 11 : 9;
     const vLines = wrapText(value, bold, valueSize, w - 12);
-    const contentAreaTop = labelY - 10;
-    const contentAreaBottom = y - h + (sublabel ? 14 : 8);
+    const contentAreaTop = labelY - 8;
+    const contentAreaBottom = sublabel ? sublabelY + 10 : y - h + 8;
     const contentAreaH = contentAreaTop - contentAreaBottom;
-    const totalTextH = vLines.length * 14 + (sublabel ? 12 : 0);
-    const vStartY = contentAreaBottom + contentAreaH / 2 + totalTextH / 2 - 4;
+    const totalTextH = vLines.length * 14;
+    const vStartY = contentAreaBottom + contentAreaH / 2 + totalTextH / 2 - 2;
     for (let i = 0; i < vLines.length; i++) {
       const vW = tw(vLines[i], bold, valueSize);
       dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, valueSize, bold, valueColor);
-    }
-    if (sublabel) {
-      const slW = tw(sublabel, false, 6.5);
-      dt(page, sublabel, x + (w - slW) / 2, vStartY - vLines.length * 14 + 2, 6.5, false, labelColor, 0.7);
     }
   }
 
@@ -581,6 +582,9 @@ async function generateQuotePdf(
       const indicativeNote = '* Indicative only. Based on 3% annual energy price growth.';
       const inW = tw(indicativeNote, false, 6.5);
       dt(page, indicativeNote, PL + CW - inW, y - 4, 6.5, false, C.GRAY_LIGHT);
+      y -= 18;
+
+      y = drawPaymentOptionsSection(page, y);
     }
 
     drawPageFooter(page);
@@ -636,9 +640,6 @@ async function generateQuotePdf(
 
     y = drawMiniHeader(page, y);
     y -= 20;
-
-    y = drawPaymentOptionsSection(page, y);
-    y -= 8;
 
     drawSectionLabel(page, "What You'll Need to Apply", PL, y);
     y -= 16;
