@@ -8,21 +8,21 @@ const CALCULATORS = [
     title: 'Rental',
     description: 'Calculate financing options for a range of different renewable services.',
     icon: Calculator,
-    path: '/calculator/step1',
+    path: '/admin/calculator/step1',
   },
   {
     id: 'serviced_rental' as const,
     title: 'Serviced Rental',
     description: 'Includes full service and maintenance packages with your rental agreement.',
     icon: TrendingUp,
-    path: '/calculator/serviced-rental-step1',
+    path: '/admin/calculator/serviced-rental-step1',
   },
   {
     id: 'progress_payment_rental' as const,
     title: 'Progress Payment Rental',
     description: 'Flexible payment structure tied to project milestones and completion stages.',
     icon: Users,
-    path: '/calculator/step1',
+    path: '/admin/calculator/step1',
   },
 ];
 

@@ -4,6 +4,7 @@ import { InstallerLayout } from '../components/InstallerLayout';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useCalculatorLayout } from '../context/CalculatorLayoutContext';
 import { supabase } from '../lib/supabase';
 import { calculateAll, calculateProgressPayment, formatCurrency, calculateCostPerKwh, formatCostPerKwh, ProgressPaymentBreakdown } from '../calculator';
 import { Calendar, Check, Plus, Trash2, DollarSign, Mail, X, CheckCircle, AlertCircle, Copy, ClipboardCheck, FileText } from 'lucide-react';
@@ -24,6 +25,7 @@ export function Step3() {
   const navigate = useNavigate();
   const { state, updateState, config, assets, introEmailTemplate } = useApp();
   const { user, installerProfile, refreshProfile } = useAuth();
+  const { isAdminMode } = useCalculatorLayout();
   const [selectedTerm, setSelectedTerm] = useState<number | null>(null);
   const [termOptions, setTermOptions] = useState<LoanTermOption[]>([]);
   const [showMoreTerms, setShowMoreTerms] = useState(false);
@@ -64,7 +66,7 @@ export function Step3() {
 
   useEffect(() => {
     if (!config || !state.projectCost || state.selectedAssetIds.length === 0) {
-      navigate('/');
+      navigate(isAdminMode ? '/admin?tab=calculator' : '/');
       return;
     }
 
@@ -389,7 +391,7 @@ export function Step3() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate(isAdminMode ? '/admin?tab=calculator' : '/');
   };
 
   if (!config || termOptions.length === 0) {

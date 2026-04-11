@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { Stepper } from '../components/Stepper';
 import { useApp } from '../context/AppContext';
+import { useCalculatorLayout } from '../context/CalculatorLayoutContext';
 import * as Icons from 'lucide-react';
 import { formatCurrency } from '../calculator';
 import { X } from 'lucide-react';
 
 export function Step1() {
   const navigate = useNavigate();
+  const { isAdminMode } = useCalculatorLayout();
   const { state, updateState, config, assets, loadingConfig } = useApp();
   const [selectedAssets, setSelectedAssets] = useState<string[]>(state.selectedAssetIds);
   const [projectCost, setProjectCost] = useState(state.projectCost || 100000);
@@ -114,7 +116,7 @@ export function Step1() {
       paymentTiming,
     });
 
-    navigate('/step-3');
+    navigate(isAdminMode ? '/admin/step-3' : '/step-3');
     window.scrollTo(0, 0);
   };
 
@@ -138,7 +140,7 @@ export function Step1() {
         loanTermYears: 7
       });
 
-      navigate('/step-4');
+      navigate(isAdminMode ? '/admin/step-3' : '/step-4');
       window.scrollTo(0, 0);
     } else {
       setShowSpecialPricingModal(false);
