@@ -7,12 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+function generatePassword() {
+  const length = 12;
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -27,7 +34,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
@@ -41,7 +47,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: adminUsersData, error: adminError } = await supabase
         .from("admin_users")
-        .select("id, email, first_name, last_name, company, phone, created_at, needs_password_reset")
+        .select("id, email, first_name, last_name, company, phone, created_at, needs_password_reset, is_super_admin")
         .order("created_at", { ascending: false });
 
       if (adminError) throw adminError;
@@ -55,6 +61,7 @@ Deno.serve(async (req: Request) => {
         phone: user.phone,
         email: user.email || '',
         needs_password_reset: user.needs_password_reset || false,
+        is_super_admin: user.is_super_admin || false,
         created_at: user.created_at,
         application_count: 0,
         quote_count: 0,
@@ -66,10 +73,62 @@ Deno.serve(async (req: Request) => {
         user_type: 'installer',
       }));
 
-      const allUsers = [...adminUsers, ...installerUsersWithType];
+      return new Response(
+        JSON.stringify({ users: [...adminUsers, ...installerUsersWithType] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "create-admin") {
+      const { firstName, lastName, email, companyName, phone, requestingAdminId } = await req.json();
+
+      if (!email) {
+        return new Response(
+          JSON.stringify({ error: "Email is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: requestingAdmin } = await supabase
+        .from("admin_users")
+        .select("is_super_admin")
+        .eq("id", requestingAdminId)
+        .maybeSingle();
+
+      if (!requestingAdmin?.is_super_admin) {
+        return new Response(
+          JSON.stringify({ error: "Only super admins can create admin accounts" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const newPassword = generatePassword();
+
+      const encoder = new TextEncoder();
+      const data = encoder.encode(newPassword);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const { data: newAdmin, error: createError } = await supabase
+        .from("admin_users")
+        .insert({
+          email,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          company: companyName || null,
+          phone: phone || null,
+          password_hash: passwordHash,
+          needs_password_reset: true,
+          is_super_admin: false,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
 
       return new Response(
-        JSON.stringify({ users: allUsers }),
+        JSON.stringify({ success: true, newPassword, admin: newAdmin }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -85,11 +144,7 @@ Deno.serve(async (req: Request) => {
       }
 
       if (userType === 'admin') {
-        const updateData: any = {
-          email: email,
-          updated_at: new Date().toISOString(),
-        };
-
+        const updateData: any = { email, updated_at: new Date().toISOString() };
         if (firstName !== undefined) updateData.first_name = firstName;
         if (lastName !== undefined) updateData.last_name = lastName;
         if (companyName !== undefined) updateData.company = companyName;
@@ -109,15 +164,8 @@ Deno.serve(async (req: Request) => {
           );
         }
 
-        const installerUpdateData: any = {
-          full_name: fullName,
-          company_name: companyName,
-          email: email,
-        };
-
-        if (allowedCalculators !== undefined) {
-          installerUpdateData.allowed_calculators = allowedCalculators;
-        }
+        const installerUpdateData: any = { full_name: fullName, company_name: companyName, email };
+        if (allowedCalculators !== undefined) installerUpdateData.allowed_calculators = allowedCalculators;
 
         const { error: updateError } = await supabase
           .from("installer_users")
@@ -126,11 +174,7 @@ Deno.serve(async (req: Request) => {
 
         if (updateError) throw updateError;
 
-        const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
-          userId,
-          { email: email }
-        );
-
+        const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, { email });
         if (authUpdateError) throw authUpdateError;
       }
 
@@ -141,7 +185,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "delete") {
-      const { userId } = await req.json();
+      const { userId, userType, requestingAdminId } = await req.json();
 
       if (!userId) {
         return new Response(
@@ -150,9 +194,30 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (userType === 'admin') {
+        const { data: requestingAdmin } = await supabase
+          .from("admin_users")
+          .select("is_super_admin")
+          .eq("id", requestingAdminId)
+          .maybeSingle();
 
-      if (error) throw error;
+        if (!requestingAdmin?.is_super_admin) {
+          return new Response(
+            JSON.stringify({ error: "Only super admins can delete admin accounts" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const { error: deleteError } = await supabase
+          .from("admin_users")
+          .delete()
+          .eq("id", userId);
+
+        if (deleteError) throw deleteError;
+      } else {
+        const { error } = await supabase.auth.admin.deleteUser(userId);
+        if (error) throw error;
+      }
 
       return new Response(
         JSON.stringify({ success: true }),
@@ -170,18 +235,7 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      function generatePassword() {
-        const length = 12;
-        const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-        let password = '';
-        for (let i = 0; i < length; i++) {
-          password += charset.charAt(Math.floor(Math.random() * charset.length));
-        }
-        return password;
-      }
-
       if (userType === 'admin') {
-
         const newPassword = generatePassword();
 
         const encoder = new TextEncoder();
@@ -192,11 +246,7 @@ Deno.serve(async (req: Request) => {
 
         const { error: updateError } = await supabase
           .from("admin_users")
-          .update({
-            password_hash: passwordHash,
-            needs_password_reset: true,
-            updated_at: new Date().toISOString(),
-          })
+          .update({ password_hash: passwordHash, needs_password_reset: true, updated_at: new Date().toISOString() })
           .eq("id", userId);
 
         if (updateError) throw updateError;
@@ -207,9 +257,7 @@ Deno.serve(async (req: Request) => {
         );
       } else {
         const elasticEmailApiKey = Deno.env.get("ELASTIC_EMAIL_API_KEY");
-        if (!elasticEmailApiKey) {
-          throw new Error("ELASTIC_EMAIL_API_KEY not configured");
-        }
+        if (!elasticEmailApiKey) throw new Error("ELASTIC_EMAIL_API_KEY not configured");
 
         const { data: userData, error: fetchError } = await supabase
           .from("installer_users")
@@ -217,16 +265,11 @@ Deno.serve(async (req: Request) => {
           .eq("id", userId)
           .single();
 
-        if (fetchError || !userData) {
-          throw new Error("Installer user not found");
-        }
+        if (fetchError || !userData) throw new Error("Installer user not found");
 
         const newPassword = generatePassword();
 
-        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-          password: newPassword
-        });
-
+        const { error: authError } = await supabase.auth.admin.updateUserById(userId, { password: newPassword });
         if (authError) throw authError;
 
         const { error: updateError } = await supabase
@@ -236,56 +279,13 @@ Deno.serve(async (req: Request) => {
 
         if (updateError) throw updateError;
 
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                body { font-family: sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .credentials { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .password { font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #28AA48; }
-                .important { color: #d32f2f; font-weight: bold; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h2>Password Reset Requested</h2>
-                <p>Hi ${userData.full_name},</p>
-                <p>An administrator has reset your password for the Green Funding Installer Portal.</p>
-                
-                <div class="credentials">
-                   <p><strong>Your new temporary password is:</strong></p>
-                   <p class="password">${newPassword}</p>
-                </div>
-                
-                <p class="important">Important: For security reasons, you will be required to create a new password when you first log in.</p>
-                
-                <p>Visit <a href="https://portal.greenfunding.com.au/installer-login">portal.greenfunding.com.au/installer-login</a> to log in.</p>
-                <p>Best regards,<br>Green Funding Support</p>
-              </div>
-            </body>
-          </html>
-        `;
+        const emailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><style>body{font-family:sans-serif;line-height:1.6;color:#333}.container{max-width:600px;margin:0 auto;padding:20px}.credentials{background:#f9f9f9;padding:15px;border-radius:5px;margin:20px 0}.password{font-size:18px;font-weight:bold;letter-spacing:1px;color:#28AA48}.important{color:#d32f2f;font-weight:bold}</style></head><body><div class="container"><h2>Password Reset</h2><p>Hi ${userData.full_name},</p><p>An administrator has reset your password for the Green Funding Installer Portal.</p><div class="credentials"><p><strong>Your new temporary password is:</strong></p><p class="password">${newPassword}</p></div><p class="important">You will be required to create a new password when you first log in.</p><p>Visit <a href="https://portal.greenfunding.com.au/installer-login">portal.greenfunding.com.au/installer-login</a> to log in.</p><p>Best regards,<br>Green Funding Support</p></div></body></html>`;
 
-        const plainTextEmail = `Hi ${userData.full_name},
-
-An administrator has reset your password.
-Your new temporary password is: ${newPassword}
-
-For security reasons, you will be required to create a new password when you first log in.
-Go to: https://portal.greenfunding.com.au/installer-login
-
-Green Funding Support`;
+        const plainTextEmail = `Hi ${userData.full_name},\n\nAn administrator has reset your password.\nYour new temporary password is: ${newPassword}\n\nYou will be required to create a new password when you first log in.\nGo to: https://portal.greenfunding.com.au/installer-login\n\nGreen Funding Support`;
 
         const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-ElasticEmail-ApiKey": elasticEmailApiKey,
-          },
+          headers: { "Content-Type": "application/json", "X-ElasticEmail-ApiKey": elasticEmailApiKey },
           body: JSON.stringify({
             Recipients: [{ Email: userData.email }],
             Content: {
@@ -301,9 +301,7 @@ Green Funding Support`;
         });
 
         const emailResult = await emailResponse.json();
-
         if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== "")) {
-          console.error("Elastic Email API error:", emailResult);
           throw new Error("Failed to send reset email");
         }
 

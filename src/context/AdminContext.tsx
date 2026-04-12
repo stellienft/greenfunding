@@ -4,6 +4,7 @@ interface Admin {
   id: string;
   email: string;
   needs_password_reset?: boolean;
+  is_super_admin?: boolean;
 }
 
 export type AdminLoginResult =
