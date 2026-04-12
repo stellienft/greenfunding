@@ -50,6 +50,7 @@ function formatCurrencyDecimals(n: number): string {
 interface LowDocRequirement {
   label: string;
   url?: string;
+  linkText?: string;
 }
 
 function getLowDocRequirements(projectCost: number): { title: string; items: LowDocRequirement[] } | null {
@@ -64,7 +65,7 @@ function getLowDocRequirements(projectCost: number): { title: string; items: Low
   if (projectCost >= 150000) {
     const withBankStatements: LowDocRequirement[] = [
       { label: "Directors Drivers Licence & Medicare card" },
-      { label: '6 months Bank Statements', url: 'https://scv.bankstatements.com.au/HSHV' },
+      { label: '6 months Bank Statements', url: 'https://scv.bankstatements.com.au/HSHV', linkText: 'Statements Portal' },
       { label: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
       { label: 'Asset and Liability statement', url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
     ];
@@ -283,15 +284,17 @@ export function OnlineQuote() {
                             <div className="w-2 h-2 rounded-full bg-[#28AA48]" />
                             {t.years} Year{t.years !== 1 ? 's' : ''}
                           </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="font-bold text-[#28AA48] text-base">
+                            {formatCurrencyDecimals(t.monthlyPayment)}
+                            <span className="text-xs text-gray-400 font-normal">/mo</span>
+                          </div>
                           {hasSolar && t.costPerKwhCents != null && (
-                            <div className="text-xs text-gray-400 font-normal mt-0.5 pl-4">
+                            <div className="text-xs text-gray-400 font-normal mt-0.5">
                               Estimate per kWh: <span className="font-semibold text-[#3A475B]">{(t.costPerKwhCents).toFixed(2)}¢</span>
                             </div>
                           )}
-                        </td>
-                        <td className="px-4 py-3.5 text-right font-bold text-[#28AA48] text-base">
-                          {formatCurrencyDecimals(t.monthlyPayment)}
-                          <span className="text-xs text-gray-400 font-normal">/mo</span>
                         </td>
                       </tr>
                     ))}
@@ -352,7 +355,7 @@ export function OnlineQuote() {
                               rel="noopener noreferrer"
                               className="ml-2 inline-flex items-center gap-1 text-xs text-[#28AA48] font-medium hover:underline"
                             >
-                              Download <ExternalLink className="w-3 h-3" />
+                              {item.linkText ?? 'Download'} <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
                         </span>
