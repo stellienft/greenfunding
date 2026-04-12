@@ -100,6 +100,7 @@ export function ClientUploadDocuments() {
   const [error, setError] = useState<string | null>(null);
 
   const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -132,12 +133,17 @@ export function ClientUploadDocuments() {
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!quote) return;
-    const expected = (quote.recipient_name || quote.recipient_company || '').toLowerCase().trim();
-    if (nameInput.trim().toLowerCase() === expected) {
+    const expectedName = (quote.recipient_name || quote.recipient_company || '').toLowerCase().trim();
+    const expectedEmail = (quote.recipient_email || '').toLowerCase().trim();
+    const nameMatch = nameInput.trim().toLowerCase() === expectedName;
+    const emailMatch = emailInput.trim().toLowerCase() === expectedEmail;
+    if (nameMatch && emailMatch) {
       setLoggedIn(true);
       setLoginError('');
-    } else {
+    } else if (!nameMatch) {
       setLoginError('Name does not match our records. Please enter your full name as it appears on the quote.');
+    } else {
+      setLoginError('Email address does not match our records. Please enter the email address used when the quote was generated.');
     }
   }
 
@@ -212,7 +218,7 @@ export function ClientUploadDocuments() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <img src="/green-funding-invertedlogo.svg" alt="Green Funding" className="h-7" />
           <div className="text-right">
-            <p className="text-white/50 text-xs">Document Upload Portal</p>
+            <p className="text-white/50 text-xs">Low Doc Requirements Client Portal</p>
             <p className="text-white font-bold text-sm">{formatQuoteNumber(quote.quote_number)}</p>
           </div>
         </div>
@@ -225,9 +231,9 @@ export function ClientUploadDocuments() {
               <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: 'linear-gradient(135deg, #34AC48, #AFD235)' }}>
                 <Upload className="w-7 h-7 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-[#3A475B] text-center mb-2">Document Upload</h1>
+              <h1 className="text-2xl font-bold text-[#3A475B] text-center mb-2">Low Doc Requirements Client Portal</h1>
               <p className="text-gray-500 text-sm text-center mb-8">
-                Please confirm your name to access your secure document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
+                Enter your name and email address to securely access your document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
               </p>
               <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
                 <div>
@@ -237,6 +243,17 @@ export function ClientUploadDocuments() {
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
                     placeholder="Enter your full name"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Email Address</label>
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={e => setEmailInput(e.target.value)}
+                    placeholder="Enter your email address"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                     required
                   />

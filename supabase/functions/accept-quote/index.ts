@@ -92,7 +92,7 @@ function generateClientUploadEmailHtml(
             <td style="padding: 36px;">
               <p style="font-size: 18px; font-weight: 600; margin: 0 0 12px 0; color: #3A475B; font-family: Arial, sans-serif;">Hi ${clientName},</p>
               <p style="font-size: 15px; color: #4B5563; margin: 0 0 24px 0; line-height: 1.7; font-family: Arial, sans-serif;">
-                Your finance quote <strong>${quoteNumber}</strong> has been accepted. To progress your application, we need you to securely upload the required documents through the link below.
+                Your finance quote <strong>${quoteNumber}</strong> has been accepted. To progress your application, we need you to securely upload the required documents through our <strong>Low Doc Requirements Client Portal</strong> using the link below.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; margin-bottom: 28px;">
@@ -118,7 +118,7 @@ function generateClientUploadEmailHtml(
                 <tr>
                   <td style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 18px;">
                     <p style="color: #92400E; font-size: 13px; margin: 0; font-family: Arial, sans-serif;">
-                      <strong>Secure access:</strong> Log in with your name <strong>${clientName}</strong> to access your document upload portal. This link is unique to your application.
+                      <strong>Secure access:</strong> Log in with your name <strong>${clientName}</strong> and your email address to access the portal. This link is unique to your application and expires in 90 days.
                     </p>
                   </td>
                 </tr>

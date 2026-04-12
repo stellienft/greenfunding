@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   FileText, Calendar, User, Building2, MapPin, Download,
-  ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen
+  ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen,
+  Send, AlertCircle, ExternalLink
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -84,14 +85,199 @@ function calcTypeColor(t: string) {
   }
 }
 
-interface ExpandedQuoteRowProps {
-  quote: AdminQuote;
+function getDocTier(projectCost: number): string {
+  if (projectCost < 150000) return 'Low Doc — up to $150,000';
+  if (projectCost < 250000) return 'Low Doc — $150,000 to $250,000';
+  if (projectCost < 500000) return 'Full Doc — $250,000 to $500,000';
+  if (projectCost < 1000000) return 'Full Doc — $500,000 to $1,000,000';
+  return 'Full Doc — $1,000,000+';
 }
 
-function ExpandedQuoteRow({ quote }: ExpandedQuoteRowProps) {
+function getDocList(projectCost: number): string[] {
+  if (projectCost >= 250000) {
+    const docs = [
+      'FY24 & FY25 Accountant Prepared Financials',
+      'Mgt YTD Dec 25 Financials',
+      'Finance Commitment Schedule',
+      'Current ATO Portal Statement',
+      'Business Overview and Major Clients',
+      'Asset and Liability Statement',
+    ];
+    if (projectCost >= 500000) docs.push('Aged Debtors and Creditors');
+    if (projectCost >= 1000000) docs.push('Cashflow Projections');
+    return docs;
+  }
+  const docs = [
+    'Invoice to be Financed',
+    "Director's Drivers Licence",
+    "Director's Medicare Card",
+    'Privacy Consent (signed)',
+    'Asset and Liability Statement (signed)',
+  ];
+  if (projectCost >= 150000) {
+    docs.splice(3, 0, '6 Months Business Bank Statements');
+  }
+  return docs;
+}
+
+interface SendModalProps {
+  quote: AdminQuote;
+  onClose: () => void;
+  onSent: () => void;
+}
+
+function SendUploadLinkModal({ quote, onClose, onSent }: SendModalProps) {
+  const [sending, setSending] = useState(false);
+  const [sentError, setSentError] = useState<string | null>(null);
+
+  const uploadUrl = quote.upload_token
+    ? `${window.location.origin}/upload-documents/${quote.upload_token}`
+    : null;
+  const clientName = quote.recipient_name || quote.recipient_company || 'Client';
+  const docTier = getDocTier(quote.project_cost);
+  const docList = getDocList(quote.project_cost);
+  const expiryDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  async function handleConfirmSend() {
+    setSending(true);
+    setSentError(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/accept-quote`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quoteId: quote.id }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to send');
+      onSent();
+    } catch (err: any) {
+      setSentError(err.message || 'Failed to send upload link.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+              <Send className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">Send Upload Portal Link</p>
+              <p className="text-white/60 text-xs">Review before sending to client</p>
+            </div>
+          </div>
+          <button onClick={onClose} disabled={sending} className="text-white/60 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2.5">
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Client</span>
+              <span className="text-sm font-semibold text-[#3A475B] text-right">{clientName}</span>
+            </div>
+            {quote.recipient_email && (
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Email</span>
+                <span className="text-sm text-gray-600 text-right">{quote.recipient_email}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Quote</span>
+              <span className="text-sm font-semibold text-[#28AA48]">#{String(quote.quote_number).padStart(6, '0')}</span>
+            </div>
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Project Cost</span>
+              <span className="text-sm font-bold text-[#3A475B]">{formatCurrency(quote.project_cost)}</span>
+            </div>
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Link Expires</span>
+              <span className="text-sm text-gray-600">{expiryDate}</span>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-2">{docTier} — Required Documents</p>
+            <ul className="space-y-1.5">
+              {docList.map((doc, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-emerald-900">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  {doc}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {uploadUrl && (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Upload Portal Link</p>
+              <p className="text-xs text-gray-500 break-all font-mono">{uploadUrl}</p>
+            </div>
+          )}
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800">
+              The client will receive an email with a link to the <strong>Low Doc Requirements Client Portal</strong>. They must log in using their name and email address to access it.
+            </p>
+          </div>
+
+          {sentError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700">{sentError}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={onClose}
+              disabled={sending}
+              className="flex-1 py-2.5 text-sm font-semibold text-[#3A475B] bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmSend}
+              disabled={sending || !quote.recipient_email}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-[#34AC48] to-[#AFD235] rounded-xl hover:shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {sending
+                ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending…</>
+                : <><Send className="w-4 h-4" /> Confirm &amp; Send</>
+              }
+            </button>
+          </div>
+          {!quote.recipient_email && (
+            <p className="text-xs text-red-600 text-center">This quote has no client email address — cannot send link.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ExpandedQuoteRowProps {
+  quote: AdminQuote;
+  onQuoteUpdated: () => void;
+}
+
+function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [uploads, setUploads] = useState<DocumentUpload[]>([]);
   const [loadingUploads, setLoadingUploads] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [showSendModal, setShowSendModal] = useState(false);
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -228,20 +414,60 @@ function ExpandedQuoteRow({ quote }: ExpandedQuoteRowProps) {
         </div>
       )}
 
+      {!quote.accepted_at && quote.status !== 'accepted' && (
+        <div className="mt-5 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold text-[#3A475B] mb-0.5">Low Doc Requirements Client Portal</p>
+              <p className="text-xs text-gray-400">Send the client a secure link to upload their required documents.</p>
+            </div>
+            <button
+              onClick={() => setShowSendModal(true)}
+              className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white text-sm font-bold rounded-xl hover:shadow-md transition-all"
+            >
+              <Send className="w-4 h-4" />
+              Send Upload Portal Link
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSendModal && (
+        <SendUploadLinkModal
+          quote={quote}
+          onClose={() => setShowSendModal(false)}
+          onSent={() => {
+            setShowSendModal(false);
+            onQuoteUpdated();
+          }}
+        />
+      )}
+
       {(quote.status === 'accepted' || quote.accepted_at) && (
         <div className="mt-5 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-              <FolderOpen className="w-3.5 h-3.5" />
-              Client Document Uploads
-            </p>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+                <FolderOpen className="w-3.5 h-3.5" />
+                Client Document Uploads
+              </p>
+              {uploads.length > 0 && (
+                <p className="text-xs text-[#28AA48] font-semibold mt-0.5">{uploads.length} document{uploads.length !== 1 ? 's' : ''} uploaded</p>
+              )}
+              {quote.accepted_at && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Link sent {new Date(quote.accepted_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+            </div>
             {uploadPageUrl && (
               <a
                 href={uploadPageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[#28AA48] font-semibold hover:underline"
+                className="flex items-center gap-1.5 text-xs text-[#28AA48] font-semibold hover:underline"
               >
+                <ExternalLink className="w-3 h-3" />
                 View Upload Portal
               </a>
             )}
@@ -551,7 +777,7 @@ export function AdminQuotesList() {
                   </div>
                 </button>
 
-                {isExpanded && <ExpandedQuoteRow quote={q} />}
+                {isExpanded && <ExpandedQuoteRow quote={q} onQuoteUpdated={loadQuotes} />}
               </div>
             );
           })}
