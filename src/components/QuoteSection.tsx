@@ -169,21 +169,21 @@ export function QuoteSection({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">System Size</label>
-                  <input
-                    type="text"
-                    value={clientFields.systemSize}
-                    onChange={e => {
-                      const raw = e.target.value;
-                      const stripped = raw.replace(/\s*kW\s*$/i, '').trim();
-                      if (stripped === '') {
-                        onClientFieldChange('systemSize', '');
-                      } else {
-                        onClientFieldChange('systemSize', `${stripped} kW`);
-                      }
-                    }}
-                    placeholder="e.g. 20"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
-                  />
+                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#28AA48]/30 focus-within:border-[#28AA48] transition-colors">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={clientFields.systemSize.replace(/\s*kW\s*$/i, '') || ''}
+                      onChange={e => {
+                        const val = e.target.value;
+                        onClientFieldChange('systemSize', val === '' ? '' : `${val} kW`);
+                      }}
+                      placeholder="e.g. 20"
+                      className="flex-1 px-3 py-2 text-sm outline-none bg-transparent"
+                    />
+                    <span className="px-3 py-2 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 select-none">kW</span>
+                  </div>
                 </div>
               </div>
             </div>

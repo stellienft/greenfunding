@@ -42,12 +42,12 @@ export function ServicedRentalStep1() {
 
   const isSolarOnlyProject = () => {
     if (selectedAssets.length !== 1) return false;
-    const solarAsset = assets.find(asset => asset.name === 'Solar Systems');
+    const solarAsset = assets.find(asset => asset.name === 'Solar System');
     return solarAsset && selectedAssets.includes(solarAsset.id);
   };
 
   const hasEnergyGenerationAsset = () => {
-    const solarAsset = assets.find(asset => asset.name === 'Solar Systems');
+    const solarAsset = assets.find(asset => asset.name === 'Solar System');
     const wasteToEnergyAsset = assets.find(asset => asset.name === 'Waste to Energy');
     return (solarAsset && selectedAssets.includes(solarAsset.id)) ||
            (wasteToEnergyAsset && selectedAssets.includes(wasteToEnergyAsset.id));
@@ -90,7 +90,7 @@ export function ServicedRentalStep1() {
         ? prev.filter(id => id !== assetId)
         : [...prev, assetId];
 
-      const solarAsset = assets.find(asset => asset.name === 'Solar Systems');
+      const solarAsset = assets.find(asset => asset.name === 'Solar System');
       const wasteToEnergyAsset = assets.find(asset => asset.name === 'Waste to Energy');
       const hasEnergyAsset = (solarAsset && newSelection.includes(solarAsset.id)) ||
                              (wasteToEnergyAsset && newSelection.includes(wasteToEnergyAsset.id));
