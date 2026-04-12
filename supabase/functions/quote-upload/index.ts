@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: quote, error } = await supabase
         .from('sent_quotes')
-        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at, accepted_at')
+        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at, accepted_at, portal_access_code')
         .eq('upload_token', token)
         .maybeSingle();
 
@@ -85,7 +85,11 @@ Deno.serve(async (req: Request) => {
         .select('id, document_type, file_name, uploaded_at')
         .eq('quote_id', quote.id);
 
-      return new Response(JSON.stringify({ quote, uploads: uploads || [] }), {
+      const { portal_access_code, ...quotePublic } = quote;
+      return new Response(JSON.stringify({
+        quote: { ...quotePublic, has_access_code: !!portal_access_code },
+        uploads: uploads || []
+      }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -104,7 +108,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: quote, error: quoteError } = await supabase
         .from('sent_quotes')
-        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at')
+        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at, portal_access_code')
         .eq('upload_token', token)
         .maybeSingle();
 
@@ -117,6 +121,13 @@ Deno.serve(async (req: Request) => {
       if (quote.upload_token_expires_at && new Date(quote.upload_token_expires_at) < new Date()) {
         return new Response(JSON.stringify({ error: 'Link expired' }), {
           status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const accessCodeInput = formData.get('accessCode') as string | null;
+      if (quote.portal_access_code && accessCodeInput?.trim() !== quote.portal_access_code) {
+        return new Response(JSON.stringify({ error: 'Invalid access code' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 

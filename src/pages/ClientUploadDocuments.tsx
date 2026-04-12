@@ -11,6 +11,7 @@ interface QuoteInfo {
   recipient_company: string | null;
   recipient_email: string | null;
   project_cost: number;
+  has_access_code: boolean;
 }
 
 interface UploadRecord {
@@ -100,6 +101,7 @@ export function ClientUploadDocuments() {
 
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
+  const [codeInput, setCodeInput] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -136,14 +138,20 @@ export function ClientUploadDocuments() {
     const expectedEmail = (quote.recipient_email || '').toLowerCase().trim();
     const nameMatch = nameInput.trim().toLowerCase() === expectedName;
     const emailMatch = emailInput.trim().toLowerCase() === expectedEmail;
-    if (nameMatch && emailMatch) {
-      setLoggedIn(true);
-      setLoginError('');
-    } else if (!nameMatch) {
+    if (!nameMatch) {
       setLoginError('Name does not match our records. Please enter your full name as it appears on the quote.');
-    } else {
-      setLoginError('Email address does not match our records. Please enter the email address used when the quote was generated.');
+      return;
     }
+    if (!emailMatch) {
+      setLoginError('Email address does not match our records. Please enter the email address used when the quote was generated.');
+      return;
+    }
+    if (quote.has_access_code && codeInput.trim() === '') {
+      setLoginError('Please enter the access code from your email.');
+      return;
+    }
+    setLoggedIn(true);
+    setLoginError('');
   }
 
   async function handleUpload(docKey: string, file: File) {
@@ -154,6 +162,7 @@ export function ClientUploadDocuments() {
       formData.append('token', token);
       formData.append('documentType', docKey);
       formData.append('file', file);
+      if (codeInput.trim()) formData.append('accessCode', codeInput.trim());
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quote-upload/submit`,
@@ -256,8 +265,23 @@ export function ClientUploadDocuments() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                     required
                   />
-                  {loginError && <p className="text-xs text-red-600 mt-1.5">{loginError}</p>}
                 </div>
+                {quote?.has_access_code && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Access Code</label>
+                    <input
+                      type="text"
+                      value={codeInput}
+                      onChange={e => setCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6-digit code from your email"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] tracking-widest font-mono text-center text-lg"
+                      maxLength={6}
+                      required
+                    />
+                    <p className="text-xs text-gray-400 mt-1.5 text-center">Check your email for the 6-digit access code</p>
+                  </div>
+                )}
+                {loginError && <p className="text-xs text-red-600 text-center">{loginError}</p>}
                 <button
                   type="submit"
                   className="w-full py-3 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-md transition-all text-sm"

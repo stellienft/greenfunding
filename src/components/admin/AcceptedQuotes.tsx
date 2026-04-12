@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { FileText, Download, ChevronDown, ChevronUp, CheckCircle2, Clock, Loader } from 'lucide-react';
 
 interface QuoteUpload {
@@ -22,6 +21,9 @@ interface AcceptedQuote {
   uploads: QuoteUpload[];
 }
 
+const API_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const HEADERS = { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` };
+
 function formatCurrency(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 }
@@ -35,7 +37,21 @@ function formatDate(s: string): string {
 }
 
 function formatDocType(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const map: Record<string, string> = {
+    directors_licence: "Director's Drivers Licence",
+    medicare_card: "Director's Medicare Card",
+    privacy_consent: 'Privacy Consent',
+    asset_liability: 'Asset and Liability Statement',
+    bank_statements: '6 Months Business Bank Statements',
+    financials: 'FY24 & FY25 Accountant Prepared Financials',
+    mgt_financials: 'Mgt YTD Dec 25 Financials',
+    finance_commitment: 'Finance Commitment Schedule',
+    ato_statement: 'Current ATO Portal Statement',
+    business_overview: 'Business Overview and Major Clients',
+    aged_debtors: 'Aged Debtors and Creditors',
+    cashflow: 'Cashflow Projections',
+  };
+  return map[s] || s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function formatBytes(bytes: number | null): string {
@@ -58,26 +74,10 @@ export function AcceptedQuotes() {
   async function loadAcceptedQuotes() {
     setLoading(true);
     try {
-      const { data: quotesData, error } = await supabase
-        .from('sent_quotes')
-        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, accepted_at')
-        .not('accepted_at', 'is', null)
-        .order('accepted_at', { ascending: false });
-
-      if (error) throw error;
-
-      const quotesWithUploads: AcceptedQuote[] = await Promise.all(
-        (quotesData || []).map(async (q) => {
-          const { data: uploads } = await supabase
-            .from('quote_document_uploads')
-            .select('id, document_type, file_name, file_path, file_size, uploaded_at')
-            .eq('quote_id', q.id)
-            .order('uploaded_at', { ascending: true });
-          return { ...q, uploads: uploads || [] };
-        })
-      );
-
-      setQuotes(quotesWithUploads);
+      const res = await fetch(`${API_BASE}/admin-quotes/accepted`, { headers: HEADERS });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to load');
+      setQuotes(json.quotes || []);
     } catch (err) {
       console.error('Failed to load accepted quotes:', err);
     } finally {
@@ -88,12 +88,13 @@ export function AcceptedQuotes() {
   async function handleDownload(upload: QuoteUpload) {
     setDownloadingFile(upload.id);
     try {
-      const { data, error } = await supabase.storage
-        .from('application-documents')
-        .createSignedUrl(upload.file_path, 60 * 60);
-
-      if (error || !data?.signedUrl) throw new Error('Failed to get download URL');
-      window.open(data.signedUrl, '_blank');
+      const res = await fetch(
+        `${API_BASE}/admin-quotes/download-url?path=${encodeURIComponent(upload.file_path)}`,
+        { headers: HEADERS }
+      );
+      const json = await res.json();
+      if (!res.ok || !json.url) throw new Error('Failed to get download URL');
+      window.open(json.url, '_blank');
     } catch (err) {
       console.error('Download error:', err);
       alert('Failed to download file. Please try again.');
@@ -126,18 +127,16 @@ export function AcceptedQuotes() {
           <CheckCircle2 className="w-7 h-7 text-gray-400" />
         </div>
         <h3 className="text-base font-semibold text-[#3A475B] mb-1">No Accepted Quotes Yet</h3>
-        <p className="text-sm text-gray-500">Quotes that have been accepted and have uploaded documents will appear here.</p>
+        <p className="text-sm text-gray-500">Quotes that have been accepted will appear here with their uploaded documents.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-[#3A475B]">Accepted Quotes</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{quotes.length} quote{quotes.length !== 1 ? 's' : ''} with uploaded documents</p>
-        </div>
+      <div>
+        <h2 className="text-xl font-bold text-[#3A475B]">Accepted Quotes</h2>
+        <p className="text-sm text-gray-500 mt-0.5">{quotes.length} quote{quotes.length !== 1 ? 's' : ''} accepted</p>
       </div>
 
       <div className="space-y-3">

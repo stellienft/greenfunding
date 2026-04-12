@@ -34,7 +34,8 @@ function generateClientUploadEmailHtml(
   clientName: string,
   quoteNumber: string,
   uploadUrl: string,
-  projectCost: number
+  projectCost: number,
+  accessCode: string
 ): string {
   const isLowDoc = projectCost < 250000;
   const tierLabel = projectCost < 150000
@@ -119,11 +120,21 @@ function generateClientUploadEmailHtml(
                 </tr>
               </table>
 
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 16px;">
+                <tr>
+                  <td style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 18px 20px; text-align: center;">
+                    <p style="color: #166534; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0; font-family: Arial, sans-serif;">Your Portal Access Code</p>
+                    <p style="color: #14532D; font-size: 32px; font-weight: 900; letter-spacing: 8px; margin: 0; font-family: Arial, sans-serif;">${accessCode}</p>
+                    <p style="color: #166534; font-size: 12px; margin: 8px 0 0 0; font-family: Arial, sans-serif;">Enter this code when prompted on the portal</p>
+                  </td>
+                </tr>
+              </table>
+
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
                 <tr>
                   <td style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 18px;">
                     <p style="color: #92400E; font-size: 13px; margin: 0; font-family: Arial, sans-serif;">
-                      <strong>Secure access:</strong> Log in with your name <strong>${clientName}</strong> and your email address to access the portal. This link is unique to your application and expires in 90 days.
+                      <strong>Secure access:</strong> Log in with your name <strong>${clientName}</strong>, your email address, and the access code above. This link is unique to your application and expires in 90 days.
                     </p>
                   </td>
                 </tr>
@@ -231,12 +242,14 @@ Deno.serve(async (req: Request) => {
     }
 
     const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    const accessCode = String(Math.floor(100000 + Math.random() * 900000));
     const { error: updateError } = await supabase
       .from('sent_quotes')
       .update({
         accepted_at: new Date().toISOString(),
         status: 'accepted',
         upload_token_expires_at: expiresAt.toISOString(),
+        portal_access_code: accessCode,
       })
       .eq('id', quoteId);
 
@@ -259,7 +272,8 @@ Deno.serve(async (req: Request) => {
         clientName,
         quoteNumber,
         uploadUrl,
-        quote.project_cost
+        quote.project_cost,
+        accessCode
       );
 
       EdgeRuntime.waitUntil((async () => {

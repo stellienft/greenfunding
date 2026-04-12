@@ -28,6 +28,56 @@ Deno.serve(async (req: Request) => {
       auth: { persistSession: false },
     });
 
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    const action = pathParts[pathParts.length - 1];
+
+    if (action === "accepted") {
+      const { data: quotes, error: quotesError } = await supabase
+        .from("sent_quotes")
+        .select("id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, accepted_at")
+        .not("accepted_at", "is", null)
+        .order("accepted_at", { ascending: false });
+
+      if (quotesError) throw quotesError;
+
+      const quotesWithUploads = await Promise.all(
+        (quotes || []).map(async (q) => {
+          const { data: uploads } = await supabase
+            .from("quote_document_uploads")
+            .select("id, document_type, file_name, file_path, file_size, uploaded_at")
+            .eq("quote_id", q.id)
+            .order("uploaded_at", { ascending: true });
+          return { ...q, uploads: uploads || [] };
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ quotes: quotesWithUploads }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "download-url") {
+      const filePath = url.searchParams.get("path");
+      if (!filePath) {
+        return new Response(JSON.stringify({ error: "path required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data, error } = await supabase.storage
+        .from("application-documents")
+        .createSignedUrl(filePath, 60 * 60);
+      if (error || !data?.signedUrl) {
+        return new Response(JSON.stringify({ error: "Failed to generate URL" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ url: data.signedUrl }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const [quotesRes, installersRes] = await Promise.all([
       supabase
         .from("sent_quotes")
