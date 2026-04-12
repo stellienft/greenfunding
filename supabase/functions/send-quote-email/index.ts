@@ -677,13 +677,14 @@ async function generateQuotePdf(
       dt(page, 'Full Doc Requirements', PL, y, 10, true, C.DARK_TEXT);
       y -= 16;
 
-      const fullDocRows = [
+      const fullDocRows: Array<{ document: string; u500: boolean; m500: boolean; o1m: boolean; url?: string }> = [
         { document: 'FY24 & FY25 Accountant prepared financials', u500: true, m500: true, o1m: true },
         { document: 'Mgt YTD Dec 25 Financials', u500: true, m500: true, o1m: true },
         { document: 'Finance Commitment Schedule', u500: true, m500: true, o1m: true },
         { document: 'Current ATO Portal Statement', u500: true, m500: true, o1m: true },
         { document: 'Business Overview and Major Clients', u500: true, m500: true, o1m: true },
-        { document: 'Asset and Liability', u500: true, m500: true, o1m: true },
+        { document: 'Asset and Liability', u500: true, m500: true, o1m: true, url: 'drive.google.com' },
+        { document: 'Privacy Consent', u500: true, m500: true, o1m: true, url: 'drive.google.com' },
         { document: 'Aged Debtors and Creditors', u500: false, m500: true, o1m: true },
         { document: 'Cashflow Projections', u500: false, m500: false, o1m: true },
       ];
@@ -717,7 +718,12 @@ async function generateQuotePdf(
           (projectCost >= 500000 && projectCost < 1000000 && row.m500) ||
           (projectCost >= 1000000 && row.o1m);
 
+        const maxDocW = docColW - 20 - (row.url ? tw('[Download]', false, 7.5) + 8 : 0);
         dt(page, row.document, PL + 10, rowY - rowH / 2 - 3.5, 8, false, isApplicable ? C.DARK_TEXT : C.GRAY_LIGHT);
+        if (row.url) {
+          const linkLabel = '[Download]';
+          dt(page, linkLabel, PL + docColW - tw(linkLabel, false, 7.5) - 8, rowY - rowH / 2 - 3.5, 7.5, false, C.GREEN);
+        }
 
         [[row.u500, 0.5], [row.m500, 1.5], [row.o1m, 2.5]].forEach(([val, multiplier]) => {
           const cx = PL + docColW + checkColW * (multiplier as number);
@@ -747,9 +753,9 @@ async function generateQuotePdf(
 
     const contactRightX = PL + CW / 2 + 14;
     dt(page, 'Phone:', contactRightX, y - 22, 8, true, C.DARK_TEXT);
-    dt(page, '1300 GET GFN', contactRightX + tw('Phone: ', true, 8), y - 22, 8, false, C.GRAY_TEXT);
+    dt(page, '1300 403 100', contactRightX + tw('Phone: ', true, 8), y - 22, 8, false, C.GRAY_TEXT);
     dt(page, 'Email:', contactRightX, y - 34, 8, true, C.DARK_TEXT);
-    dt(page, 'info@greenfunding.com.au', contactRightX + tw('Email: ', true, 8), y - 34, 8, false, C.GRAY_TEXT);
+    dt(page, 'solutions@greenfunding.com.au', contactRightX + tw('Email: ', true, 8), y - 34, 8, false, C.GRAY_TEXT);
     dt(page, 'Web:', contactRightX, y - 46, 8, true, C.DARK_TEXT);
     dt(page, 'www.greenfunding.com.au', contactRightX + tw('Web: ', true, 8), y - 46, 8, false, C.GRAY_TEXT);
 
