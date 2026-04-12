@@ -13,17 +13,18 @@ import { UserManagement } from '../components/admin/UserManagement';
 import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
+import { AcceptedQuotes } from '../components/admin/AcceptedQuotes';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
 import { PlatformDashboard } from '../components/admin/PlatformDashboard';
 import { Step1 } from './Step1';
 import { ServicedRentalStep1 } from './ServicedRentalStep1';
 import { Step3 } from './Step3';
 import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
-import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare } from 'lucide-react';
 
 type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
-type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'accepted-quotes' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
   {
@@ -50,6 +51,7 @@ const NAV_GROUPS = [
     label: 'Activity',
     items: [
       { id: 'quotes' as Tab, label: 'Quotes', icon: Send },
+      { id: 'accepted-quotes' as Tab, label: 'Accepted Quotes', icon: CheckSquare },
       { id: 'documents' as Tab, label: 'Documents', icon: FileText },
     ],
   },
@@ -240,6 +242,7 @@ export function AdminDashboard() {
                 {activeTab === 'assets' && <AssetsManager />}
                 {activeTab === 'documents' && <DocumentsManager />}
                 {activeTab === 'quotes' && <AdminQuotesList />}
+                {activeTab === 'accepted-quotes' && <AcceptedQuotes />}
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}

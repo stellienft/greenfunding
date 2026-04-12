@@ -51,7 +51,6 @@ function getDocFields(projectCost: number): DocField[] {
     ];
   }
   const base: DocField[] = [
-    { key: 'invoice', label: 'Invoice to be Financed', required: true },
     { key: 'directors_licence', label: "Director's Drivers Licence", required: true },
     { key: 'medicare_card', label: "Director's Medicare Card", required: true },
     {
@@ -72,7 +71,7 @@ function getDocFields(projectCost: number): DocField[] {
     },
   ];
   if (projectCost >= 150000) {
-    base.splice(3, 0, {
+    base.splice(2, 0, {
       key: 'bank_statements',
       label: '6 Months Business Bank Statements',
       hint: 'You can submit securely via the link below',
