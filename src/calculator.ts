@@ -453,7 +453,7 @@ export function calculateCostPerKwh(
     return null;
   }
 
-  const monthlyGenerationKwh = annualGenerationKwh / 12;
+  const monthlyGenerationKwh = (annualGenerationKwh * 0.9) / 12;
 
   if (monthlyGenerationKwh === 0) {
     return null;
