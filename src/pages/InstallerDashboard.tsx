@@ -203,7 +203,7 @@ export function InstallerDashboard() {
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span>New {calc.title} Quote</span>
+                  <span>New Proposal</span>
                   {!calc.available && <span className="text-[10px] font-normal ml-1">(Coming Soon)</span>}
                 </button>
               );
