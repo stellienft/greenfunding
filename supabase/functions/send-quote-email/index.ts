@@ -646,7 +646,7 @@ async function generateQuotePdf(
         lowDocTitle = 'Low Doc Requirements ($150k\u2013$250k)';
         lowDocItems = [
           { label: "Directors Drivers Licence & Medicare card" },
-          { label: '6 months Bank Statements', url: 'scv.bankstatements.com.au/HSHV' },
+          { label: '6 months Bank Statements', url: 'scv.bankstatements.com.au/HSHV', urlLabel: 'Statements Portal' },
           { label: 'Privacy Consent', url: 'drive.google.com' },
           { label: 'Asset and Liability statement', url: 'drive.google.com' },
         ];
@@ -670,7 +670,8 @@ async function generateQuotePdf(
         const maxItemW = CW - 30 - (item.url ? 90 : 0);
         dtWrapped(page, item.label, PL + 26, y - rowH / 2 - 3, 8.5, false, C.DARK_TEXT, maxItemW, 12);
         if (item.url) {
-          dt(page, `[Download]`, W - PR - tw('[Download]', false, 7.5), y - rowH / 2 - 3, 7.5, false, C.GREEN);
+          const linkLabel = `[${item.urlLabel ?? 'Download'}]`;
+          dt(page, linkLabel, W - PR - tw(linkLabel, false, 7.5), y - rowH / 2 - 3, 7.5, false, C.GREEN);
         }
         y -= rowH + 4;
       }
