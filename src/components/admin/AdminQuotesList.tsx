@@ -108,14 +108,13 @@ function getDocList(projectCost: number): string[] {
     return docs;
   }
   const docs = [
-    'Invoice to be Financed',
     "Director's Drivers Licence",
     "Director's Medicare Card",
     'Privacy Consent (signed)',
     'Asset and Liability Statement (signed)',
   ];
   if (projectCost >= 150000) {
-    docs.splice(3, 0, '6 Months Business Bank Statements');
+    docs.splice(2, 0, '6 Months Business Bank Statements');
   }
   return docs;
 }
@@ -426,7 +425,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
               className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white text-sm font-bold rounded-xl hover:shadow-md transition-all"
             >
               <Send className="w-4 h-4" />
-              Send Upload Portal Link
+              Quote Accepted
             </button>
           </div>
         </div>

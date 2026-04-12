@@ -44,13 +44,11 @@ function generateClientUploadEmailHtml(
       : '$250,000+';
 
   const lowDocUnder150 = `
-    <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Invoice to be financed</li>
     <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Directors Drivers Licence &amp; Medicare Card</li>
     <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Privacy Consent (<a href="https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view" style="color: #28AA48;">download here</a>)</li>
     <li style="padding: 10px 0; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Asset and Liability Statement (<a href="https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view" style="color: #28AA48;">download here</a>)</li>`;
 
   const lowDoc150to250 = `
-    <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Invoice to be financed</li>
     <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Directors Drivers Licence &amp; Medicare Card</li>
     <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">6 months Bank Statements (<a href="https://scv.bankstatements.com.au/HSHV" style="color: #28AA48;">submit securely here</a>)</li>
     <li style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-family: Arial, sans-serif; font-size: 14px; color: #374151;">Privacy Consent (<a href="https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view" style="color: #28AA48;">download here</a>)</li>
@@ -83,8 +81,15 @@ function generateClientUploadEmailHtml(
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
-            <td style="background: linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%); padding: 32px 36px;">
-              <img src="https://greenfunding.com.au/wp-content/uploads/2024/01/green-funding-logo-white.png" alt="Green Funding" height="40" style="display: block; margin-bottom: 0;" onerror="this.style.display='none'" />
+            <td style="background-color: #1a2e3b; padding: 32px 36px;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color: #28AA48; border-radius: 6px; padding: 8px 16px;">
+                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Green</span>
+                    <span style="color: #AFD235; font-size: 20px; font-weight: 900; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Funding</span>
+                  </td>
+                </tr>
+              </table>
               <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 12px 0 0 0; font-family: Arial, sans-serif;">Finance Solutions for Clean Energy</p>
             </td>
           </tr>
@@ -109,7 +114,7 @@ function generateClientUploadEmailHtml(
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
                 <tr>
                   <td align="center">
-                    <a href="${uploadUrl}" style="display: inline-block; background: linear-gradient(135deg, #34AC48 0%, #AFD235 100%); color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 40px; border-radius: 10px; text-decoration: none; font-family: Arial, sans-serif;">Upload Your Documents</a>
+                    <a href="${uploadUrl}" style="display: inline-block; background-color: #28AA48; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 40px; border-radius: 10px; text-decoration: none; font-family: Arial, sans-serif; mso-padding-alt: 0;">Upload Your Documents</a>
                   </td>
                 </tr>
               </table>
