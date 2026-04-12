@@ -68,7 +68,7 @@ export function QuoteSection({
           <Download className="w-4 h-4 text-[#28AA48]" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-[#3A475B]">Generate Quote</h3>
+          <h3 className="text-sm font-bold text-[#3A475B]">Generate Proposal</h3>
           <p className="text-xs text-gray-500">Enter client details and select loan terms to submit a quote</p>
         </div>
       </div>
@@ -245,7 +245,7 @@ export function QuoteSection({
               ) : selectedTerm !== null && selectedTerm !== undefined ? (
                 <>
                   <Send className="w-4 h-4" />
-                  Generate Quote
+                  Generate Proposal
                 </>
               ) : (
                 <>

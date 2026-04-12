@@ -313,7 +313,6 @@ export function OnlineQuote() {
 
             {hasSavings && currentElectricityBill !== undefined && anticipatedElectricityBillWithSolar !== undefined && (
               <div className="px-8 py-6 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
                 <SavingsChart
                   currentElectricityBill={currentElectricityBill}
                   anticipatedElectricityBillWithSolar={anticipatedElectricityBillWithSolar}
