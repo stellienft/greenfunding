@@ -273,7 +273,6 @@ export function OnlineQuote() {
                     <tr style={{ background: '#094325' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
                       <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
-                      {hasSolar && <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Cost per kWh</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -284,18 +283,16 @@ export function OnlineQuote() {
                             <div className="w-2 h-2 rounded-full bg-[#28AA48]" />
                             {t.years} Year{t.years !== 1 ? 's' : ''}
                           </div>
+                          {hasSolar && t.costPerKwhCents != null && (
+                            <div className="text-xs text-gray-400 font-normal mt-0.5 pl-4">
+                              Estimate per kWh: <span className="font-semibold text-[#3A475B]">{(t.costPerKwhCents).toFixed(2)}¢</span>
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 text-right font-bold text-[#28AA48] text-base">
                           {formatCurrencyDecimals(t.monthlyPayment)}
                           <span className="text-xs text-gray-400 font-normal">/mo</span>
                         </td>
-                        {hasSolar && (
-                          <td className="px-4 py-3.5 text-right font-semibold text-[#3A475B]">
-                            {t.costPerKwhCents != null
-                              ? <>{(t.costPerKwhCents).toFixed(2)}<span className="text-xs text-gray-400 font-normal">¢/kWh</span></>
-                              : <span className="text-gray-400">—</span>}
-                          </td>
-                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -304,6 +301,11 @@ export function OnlineQuote() {
               <p className="text-xs text-gray-400 mt-2">
                 * Quote valid for 30 days from {quoteDate}.
               </p>
+              {hasSolar && (
+                <p className="text-xs text-gray-400 mt-1">
+                  * This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.
+                </p>
+              )}
             </div>
 
             {hasSavings && currentElectricityBill !== undefined && anticipatedElectricityBillWithSolar !== undefined && (
