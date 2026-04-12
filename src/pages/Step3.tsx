@@ -831,7 +831,7 @@ export function Step3() {
                 onClick={handleRestartClick}
                 className="px-5 py-3 text-sm font-semibold text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-gray-200 hover:border-red-200 order-2 sm:order-2"
               >
-                Restart Quote
+                Restart Proposal
               </button>
             </div>
           </div>
@@ -842,9 +842,9 @@ export function Step3() {
       {showRestartConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
-            <h3 className="text-lg font-bold text-[#3A475B] mb-2">Restart Quote?</h3>
+            <h3 className="text-lg font-bold text-[#3A475B] mb-2">Restart Proposal?</h3>
             <p className="text-gray-500 text-sm mb-6">
-              You have already started a quote. Restarting will clear all your current selections and start fresh.
+              You have already started a proposal. Restarting will clear all your current selections and start fresh.
             </p>
             <div className="flex gap-3">
               <button
