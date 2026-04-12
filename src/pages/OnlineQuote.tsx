@@ -75,13 +75,14 @@ function getLowDocRequirements(projectCost: number): { title: string; items: Low
   return { title: 'Low Doc Requirements (up to $150k)', items: base };
 }
 
-const fullDocRequirements: { document: string; under500k: boolean; between500kAnd1m: boolean; over1m: boolean }[] = [
+const fullDocRequirements: { document: string; under500k: boolean; between500kAnd1m: boolean; over1m: boolean; url?: string }[] = [
   { document: 'FY24 & FY25 Accountant prepared financials', under500k: true, between500kAnd1m: true, over1m: true },
   { document: 'Mgt YTD Dec 25 Financials', under500k: true, between500kAnd1m: true, over1m: true },
   { document: 'Finance Commitment Schedule', under500k: true, between500kAnd1m: true, over1m: true },
   { document: 'Current ATO Portal Statement', under500k: true, between500kAnd1m: true, over1m: true },
   { document: 'Business Overview and Major Clients', under500k: true, between500kAnd1m: true, over1m: true },
-  { document: 'Asset and Liability', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Asset and Liability', under500k: true, between500kAnd1m: true, over1m: true, url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
+  { document: 'Privacy Consent', under500k: true, between500kAnd1m: true, over1m: true, url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
   { document: 'Aged Debtors and Creditors', under500k: false, between500kAnd1m: true, over1m: true },
   { document: 'Cashflow Projections', under500k: false, between500kAnd1m: false, over1m: true },
 ];
@@ -384,7 +385,12 @@ export function OnlineQuote() {
                           return (
                             <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                               <td className={`px-4 py-3.5 border-b border-gray-100 font-medium ${isApplicable ? 'text-[#3A475B]' : 'text-gray-400'}`}>
-                                {req.document}
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{req.document}</span>
+                                  {req.url && (
+                                    <a href={req.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#28AA48] hover:underline whitespace-nowrap shrink-0">[Download]</a>
+                                  )}
+                                </div>
                               </td>
                               {[req.under500k, req.between500kAnd1m, req.over1m].map((val, ci) => (
                                 <td key={ci} className="px-4 py-3.5 text-center border-b border-gray-100">
@@ -420,8 +426,8 @@ export function OnlineQuote() {
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 GET GFN</p>
-                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> info@greenfunding.com.au</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 403 100</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> solutions@greenfunding.com.au</p>
                   <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Web:</span> www.greenfunding.com.au</p>
                 </div>
               </div>
