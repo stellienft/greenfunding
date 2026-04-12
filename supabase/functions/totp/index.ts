@@ -89,7 +89,7 @@ function buildOtpAuthUrl(secret: string, email: string, issuer: string): string 
   const label = encodeURIComponent(`${issuer}:${email}`);
   const params = new URLSearchParams({
     secret,
-    issuer,
+    issuer: encodeURIComponent(issuer),
     algorithm: 'SHA1',
     digits: '6',
     period: '30',
