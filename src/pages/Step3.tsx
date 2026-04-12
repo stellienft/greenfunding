@@ -504,7 +504,12 @@ export function Step3() {
                   </div>
 
                   <div className="pt-4 border-t border-gray-200">
-                    <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-sm text-gray-600">Monthly Payment</div>
+                      {showCostPerKwh && option.costPerKwh && (
+                        <div className="text-xs text-gray-400 opacity-60">{formatCostPerKwh(option.costPerKwh)}/kWh</div>
+                      )}
+                    </div>
                     <div className={`text-2xl font-bold ${selectedTerm === option.years ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                       {formatCurrency(option.monthlyPayment, true)}
                     </div>
@@ -512,16 +517,6 @@ export function Step3() {
                     <div className="text-sm text-gray-600 mt-2">
                       {formatCurrency(option.monthlyPayment * 1.10, true)} <span className="text-xs">(inc. GST)</span>
                     </div>
-
-                    {showCostPerKwh && option.costPerKwh && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <div className="text-xs text-gray-600 mb-1">Cost per kWh</div>
-                        <div className="text-lg font-bold text-[#3A475B]">
-                          {formatCostPerKwh(option.costPerKwh)}
-                        </div>
-                        <div className="text-xs text-gray-500 italic">*equivalent cents per kWh</div>
-                      </div>
-                    )}
                   </div>
                 </button>
               ))}
@@ -573,7 +568,12 @@ export function Step3() {
                         </div>
 
                         <div className="pt-4 border-t border-gray-200">
-                          <div className="text-sm text-gray-600 mb-1">Monthly Payment</div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="text-sm text-gray-600">Monthly Payment</div>
+                            {showCostPerKwh && option.costPerKwh && (
+                              <div className="text-xs text-gray-400 opacity-60">{formatCostPerKwh(option.costPerKwh)}/kWh</div>
+                            )}
+                          </div>
                           <div className={`text-2xl font-bold ${selectedTerm === option.years ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                             {formatCurrency(option.monthlyPayment, true)}
                           </div>
@@ -581,32 +581,11 @@ export function Step3() {
                           <div className="text-sm text-gray-600 mt-2">
                             {formatCurrency(option.monthlyPayment * 1.10, true)} <span className="text-xs">(inc. GST)</span>
                           </div>
-
-                          {showCostPerKwh && option.costPerKwh && (
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <div className="text-xs text-gray-600 mb-1">Cost per kWh</div>
-                              <div className="text-lg font-bold text-[#3A475B]">
-                                {formatCostPerKwh(option.costPerKwh)}
-                              </div>
-                              <div className="text-xs text-gray-500 italic">*equivalent cents per kWh</div>
-                            </div>
-                          )}
                         </div>
                       </button>
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {showCostPerKwh && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-900 font-semibold mb-2">Cost per kWh Calculation Note:</p>
-                <p className="text-sm text-blue-900">
-                  This calculation shows equivalent cents per kWh for comparison purposes only.
-                  Actual billing is based on fixed monthly installments, not per-kWh usage.
-                  This metric is provided to help installers communicate value to customers for comparison purposes only based solely on your generation input.
-                </p>
               </div>
             )}
 

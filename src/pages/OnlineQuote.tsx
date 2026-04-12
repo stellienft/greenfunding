@@ -257,41 +257,9 @@ export function OnlineQuote() {
                     <p className="text-[#3A475B] font-bold text-sm">{systemSize}</p>
                   </div>
                 )}
-                {hasSolar && annualSolarGenerationKwh && (
-                  <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
-                    <p className="text-gray-500 text-xs mb-1">Annual Generation</p>
-                    <p className="text-[#3A475B] font-bold text-sm">{annualSolarGenerationKwh.toLocaleString()} kWh</p>
-                  </div>
-                )}
               </div>
             </div>
 
-            {hasSolar && annualSolarGenerationKwh && annualSolarGenerationKwh > 0 && (
-              <div className="px-8 py-6 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Solar Generation Details</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-xl p-4 bg-amber-50 border border-amber-100">
-                    <p className="text-amber-700 text-xs font-medium mb-1">Annual Generation</p>
-                    <p className="text-amber-900 font-bold text-lg">{annualSolarGenerationKwh.toLocaleString()} kWh</p>
-                    <p className="text-amber-600 text-xs mt-0.5">per year</p>
-                  </div>
-                  {hasSavings && energySavings && (
-                    <div className="rounded-xl p-4 bg-green-50 border border-green-100">
-                      <p className="text-green-700 text-xs font-medium mb-1">Est. Annual Energy Savings</p>
-                      <p className="text-green-900 font-bold text-lg">{formatCurrency(energySavings)}</p>
-                      <p className="text-green-600 text-xs mt-0.5">per year</p>
-                    </div>
-                  )}
-                  {sortedTerms.filter(t => t.costPerKwhCents && t.costPerKwhCents > 0).map(t => (
-                    <div key={t.years} className="rounded-xl p-4 bg-blue-50 border border-blue-100">
-                      <p className="text-blue-700 text-xs font-medium mb-1">Cost per kWh — {t.years} yr term</p>
-                      <p className="text-blue-900 font-bold text-lg">{t.costPerKwhCents!.toFixed(2)}¢</p>
-                      <p className="text-blue-600 text-xs mt-0.5">per kilowatt-hour</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
@@ -300,7 +268,6 @@ export function OnlineQuote() {
                   <thead>
                     <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
-                      <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Cost per kWh</th>
                       <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
                     </tr>
                   </thead>
@@ -312,13 +279,6 @@ export function OnlineQuote() {
                             <div className="w-2 h-2 rounded-full bg-[#28AA48]" />
                             {t.years} Year{t.years !== 1 ? 's' : ''}
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {t.costPerKwhCents && t.costPerKwhCents > 0 ? (
-                            <span className="font-semibold text-blue-700">{t.costPerKwhCents.toFixed(2)}¢</span>
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
                         </td>
                         <td className="px-4 py-3.5 text-right font-bold text-[#28AA48] text-base">
                           {formatCurrencyDecimals(t.monthlyPayment)}

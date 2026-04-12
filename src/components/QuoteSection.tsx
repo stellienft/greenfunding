@@ -172,8 +172,16 @@ export function QuoteSection({
                   <input
                     type="text"
                     value={clientFields.systemSize}
-                    onChange={e => onClientFieldChange('systemSize', e.target.value)}
-                    placeholder="e.g. 20 kW"
+                    onChange={e => {
+                      const raw = e.target.value;
+                      const stripped = raw.replace(/\s*kW\s*$/i, '').trim();
+                      if (stripped === '') {
+                        onClientFieldChange('systemSize', '');
+                      } else {
+                        onClientFieldChange('systemSize', `${stripped} kW`);
+                      }
+                    }}
+                    placeholder="e.g. 20"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors"
                   />
                 </div>
