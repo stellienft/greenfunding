@@ -385,18 +385,30 @@ async function generateQuotePdf(
 
     y = drawPaymentOptionsSection(page, y);
 
-    if (hasSavings && energySavings) {
+    if (hasSolar && annualSolarGenerationKwh) {
+      const kwhNote = '* This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.';
+      const kwhNoteH = 28;
+      dr(page, PL, y - kwhNoteH, CW, kwhNoteH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
+      dtWrapped(page, kwhNote, PL + 10, y - 9, 6.5, false, C.GRAY_TEXT, CW - 20, 10);
+      y -= kwhNoteH + 12;
+    }
+
+    const effectiveEnergySavings = energySavings && energySavings > 0
+      ? energySavings
+      : (annualSolarGenerationKwh && annualSolarGenerationKwh > 0 ? annualSolarGenerationKwh * 0.30 : 0);
+
+    if (effectiveEnergySavings > 0 && hasSolar) {
       drawSectionLabel(page, 'Savings Thanks to Solar', PL, y);
       y -= 18;
 
       const YEARS = 25;
       const GROWTH_RATE = 0.03;
       const annualLoanCost = sortedTerms[0]?.monthlyPayment ? sortedTerms[0].monthlyPayment * 12 : 0;
-      const electricityBillWithSolar = energySavings * 0.05;
+      const electricityBillWithSolar = effectiveEnergySavings * 0.05;
       const firstTermYears = sortedTerms[0]?.years ?? 0;
 
       const chartData: Array<{ year: number; billWithoutSolar: number; billWithSolar: number; loanCost: number; cumulativeSavings: number }> = [];
-      let currentBill = energySavings;
+      let currentBill = effectiveEnergySavings;
       let cumSavings = 0;
       for (let yr = 1; yr <= YEARS; yr++) {
         const loanCostThisYear = (firstTermYears && annualLoanCost && yr <= firstTermYears) ? annualLoanCost : 0;
@@ -416,7 +428,7 @@ async function generateQuotePdf(
       const c1Label = 'Electricity bill without solar';
       const c1LabelW = tw(c1Label, false, 6.5);
       dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 12, 6.5, false, C.WHITE, 0.7);
-      const c1Val = formatCurrencyAU(energySavings) + '/yr';
+      const c1Val = formatCurrencyAU(effectiveEnergySavings) + '/yr';
       const c1ValW = tw(c1Val, true, 9);
       dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 28, 9, true, C.WHITE);
 
@@ -511,7 +523,7 @@ async function generateQuotePdf(
       y -= chartH + 12;
 
       if (firstTermYears) {
-        const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? energySavings;
+        const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? effectiveEnergySavings;
         const postLoanNote = `After year ${firstTermYears}, your finance payments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
         const postNoteH = 28;
         dr(page, PL, y - postNoteH, CW, postNoteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
