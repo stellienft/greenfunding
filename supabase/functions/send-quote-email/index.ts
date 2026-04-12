@@ -385,13 +385,6 @@ async function generateQuotePdf(
 
     y = drawPaymentOptionsSection(page, y);
 
-    if (hasSolar && annualSolarGenerationKwh) {
-      const kwhNote = '* This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.';
-      const kwhNoteH = 28;
-      dr(page, PL, y - kwhNoteH, CW, kwhNoteH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
-      dtWrapped(page, kwhNote, PL + 10, y - 9, 6.5, false, C.GRAY_TEXT, CW - 20, 10);
-      y -= kwhNoteH + 12;
-    }
 
     const effectiveEnergySavings = energySavings && energySavings > 0
       ? energySavings
@@ -623,7 +616,13 @@ async function generateQuotePdf(
 
     const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
     dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
-    y -= 26;
+    y -= 16;
+    if (hasSolar && annualSolarGenerationKwh) {
+      const kwhNote = '* This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.';
+      dtWrapped(page, kwhNote, PL, y - 10, 7, false, C.GRAY_LIGHT, CW, 11);
+      y -= 22;
+    }
+    y -= 10;
 
     return y;
   }
@@ -635,44 +634,6 @@ async function generateQuotePdf(
     y = drawMiniHeader(page, y);
     y -= 20;
 
-    const hasSolarStats = (annualSolarGenerationKwh && annualSolarGenerationKwh > 0) || (energySavings && energySavings > 0) || (sortedTerms[0]?.costPerKwhCents && sortedTerms[0].costPerKwhCents > 0);
-    if (hasSolarStats) {
-      const statBoxes = [
-        {
-          label: 'Annual Generation',
-          value: annualSolarGenerationKwh && annualSolarGenerationKwh > 0 ? `${Math.round(annualSolarGenerationKwh).toLocaleString('en-AU')} kWh` : '—',
-          color: C.DARK,
-          textColor: C.WHITE,
-          subColor: { r: 1, g: 1, b: 1 } as { r: number; g: number; b: number },
-        },
-        {
-          label: 'Est. Annual Savings',
-          value: energySavings && energySavings > 0 ? formatCurrencyAU(energySavings) : '—',
-          color: C.GREEN,
-          textColor: C.WHITE,
-          subColor: { r: 1, g: 1, b: 1 } as { r: number; g: number; b: number },
-        },
-        {
-          label: 'Cost per kWh',
-          value: sortedTerms[0]?.costPerKwhCents && sortedTerms[0].costPerKwhCents > 0 ? `${sortedTerms[0].costPerKwhCents.toFixed(2)}c` : '—',
-          color: C.BLUE_BG,
-          textColor: C.BLUE_TEXT,
-          subColor: hexToRgb('#3B82F6'),
-        },
-      ];
-      const boxW = (CW - 12) / 3;
-      const boxH = 52;
-      for (let bi = 0; bi < statBoxes.length; bi++) {
-        const bx = PL + bi * (boxW + 6);
-        const box = statBoxes[bi];
-        dr(page, bx, y - boxH, boxW, boxH, box.color, 1, undefined, 0, 8);
-        const labelW = tw(box.label, false, 7);
-        dt(page, box.label, bx + (boxW - labelW) / 2, y - 14, 7, false, box.subColor, 0.8);
-        const valW = tw(box.value, true, 13);
-        dt(page, box.value, bx + (boxW - valW) / 2, y - 34, 13, true, box.textColor);
-      }
-      y -= boxH + 22;
-    }
 
     drawSectionLabel(page, "What You'll Need to Apply", PL, y);
     y -= 24;
