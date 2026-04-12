@@ -809,10 +809,11 @@ export function Step3() {
               </div>
             )}
 
-            {state.energySavings && state.energySavings > 0 && (
+            {state.currentElectricityBill && state.currentElectricityBill > 0 && state.anticipatedElectricityBillWithSolar !== undefined && (
               <div className="mt-6">
                 <SavingsChart
-                  annualSavings={state.energySavings}
+                  currentElectricityBill={state.currentElectricityBill}
+                  anticipatedElectricityBillWithSolar={state.anticipatedElectricityBillWithSolar}
                   selectedTermYears={selectedTerm}
                   monthlyPayment={selectedTerm ? termOptions.find(t => t.years === selectedTerm)?.monthlyPayment || additionalTermOptions.find(t => t.years === selectedTerm)?.monthlyPayment : undefined}
                 />

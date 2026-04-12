@@ -16,6 +16,8 @@ interface AppState {
   annualMaintenanceFee?: number;
   annualMaintenanceCost?: number;
   energySavings?: number;
+  currentElectricityBill?: number;
+  anticipatedElectricityBillWithSolar?: number;
   recipientEmail?: string;
   recipientName?: string;
   recipientCompany?: string;
