@@ -6,6 +6,7 @@ import { Step1 } from './pages/Step1';
 import { ServicedRentalStep1 } from './pages/ServicedRentalStep1';
 import { Step3 } from './pages/Step3';
 import { AdminLogin } from './pages/AdminLogin';
+import { AdminResetPassword } from './pages/AdminResetPassword';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { InstallerLogin } from './pages/InstallerLogin';
 import { ResetPassword } from './pages/ResetPassword';
@@ -161,6 +162,7 @@ function App() {
               />
               <Route path="/upload-documents/:token" element={<ClientUploadDocuments />} />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route
                 path="/admin"
                 element={
