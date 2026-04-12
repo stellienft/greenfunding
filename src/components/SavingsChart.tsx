@@ -201,7 +201,7 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
           {[
             {
               label: `Over ${selectedTermYears ?? YEARS} years`,
-              sublabel: selectedTermYears ? 'Period of rental facility' : '25-year projection',
+              sublabel: selectedTermYears ? 'Period of financed term' : '25-year projection',
               value: data[(selectedTermYears ?? YEARS) - 1]?.cumulativeSavings ?? 0,
             },
             {
