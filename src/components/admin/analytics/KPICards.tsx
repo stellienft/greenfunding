@@ -1,6 +1,6 @@
 import type { Quote, Application, InstallerStats } from './types';
 import { formatCurrency } from './utils';
-import { TrendingUp, DollarSign, Users, Percent, BarChart2, RefreshCw } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, Percent, BarChart2, CheckSquare } from 'lucide-react';
 
 interface Props {
   quotes: Quote[];
@@ -24,15 +24,9 @@ export function KPICards({ quotes, applications, installerStats }: Props) {
   const appsSubmitted = applications.length;
   const appToSettleRate = appsSubmitted ? Math.round((appsSubmitted / Math.max(quotesWithApp, 1)) * 100) : 0;
 
-  const installerQuoteCounts = new Map<string, number>();
-  quotes.forEach(q => {
-    if (q.installer_id) {
-      installerQuoteCounts.set(q.installer_id, (installerQuoteCounts.get(q.installer_id) ?? 0) + 1);
-    }
-  });
-  const repeatInstallers = [...installerQuoteCounts.values()].filter(c => c > 1).length;
-  const totalInstallers = installerQuoteCounts.size;
-  const repeatRate = totalInstallers ? Math.round((repeatInstallers / totalInstallers) * 100) : 0;
+  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+  const acceptedValue = quotes.filter(q => q.status === 'accepted').reduce((s, q) => s + Number(q.project_cost), 0);
+  const acceptanceRate = totalQuotes ? Math.round((acceptedQuotes / totalQuotes) * 100) : 0;
 
   const kpis = [
     {
@@ -87,11 +81,11 @@ export function KPICards({ quotes, applications, installerStats }: Props) {
       color: 'bg-teal-50 text-teal-600',
     },
     {
-      label: 'Repeat Quote Rate',
-      value: `${repeatRate}%`,
-      sub: `${repeatInstallers} of ${totalInstallers} installers`,
-      icon: RefreshCw,
-      color: 'bg-slate-50 text-slate-600',
+      label: 'Accepted Quotes',
+      value: acceptedQuotes.toLocaleString(),
+      sub: `${acceptanceRate}% acceptance · ${formatCurrency(acceptedValue)}`,
+      icon: CheckSquare,
+      color: 'bg-green-50 text-green-600',
     },
   ];
 
