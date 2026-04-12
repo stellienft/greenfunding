@@ -395,6 +395,8 @@ export function Step3() {
           installerPhone: installerProfile?.phone_number || undefined,
           annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
           energySavings: state.energySavings || undefined,
+          currentElectricityBill: state.currentElectricityBill || undefined,
+          anticipatedElectricityBillWithSolar: state.anticipatedElectricityBillWithSolar ?? undefined,
           disclaimerText: undefined,
         },
       });

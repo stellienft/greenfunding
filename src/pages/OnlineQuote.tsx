@@ -34,6 +34,8 @@ export interface OnlineQuoteData {
   installerPhone?: string;
   annualSolarGenerationKwh?: number;
   energySavings?: number;
+  currentElectricityBill?: number;
+  anticipatedElectricityBillWithSolar?: number;
   disclaimerText?: string;
 }
 
@@ -85,7 +87,7 @@ const fullDocRequirements: { document: string; under500k: boolean; between500kAn
 
 function PageHeader({ quoteNumber, quoteDate }: { quoteNumber: string; quoteDate: string }) {
   return (
-    <div className="px-8 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+    <div className="px-8 py-5 flex items-center justify-between" style={{ background: '#094325' }}>
       <img src="/green-funding-invertedlogo.svg" alt="Green Funding" className="h-7" />
       <div className="text-right">
         <p className="text-white/50 text-xs uppercase tracking-widest">{quoteNumber}</p>
@@ -97,7 +99,7 @@ function PageHeader({ quoteNumber, quoteDate }: { quoteNumber: string; quoteDate
 
 function PageFooter({ text }: { text?: string }) {
   return (
-    <div className="px-8 py-4" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+    <div className="px-8 py-4" style={{ background: '#094325' }}>
       <p className="text-white/40 text-xs text-center">
         {text ?? 'This quote is indicative only and subject to credit approval. Valid for 30 days.'}
       </p>
@@ -138,6 +140,8 @@ export function OnlineQuote() {
     installerPhone,
     annualSolarGenerationKwh,
     energySavings,
+    currentElectricityBill,
+    anticipatedElectricityBillWithSolar,
     disclaimerText,
     pdfUrl,
   } = quoteData;
@@ -148,7 +152,7 @@ export function OnlineQuote() {
   const firstTerm = sortedTerms[0];
 
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
-  const hasSavings = !!(energySavings && energySavings > 0);
+  const hasSavings = !!(currentElectricityBill && currentElectricityBill > 0 && anticipatedElectricityBillWithSolar !== undefined);
   const isLowDoc = projectCost < 250000;
   const lowDocReqs = getLowDocRequirements(projectCost);
 
@@ -209,7 +213,7 @@ export function OnlineQuote() {
 
           {/* PAGE 1 — Cover + Repayment Options */}
           <div className="print-page bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="px-8 py-6" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+            <div className="px-8 py-6" style={{ background: '#094325' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <img src="/green-funding-invertedlogo.svg" alt="Green Funding" className="h-8 mb-2" />
@@ -266,9 +270,10 @@ export function OnlineQuote() {
               <div className="overflow-hidden rounded-xl border border-gray-200">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+                    <tr style={{ background: '#094325' }}>
                       <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
                       <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
+                      {hasSolar && <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Cost per kWh</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -284,6 +289,13 @@ export function OnlineQuote() {
                           {formatCurrencyDecimals(t.monthlyPayment)}
                           <span className="text-xs text-gray-400 font-normal">/mo</span>
                         </td>
+                        {hasSolar && (
+                          <td className="px-4 py-3.5 text-right font-semibold text-[#3A475B]">
+                            {t.costPerKwhCents != null
+                              ? <>{(t.costPerKwhCents).toFixed(2)}<span className="text-xs text-gray-400 font-normal">¢/kWh</span></>
+                              : <span className="text-gray-400">—</span>}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -294,11 +306,12 @@ export function OnlineQuote() {
               </p>
             </div>
 
-            {hasSavings && energySavings && (
+            {hasSavings && currentElectricityBill !== undefined && anticipatedElectricityBillWithSolar !== undefined && (
               <div className="px-8 py-6 border-b border-gray-100">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Savings Thanks to Solar</p>
                 <SavingsChart
-                  annualSavings={energySavings}
+                  currentElectricityBill={currentElectricityBill}
+                  anticipatedElectricityBillWithSolar={anticipatedElectricityBillWithSolar}
                   selectedTermYears={firstTerm?.years}
                   monthlyPayment={firstTerm?.monthlyPayment}
                 />
@@ -351,7 +364,7 @@ export function OnlineQuote() {
                   <div className="overflow-hidden rounded-xl border border-gray-200">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+                        <tr style={{ background: '#094325' }}>
                           <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Document</th>
                           <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">&lt;$500k</th>
                           <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">$500k–$1m</th>

@@ -123,7 +123,7 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
 
       <div className="flex flex-wrap items-center gap-4 mb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#2D3A4A' }} />
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#094325' }} />
           <span className="text-xs text-gray-600">Electricity bill without solar</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -152,7 +152,7 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
 
             {data.map((d, i) => (
               <g key={d.year}>
-                <rect x={xBar(i, 0)} y={yPos(d.billWithoutSolar)} width={barWidth} height={bHeight(d.billWithoutSolar)} rx="2" fill="#2D3A4A" opacity="0.9" />
+                <rect x={xBar(i, 0)} y={yPos(d.billWithoutSolar)} width={barWidth} height={bHeight(d.billWithoutSolar)} rx="2" fill="#094325" opacity="0.9" />
                 <rect x={xBar(i, 1)} y={yPos(d.billWithSolar)} width={barWidth} height={bHeight(d.billWithSolar)} rx="2" fill="#5EC4C1" opacity="0.85" />
                 {hasLoanData && (
                   <rect
@@ -193,7 +193,7 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
         </div>
       )}
 
-      <div className="mt-5 rounded-2xl overflow-hidden border border-gray-100" style={{ background: 'linear-gradient(135deg, #1a2e3b 0%, #2D3A4A 100%)' }}>
+      <div className="mt-5 rounded-2xl overflow-hidden border border-gray-100" style={{ background: '#094325' }}>
         <div className="px-5 pt-4 pb-3 border-b border-white/10">
           <p className="text-sm font-bold text-white">Estimated Cumulative Savings</p>
         </div>
