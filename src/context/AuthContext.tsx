@@ -8,6 +8,7 @@ interface InstallerUser {
   company_name: string;
   email: string;
   phone_number: string | null;
+  logo_url: string | null;
   needs_password_reset: boolean;
   quote_count: number;
   application_count: number;
@@ -26,6 +27,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   updateProfile: (fields: { full_name?: string; company_name?: string; phone_number?: string }) => Promise<void>;
+  uploadLogo: (file: File) => Promise<void>;
   refreshProfile: () => Promise<void>;
   completeTotpVerification: () => void;
   markTotpSetupPrompted: () => Promise<void>;
@@ -152,6 +154,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTotpVerified(true);
   }
 
+  async function uploadLogo(file: File) {
+    if (!user) throw new Error('Not authenticated');
+    const ext = file.name.split('.').pop();
+    const path = `logos/${user.id}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
+    const { error } = await supabase
+      .from('installer_users')
+      .update({ logo_url: publicUrl })
+      .eq('id', user.id);
+    if (error) throw error;
+    await loadInstallerProfile(user.id);
+  }
+
   async function markTotpSetupPrompted() {
     if (!user) return;
     try {
@@ -180,6 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         updatePassword,
         updateProfile,
+        uploadLogo,
         refreshProfile,
         completeTotpVerification,
         markTotpSetupPrompted,

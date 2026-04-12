@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { TwoFactorManager } from '../components/TwoFactorManager';
-import { User, Building2, Mail, Phone, Calendar, Lock, Eye, EyeOff, CheckCircle, AlertCircle, CreditCard as Edit3, Save, X, FileText, ClipboardList, ShieldCheck, ChevronRight } from 'lucide-react';
+import { User, Building2, Mail, Phone, Calendar, Lock, Eye, EyeOff, CheckCircle, AlertCircle, CreditCard as Edit3, Save, X, FileText, ShieldCheck, ChevronRight, Upload, Image as ImageIcon } from 'lucide-react';
 
 type Section = 'profile' | 'password' | 'security';
 
@@ -371,6 +371,81 @@ function ActivityStats({ profile }: { profile: { quote_count: number; applicatio
   );
 }
 
+function LogoUpload() {
+  const { installerProfile, uploadLogo } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image must be under 2MB');
+      return;
+    }
+    setError(null);
+    setPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      await uploadLogo(file);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Upload failed');
+      setPreview(null);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const logoSrc = preview || installerProfile?.logo_url;
+
+  return (
+    <div className="flex flex-col items-center gap-3 mb-4">
+      <div
+        onClick={() => !uploading && inputRef.current?.click()}
+        className="relative w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center cursor-pointer hover:border-[#6EAE3C] hover:bg-[#6EAE3C]/5 transition-all group overflow-hidden"
+      >
+        {logoSrc ? (
+          <>
+            <img src={logoSrc} alt="Company logo" className="w-full h-full object-contain p-1" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Upload className="w-5 h-5 text-white" />
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-gray-400 group-hover:text-[#6EAE3C] transition-colors">
+            <ImageIcon className="w-6 h-6" />
+            <span className="text-[10px] font-medium">Logo</span>
+          </div>
+        )}
+        {uploading && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-[#6EAE3C] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="text-xs text-[#6EAE3C] font-medium hover:underline disabled:opacity-50"
+      >
+        {uploading ? 'Uploading...' : logoSrc ? 'Change logo' : 'Upload logo'}
+      </button>
+      {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+      {success && <p className="text-xs text-green-600 text-center">Logo updated!</p>}
+    </div>
+  );
+}
+
 export function MyAccount() {
   const { installerProfile, refreshProfile } = useAuth();
   const [section, setSection] = useState<Section>('profile');
@@ -399,15 +474,11 @@ export function MyAccount() {
 
             <div className="space-y-4">
               <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                <div className="flex flex-col items-center text-center mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] rounded-full flex items-center justify-center mb-3 shadow">
-                    <span className="text-2xl font-bold text-white">
-                      {installerProfile.full_name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                <div className="flex flex-col items-center text-center">
+                  <LogoUpload />
                   <div className="font-semibold text-[#3A475B] text-sm leading-tight">{installerProfile.full_name}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{installerProfile.company_name}</div>
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full">
+                  <div className="mt-2 mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
                     <span className="text-xs font-medium text-green-700">Active</span>
                   </div>
