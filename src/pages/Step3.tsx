@@ -59,7 +59,7 @@ export function Step3() {
 
   const isSolarOnlyProject = () => {
     if (state.selectedAssetIds.length !== 1) return false;
-    const solarAsset = assets.find(asset => asset.name === 'Solar Panels');
+    const solarAsset = assets.find(asset => asset.name === 'Solar Systems');
     return solarAsset && state.selectedAssetIds.includes(solarAsset.id);
   };
 
