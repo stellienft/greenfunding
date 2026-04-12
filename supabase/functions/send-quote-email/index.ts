@@ -518,10 +518,8 @@ async function generateQuotePdf(
       if (firstTermYears) {
         const savingsAtEnd = chartData[firstTermYears - 1]?.billWithoutSolar ?? effectiveEnergySavings;
         const postLoanNote = `After year ${firstTermYears}, your finance payments end. Your electricity savings of ${formatCurrencyAU(savingsAtEnd)}/year are yours to keep — and growing every year.`;
-        const postNoteH = 28;
-        dr(page, PL, y - postNoteH, CW, postNoteH, C.GREEN, 0.08, C.GREEN, 0.2, 6);
-        dtWrapped(page, postLoanNote, PL + 10, y - 10, 7.5, false, C.GREEN, CW - 20, 11);
-        y -= postNoteH + 12;
+        dt(page, postLoanNote, PL, y - 8, 7.5, false, C.GREEN);
+        y -= 20;
       }
 
       const cumHeaderH = 30;
