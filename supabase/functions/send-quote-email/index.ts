@@ -232,7 +232,7 @@ async function generateQuotePdf(
     const subText = 'Finance Solutions for Clean Energy';
     dt(page, subText, PL, logoBaseY - 4, 7.5, false, { r: 1, g: 1, b: 1 }, 0.5);
 
-    const qnLabel = 'Finance Quote';
+    const qnLabel = 'Finance Proposal';
     const qnLabelW = tw(qnLabel, false, 7.5);
     dt(page, qnLabel, W - PR - qnLabelW, topY - 20, 7.5, false, { r: 1, g: 1, b: 1 }, 0.55);
     const qnW = tw(quoteNumber, true, 15);

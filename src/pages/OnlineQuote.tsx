@@ -221,7 +221,7 @@ export function OnlineQuote() {
                   <p className="text-white/60 text-sm">Finance Solutions for Clean Energy</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white/50 text-xs uppercase tracking-widest mb-1">Finance Quote</p>
+                  <p className="text-white/50 text-xs uppercase tracking-widest mb-1">Finance Proposal</p>
                   <p className="text-white font-bold text-lg">{quoteNumber}</p>
                   <p className="text-white/60 text-sm mt-0.5">{quoteDate}</p>
                 </div>
