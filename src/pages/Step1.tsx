@@ -47,9 +47,9 @@ export function Step1() {
 
   const hasEnergyGenerationAsset = () => {
     const solarAsset = assets.find(asset => asset.name === 'Solar System');
-    const wasteToEnergyAsset = assets.find(asset => asset.name === 'Waste to Energy');
+    const microgridAsset = assets.find(asset => asset.name === 'Microgrid');
     return (solarAsset && selectedAssets.includes(solarAsset.id)) ||
-           (wasteToEnergyAsset && selectedAssets.includes(wasteToEnergyAsset.id));
+           (microgridAsset && selectedAssets.includes(microgridAsset.id));
   };
 
   const isCarOnlyProject = () => {
@@ -375,61 +375,65 @@ export function Step1() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                  Current Electricity Bill <span className="text-sm font-normal text-gray-500">(Optional)</span>
-                </label>
-                <p className="text-sm text-gray-600 mb-4">
-                  Enter the client's current annual electricity bill. This will increase 3% each year over the 25-year savings projection.
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 font-medium">$</span>
-                  <input
-                    type="text"
-                    value={currentElectricityBill ? currentElectricityBill.toLocaleString('en-US') : ''}
-                    onChange={e => {
-                      const value = e.target.value.replace(/,/g, '');
-                      const numValue = Number(value);
-                      if (value === '') {
-                        setCurrentElectricityBill(undefined);
-                      } else if (!isNaN(numValue) && numValue >= 0) {
-                        setCurrentElectricityBill(numValue);
-                      }
-                    }}
-                    placeholder="e.g., 20,000"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
-                  />
-                  <span className="text-sm text-gray-600 font-medium">per year</span>
+              {hasEnergyGenerationAsset() && (
+                <div>
+                  <label className="block text-lg font-semibold text-[#3A475B] mb-2">
+                    Current Electricity Bill <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                  </label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Enter the client's current annual electricity bill. This will increase 3% each year over the 25-year savings projection.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">$</span>
+                    <input
+                      type="text"
+                      value={currentElectricityBill ? currentElectricityBill.toLocaleString('en-US') : ''}
+                      onChange={e => {
+                        const value = e.target.value.replace(/,/g, '');
+                        const numValue = Number(value);
+                        if (value === '') {
+                          setCurrentElectricityBill(undefined);
+                        } else if (!isNaN(numValue) && numValue >= 0) {
+                          setCurrentElectricityBill(numValue);
+                        }
+                      }}
+                      placeholder="e.g., 20,000"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
+                    />
+                    <span className="text-sm text-gray-600 font-medium">per year</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                  Anticipated Electricity Bill with Solar <span className="text-sm font-normal text-gray-500">(Optional)</span>
-                </label>
-                <p className="text-sm text-gray-600 mb-4">
-                  Enter the anticipated annual electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600 font-medium">$</span>
-                  <input
-                    type="text"
-                    value={anticipatedElectricityBillWithSolar ? anticipatedElectricityBillWithSolar.toLocaleString('en-US') : ''}
-                    onChange={e => {
-                      const value = e.target.value.replace(/,/g, '');
-                      const numValue = Number(value);
-                      if (value === '') {
-                        setAnticipatedElectricityBillWithSolar(undefined);
-                      } else if (!isNaN(numValue) && numValue >= 0) {
-                        setAnticipatedElectricityBillWithSolar(numValue);
-                      }
-                    }}
-                    placeholder="e.g., 1,200"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
-                  />
-                  <span className="text-sm text-gray-600 font-medium">per year</span>
+              {hasEnergyGenerationAsset() && (
+                <div>
+                  <label className="block text-lg font-semibold text-[#3A475B] mb-2">
+                    Anticipated Electricity Bill with Solar <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                  </label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Enter the anticipated annual electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">$</span>
+                    <input
+                      type="text"
+                      value={anticipatedElectricityBillWithSolar ? anticipatedElectricityBillWithSolar.toLocaleString('en-US') : ''}
+                      onChange={e => {
+                        const value = e.target.value.replace(/,/g, '');
+                        const numValue = Number(value);
+                        if (value === '') {
+                          setAnticipatedElectricityBillWithSolar(undefined);
+                        } else if (!isNaN(numValue) && numValue >= 0) {
+                          setAnticipatedElectricityBillWithSolar(numValue);
+                        }
+                      }}
+                      placeholder="e.g., 1,200"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
+                    />
+                    <span className="text-sm text-gray-600 font-medium">per year</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {isCarOnlyProject() && (
                 <div>
