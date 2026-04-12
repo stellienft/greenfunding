@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TrendingUp, TrendingDown, Minus, FileText, Users, DollarSign, Activity, ArrowRight, RefreshCw, Zap, AlertCircle, BarChart2, Percent, Repeat as RepeatIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, FileText, Users, DollarSign, Activity, ArrowRight, RefreshCw, Zap, AlertCircle, BarChart2, Percent, CheckSquare } from 'lucide-react';
 
 interface TermOption {
   years: number;
@@ -289,6 +289,10 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
   const quoteToAppRate = quotes.length > 0 ? Math.round((totalApplications / quotes.length) * 100) : 0;
   const appToSettlementRate = 0;
 
+  const acceptedQuotes = quotes.filter(q => q.status === 'accepted').length;
+  const acceptedValue = quotes.filter(q => q.status === 'accepted').reduce((s, q) => s + Number(q.project_cost), 0);
+  const acceptanceRate = quotes.length > 0 ? Math.round((acceptedQuotes / quotes.length) * 100) : 0;
+
   const daily7 = Array.from({ length: 7 }, (_, i) => {
     const from = daysAgo(6 - i);
     const to = daysAgo(5 - i);
@@ -466,11 +470,13 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesPrev30}
         />
         <StatCard
-          label="Repeat Quote Rate"
-          value={`${repeatUsersPct}%`}
-          sub={`${repeatUsers} of ${installersWithQuotes.length} installers`}
-          icon={RepeatIcon}
-          iconBg="bg-gray-100 text-gray-500"
+          label="Accepted Quotes"
+          value={acceptedQuotes.toLocaleString()}
+          sub={`${acceptanceRate}% acceptance · ${fmt(acceptedValue)}`}
+          icon={CheckSquare}
+          iconBg="bg-green-50 text-green-600"
+          current={acceptedQuotes}
+          previous={0}
         />
       </div>
 
