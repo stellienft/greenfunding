@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 
 interface SavingsChartProps {
-  annualSavings: number;
+  currentElectricityBill: number;
+  anticipatedElectricityBillWithSolar: number;
   selectedTermYears?: number | null;
   monthlyPayment?: number;
 }
@@ -16,38 +17,38 @@ function formatCurrencyFull(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n);
 }
 
-export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment }: SavingsChartProps) {
+export function SavingsChart({ currentElectricityBill, anticipatedElectricityBillWithSolar, selectedTermYears, monthlyPayment }: SavingsChartProps) {
   const YEARS = 25;
   const GROWTH_RATE = 0.03;
 
   const annualLoanCost = monthlyPayment ? monthlyPayment * 12 : 0;
-  const electricityBillWithSolar = annualSavings * 0.05;
 
   const data = useMemo(() => {
     const rows = [];
-    let currentBillWithoutSolar = annualSavings;
+    let currentBillWithoutSolar = currentElectricityBill;
+    let currentBillWithSolar = anticipatedElectricityBillWithSolar;
     let cumulativeSavings = 0;
 
     for (let year = 1; year <= YEARS; year++) {
       const loanCostThisYear = (selectedTermYears && monthlyPayment && year <= selectedTermYears)
         ? monthlyPayment * 12
         : 0;
-      const billWithSolarThisYear = electricityBillWithSolar * Math.pow(1 + GROWTH_RATE, year - 1);
-      const netSavingThisYear = currentBillWithoutSolar - billWithSolarThisYear - loanCostThisYear;
+      const netSavingThisYear = currentBillWithoutSolar - currentBillWithSolar - loanCostThisYear;
       cumulativeSavings += netSavingThisYear;
 
       rows.push({
         year,
         billWithoutSolar: currentBillWithoutSolar,
-        billWithSolar: billWithSolarThisYear,
+        billWithSolar: currentBillWithSolar,
         loanCost: loanCostThisYear,
         cumulativeSavings,
       });
 
       currentBillWithoutSolar = currentBillWithoutSolar * (1 + GROWTH_RATE);
+      currentBillWithSolar = currentBillWithSolar * (1 + GROWTH_RATE);
     }
     return rows;
-  }, [annualSavings, selectedTermYears, monthlyPayment, electricityBillWithSolar]);
+  }, [currentElectricityBill, anticipatedElectricityBillWithSolar, selectedTermYears, monthlyPayment]);
 
   const totalNetSavings = data[YEARS - 1]?.cumulativeSavings ?? 0;
   const hasLoanData = !!(selectedTermYears && monthlyPayment);
@@ -88,8 +89,8 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
 
   const loanEndYear = selectedTermYears ?? 0;
   const savingsAtLoanEnd = loanEndYear > 0 && loanEndYear <= YEARS
-    ? data[loanEndYear - 1]?.billWithoutSolar ?? annualSavings
-    : annualSavings;
+    ? data[loanEndYear - 1]?.billWithoutSolar ?? currentElectricityBill
+    : currentElectricityBill;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -101,11 +102,11 @@ export function SavingsChart({ annualSavings, selectedTermYears, monthlyPayment 
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="border border-gray-200 rounded-xl p-3 text-center bg-gray-50">
           <p className="text-xs text-gray-500 mb-1">Electricity bill without solar</p>
-          <p className="text-base font-bold text-[#3A475B]">{formatCurrencyFull(annualSavings)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
+          <p className="text-base font-bold text-[#3A475B]">{formatCurrencyFull(currentElectricityBill)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
         </div>
         <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(94,196,193,0.4)', backgroundColor: 'rgba(94,196,193,0.07)' }}>
           <p className="text-xs text-gray-500 mb-1">Electricity bill with solar</p>
-          <p className="text-base font-bold" style={{ color: '#3ABFBB' }}>{formatCurrencyFull(electricityBillWithSolar)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
+          <p className="text-base font-bold" style={{ color: '#3ABFBB' }}>{formatCurrencyFull(anticipatedElectricityBillWithSolar)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
         </div>
         {hasLoanData ? (
           <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(40,170,72,0.3)', backgroundColor: 'rgba(40,170,72,0.06)' }}>

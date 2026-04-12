@@ -48,12 +48,8 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
   }
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      window.location.href = '/login';
-    } catch {
-      window.location.href = '/login';
-    }
+    await signOut();
+    navigate('/login');
   };
 
   const isActive = (item: NavItem) => {

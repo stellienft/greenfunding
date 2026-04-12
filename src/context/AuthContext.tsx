@@ -102,19 +102,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    try {
-      setUser(null);
-      setInstallerProfile(null);
-      setTotpVerified(false);
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      if (error) {
-        console.error('Sign out error:', error);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error during sign out:', error);
-      throw error;
-    }
+    setUser(null);
+    setInstallerProfile(null);
+    setTotpVerified(false);
+    await supabase.auth.signOut();
   }
 
   async function updatePassword(newPassword: string) {

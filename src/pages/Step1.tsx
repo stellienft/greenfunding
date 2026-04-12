@@ -17,7 +17,8 @@ export function Step1() {
   const [inputValue, setInputValue] = useState('');
   const [isEditingInput, setIsEditingInput] = useState(false);
   const [annualSolarGeneration, setAnnualSolarGeneration] = useState<number | undefined>(state.annualSolarGenerationKwh);
-  const [energySavings, setEnergySavings] = useState<number | undefined>(state.energySavings);
+  const [currentElectricityBill, setCurrentElectricityBill] = useState<number | undefined>(state.currentElectricityBill);
+  const [anticipatedElectricityBillWithSolar, setAnticipatedElectricityBillWithSolar] = useState<number | undefined>(state.anticipatedElectricityBillWithSolar);
   const [showSpecialPricingModal, setShowSpecialPricingModal] = useState(false);
   const [specialPricingRequested, setSpecialPricingRequested] = useState(state.specialPricingRequested || false);
   const [hasShownModal, setHasShownModal] = useState(false);
@@ -95,6 +96,8 @@ export function Step1() {
 
       if (!hasEnergyAsset) {
         setAnnualSolarGeneration(undefined);
+        setCurrentElectricityBill(undefined);
+        setAnticipatedElectricityBillWithSolar(undefined);
       }
 
       return newSelection;
@@ -111,7 +114,8 @@ export function Step1() {
       projectCost,
       selectedAssetIds: selectedAssets,
       annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
-      energySavings: energySavings || undefined,
+      currentElectricityBill: hasEnergyGenerationAsset() ? currentElectricityBill : undefined,
+      anticipatedElectricityBillWithSolar: hasEnergyGenerationAsset() ? anticipatedElectricityBillWithSolar : undefined,
       specialPricingRequested,
       residualPercentage: isCarOnlyProject() ? residualPercentage : undefined,
       paymentTiming,
@@ -138,7 +142,8 @@ export function Step1() {
     setProjectCost(config?.costSliderDefault || 100000);
     setInputValue('');
     setAnnualSolarGeneration(undefined);
-    setEnergySavings(undefined);
+    setCurrentElectricityBill(undefined);
+    setAnticipatedElectricityBillWithSolar(undefined);
     setSpecialPricingRequested(false);
     setResidualPercentage(undefined);
     setPaymentTiming('arrears');
@@ -372,26 +377,54 @@ export function Step1() {
 
               <div>
                 <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                  Energy Savings <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                  Current Electricity Bill <span className="text-sm font-normal text-gray-500">(Optional)</span>
                 </label>
                 <p className="text-sm text-gray-600 mb-4">
-                  Enter the estimated annual energy savings. This will be used to show a 25-year savings projection on the next page.
+                  Enter the client's current annual electricity bill. This will increase 3% each year over the 25-year savings projection.
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600 font-medium">$</span>
                   <input
                     type="text"
-                    value={energySavings ? energySavings.toLocaleString('en-US') : ''}
+                    value={currentElectricityBill ? currentElectricityBill.toLocaleString('en-US') : ''}
                     onChange={e => {
                       const value = e.target.value.replace(/,/g, '');
                       const numValue = Number(value);
                       if (value === '') {
-                        setEnergySavings(undefined);
+                        setCurrentElectricityBill(undefined);
                       } else if (!isNaN(numValue) && numValue >= 0) {
-                        setEnergySavings(numValue);
+                        setCurrentElectricityBill(numValue);
                       }
                     }}
-                    placeholder="e.g., 10,000"
+                    placeholder="e.g., 20,000"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
+                  />
+                  <span className="text-sm text-gray-600 font-medium">per year</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-lg font-semibold text-[#3A475B] mb-2">
+                  Anticipated Electricity Bill with Solar <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                </label>
+                <p className="text-sm text-gray-600 mb-4">
+                  Enter the anticipated annual electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 font-medium">$</span>
+                  <input
+                    type="text"
+                    value={anticipatedElectricityBillWithSolar ? anticipatedElectricityBillWithSolar.toLocaleString('en-US') : ''}
+                    onChange={e => {
+                      const value = e.target.value.replace(/,/g, '');
+                      const numValue = Number(value);
+                      if (value === '') {
+                        setAnticipatedElectricityBillWithSolar(undefined);
+                      } else if (!isNaN(numValue) && numValue >= 0) {
+                        setAnticipatedElectricityBillWithSolar(numValue);
+                      }
+                    }}
+                    placeholder="e.g., 1,200"
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
                   />
                   <span className="text-sm text-gray-600 font-medium">per year</span>

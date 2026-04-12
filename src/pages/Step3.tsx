@@ -430,7 +430,7 @@ export function Step3() {
   };
 
   const handleBack = () => {
-    const dest = isAdminMode ? '/admin?tab=calculator' : '/';
+    const dest = isAdminMode ? '/admin?tab=calculator' : '/calculator/step1';
     if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
   };
 
@@ -441,7 +441,7 @@ export function Step3() {
   const doRestart = () => {
     resetState();
     setShowRestartConfirm(false);
-    const dest = isAdminMode ? '/admin?tab=calculator' : '/';
+    const dest = isAdminMode ? '/admin?tab=calculator' : '/calculator/step1';
     if (isAdminMode && onAdminNavigate) onAdminNavigate(dest); else navigate(dest);
   };
 
