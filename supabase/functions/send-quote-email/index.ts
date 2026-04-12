@@ -76,8 +76,8 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 }
 
 const C = {
-  DARK: hexToRgb('#263644'),
-  DARK2: hexToRgb('#263644'),
+  DARK: hexToRgb('#094325'),
+  DARK2: hexToRgb('#094325'),
   DARK_TEXT: hexToRgb('#3A475B'),
   GREEN: hexToRgb('#28AA48'),
   GREEN2: hexToRgb('#AFD235'),
@@ -592,16 +592,19 @@ async function generateQuotePdf(
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
       dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
 
-      if (t.costPerKwhCents && t.costPerKwhCents > 0) {
-        const kwhText = `${t.costPerKwhCents.toFixed(2)}c per kWh`;
-        const kwhW = tw(kwhText, false, 8);
-        dt(page, kwhText, PL + CW / 2 - kwhW / 2, rowY - rowH / 2 - 4, 8, false, C.BLUE_TEXT);
-      }
-
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
       const amtW = tw(amtText, true, 13);
-      dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
-      dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
+
+      if (t.costPerKwhCents && t.costPerKwhCents > 0) {
+        dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 1, 13, true, C.GREEN);
+        dt(page, '/mo', W - PR - 30, rowY - rowH / 2 + 1, 8, false, C.GRAY_LIGHT);
+        const kwhText = `Estimate per kWh: ${t.costPerKwhCents.toFixed(2)}¢`;
+        const kwhW = tw(kwhText, false, 7);
+        dt(page, kwhText, W - PR - kwhW - 30, rowY - rowH / 2 - 12, 7, false, C.GRAY_LIGHT);
+      } else {
+        dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
+        dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
+      }
     });
 
     y -= 36 * sortedTerms.length;
