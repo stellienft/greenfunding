@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import { TwoFactorManager } from '../TwoFactorManager';
-import { User, Mail, Phone, Pencil, Check, X, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Pencil, Check, X, AlertCircle, Lock, KeyRound } from 'lucide-react';
 
 interface AdminProfile {
   id: string;
@@ -27,6 +27,8 @@ export function AdminAccount() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', phone: '' });
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   useEffect(() => {
     if (admin) loadProfile();
@@ -76,6 +78,27 @@ export function AdminAccount() {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleRequestPasswordReset() {
+    if (!admin) return;
+    setResettingPassword(true);
+    setError('');
+    try {
+      const res = await fetch(`${baseUrl}/request-password-reset`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ adminId: admin.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
+      setResetSuccess(true);
+      setTimeout(() => setResetSuccess(false), 6000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setResettingPassword(false);
     }
   }
 
@@ -203,6 +226,33 @@ export function AdminAccount() {
             <div className="font-semibold text-[#3A475B]">Administrator</div>
           </div>
         </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <div>
+          <h3 className="font-semibold text-[#3A475B]">Password</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Send a temporary password to your email address to set up a new one</p>
+        </div>
+
+        {resetSuccess && (
+          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            <Check className="w-4 h-4 flex-shrink-0" />
+            A temporary password has been sent to {profile.email}
+          </div>
+        )}
+
+        <button
+          onClick={handleRequestPasswordReset}
+          disabled={resettingPassword}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#094325] rounded-lg hover:bg-[#0d5c33] transition-colors disabled:opacity-50"
+        >
+          {resettingPassword ? (
+            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          ) : (
+            <KeyRound className="w-4 h-4" />
+          )}
+          {resettingPassword ? 'Sending...' : 'Send Password Reset Email'}
+        </button>
       </div>
 
       <div className="space-y-3">

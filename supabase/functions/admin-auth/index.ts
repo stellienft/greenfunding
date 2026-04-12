@@ -166,6 +166,75 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    if (action === 'request-password-reset') {
+      const { adminId } = await req.json();
+      if (!adminId) {
+        return new Response(JSON.stringify({ error: 'Missing adminId' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
+      if (!elasticEmailApiKey) throw new Error('ELASTIC_EMAIL_API_KEY not configured');
+
+      const { data: adminData, error: fetchError } = await supabase
+        .from('admin_users')
+        .select('email, first_name, last_name')
+        .eq('id', adminId)
+        .maybeSingle();
+
+      if (fetchError || !adminData) throw new Error('Admin user not found');
+
+      const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+      let tempPassword = '';
+      for (let i = 0; i < 12; i++) {
+        tempPassword += chars[Math.floor(Math.random() * chars.length)];
+      }
+
+      const passwordHash = bcrypt.hashSync(tempPassword, 10);
+
+      const { error: updateError } = await supabase
+        .from('admin_users')
+        .update({ password_hash: passwordHash, needs_password_reset: true })
+        .eq('id', adminId);
+
+      if (updateError) throw updateError;
+
+      const displayName = [adminData.first_name, adminData.last_name].filter(Boolean).join(' ') || adminData.email;
+
+      const emailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><style>body{font-family:sans-serif;line-height:1.6;color:#333}.container{max-width:600px;margin:0 auto;padding:20px}.credentials{background:#f9f9f9;padding:15px;border-radius:5px;margin:20px 0}.password{font-size:18px;font-weight:bold;letter-spacing:1px;color:#094325}.important{color:#d32f2f;font-weight:bold}</style></head><body><div class="container"><h2>Password Reset</h2><p>Hi ${displayName},</p><p>A password reset has been requested for your Green Funding Admin Portal account.</p><div class="credentials"><p><strong>Your new temporary password is:</strong></p><p class="password">${tempPassword}</p></div><p class="important">You will be required to create a new password when you first log in.</p><p>Visit <a href="https://portal.greenfunding.com.au/admin">portal.greenfunding.com.au/admin</a> to log in.</p><p>Best regards,<br>Green Funding Support</p></div></body></html>`;
+
+      const plainText = `Hi ${displayName},\n\nA password reset has been requested for your Green Funding Admin Portal account.\nYour new temporary password is: ${tempPassword}\n\nYou will be required to create a new password when you first log in.\nGo to: https://portal.greenfunding.com.au/admin\n\nGreen Funding Support`;
+
+      const emailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-ElasticEmail-ApiKey': elasticEmailApiKey },
+        body: JSON.stringify({
+          Recipients: [{ Email: adminData.email }],
+          Content: {
+            From: 'noreply@portal.greenfunding.com.au',
+            ReplyTo: 'support@greenfundingcalculator.com',
+            Subject: 'Green Funding Portal - Your Password Has Been Reset',
+            Body: [
+              { ContentType: 'HTML', Charset: 'utf-8', Content: emailHtml },
+              { ContentType: 'PlainText', Charset: 'utf-8', Content: plainText },
+            ],
+          },
+        }),
+      });
+
+      const emailResult = await emailResponse.json();
+      if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== '')) {
+        throw new Error('Failed to send reset email');
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: 'Unknown action' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
