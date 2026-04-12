@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: adminUsersData, error: adminError } = await supabase
         .from("admin_users")
-        .select("id, email, first_name, last_name, company, phone, created_at, needs_password_reset, is_super_admin")
+        .select("id, email, first_name, last_name, company, phone, created_at, needs_password_reset, is_super_admin, role, permissions")
         .order("created_at", { ascending: false });
 
       if (adminError) throw adminError;
@@ -62,6 +62,8 @@ Deno.serve(async (req: Request) => {
         email: user.email || '',
         needs_password_reset: user.needs_password_reset || false,
         is_super_admin: user.is_super_admin || false,
+        role: user.role || 'admin',
+        permissions: user.permissions || null,
         created_at: user.created_at,
         application_count: 0,
         quote_count: 0,
@@ -80,7 +82,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "create-admin") {
-      const { firstName, lastName, email, companyName, phone, requestingAdminId } = await req.json();
+      const { firstName, lastName, email, companyName, phone, requestingAdminId, role, permissions } = await req.json();
 
       if (!email) {
         return new Response(
@@ -91,13 +93,13 @@ Deno.serve(async (req: Request) => {
 
       const { data: requestingAdmin } = await supabase
         .from("admin_users")
-        .select("is_super_admin")
+        .select("is_super_admin, role")
         .eq("id", requestingAdminId)
         .maybeSingle();
 
-      if (!requestingAdmin?.is_super_admin) {
+      if (!requestingAdmin?.is_super_admin && requestingAdmin?.role !== 'admin') {
         return new Response(
-          JSON.stringify({ error: "Only super admins can create admin accounts" }),
+          JSON.stringify({ error: "Only admins can create admin or moderator accounts" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -110,18 +112,25 @@ Deno.serve(async (req: Request) => {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
+      const insertData: any = {
+        email,
+        first_name: firstName || null,
+        last_name: lastName || null,
+        company: companyName || null,
+        phone: phone || null,
+        password_hash: passwordHash,
+        needs_password_reset: true,
+        is_super_admin: false,
+        role: role || 'admin',
+      };
+
+      if (role === 'moderator' && permissions) {
+        insertData.permissions = permissions;
+      }
+
       const { data: newAdmin, error: createError } = await supabase
         .from("admin_users")
-        .insert({
-          email,
-          first_name: firstName || null,
-          last_name: lastName || null,
-          company: companyName || null,
-          phone: phone || null,
-          password_hash: passwordHash,
-          needs_password_reset: true,
-          is_super_admin: false,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -134,7 +143,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "update") {
-      const { userId, fullName, companyName, email, userType, firstName, lastName, phone, allowedCalculators } = await req.json();
+      const { userId, fullName, companyName, email, userType, firstName, lastName, phone, allowedCalculators, permissions } = await req.json();
 
       if (!userId || !email) {
         return new Response(
@@ -149,6 +158,7 @@ Deno.serve(async (req: Request) => {
         if (lastName !== undefined) updateData.last_name = lastName;
         if (companyName !== undefined) updateData.company = companyName;
         if (phone !== undefined) updateData.phone = phone;
+        if (permissions !== undefined) updateData.permissions = permissions;
 
         const { error: updateError } = await supabase
           .from("admin_users")
@@ -197,13 +207,13 @@ Deno.serve(async (req: Request) => {
       if (userType === 'admin') {
         const { data: requestingAdmin } = await supabase
           .from("admin_users")
-          .select("is_super_admin")
+          .select("is_super_admin, role")
           .eq("id", requestingAdminId)
           .maybeSingle();
 
-        if (!requestingAdmin?.is_super_admin) {
+        if (!requestingAdmin?.is_super_admin && requestingAdmin?.role !== 'admin') {
           return new Response(
-            JSON.stringify({ error: "Only super admins can delete admin accounts" }),
+            JSON.stringify({ error: "Only admins can delete admin/moderator accounts" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }

@@ -9,3 +9,9 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
+
+@layer components {
+  .form-input {
+    @apply w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] outline-none bg-white transition-colors;
+  }
+}
