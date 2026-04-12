@@ -408,7 +408,7 @@ export function Step1() {
               {hasEnergyGenerationAsset() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                    Anticipated Electricity Bill with Solar <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                    Your Proposal <span className="text-sm font-normal text-gray-500">(Optional)</span>
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
                     Enter the anticipated annual electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
