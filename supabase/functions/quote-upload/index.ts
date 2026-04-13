@@ -40,6 +40,22 @@ function formatCurrency(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 }
 
+async function postPipedriveNote(
+  apiToken: string,
+  dealId: string,
+  content: string
+): Promise<void> {
+  const res = await fetch(`https://api.pipedrive.com/v1/notes?api_token=${apiToken}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content, deal_id: Number(dealId) }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error('Pipedrive note error:', res.status, body);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -163,51 +179,81 @@ Deno.serve(async (req: Request) => {
       }
 
       const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
-      if (elasticEmailApiKey) {
-        EdgeRuntime.waitUntil((async () => {
-          try {
-            const quoteNum = '#' + String(quote.quote_number).padStart(6, '0');
-            const clientName = quote.recipient_company || quote.recipient_name || 'Client';
 
-            const { data: allUploads } = await supabase
-              .from('quote_document_uploads')
-              .select('id, document_type, file_name, file_path, file_size, uploaded_at')
-              .eq('quote_id', quote.id)
-              .order('uploaded_at', { ascending: true });
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          const quoteNum = '#' + String(quote.quote_number).padStart(6, '0');
+          const clientName = quote.recipient_company || quote.recipient_name || 'Client';
 
-            const uploads = allUploads || [];
-            const requiredKeys = getRequiredDocKeys(quote.project_cost);
-            const uploadedKeys = new Set(uploads.map((u: any) => u.document_type));
-            const allComplete = requiredKeys.every(k => uploadedKeys.has(k));
+          const { data: allUploads } = await supabase
+            .from('quote_document_uploads')
+            .select('id, document_type, file_name, file_path, file_size, uploaded_at')
+            .eq('quote_id', quote.id)
+            .order('uploaded_at', { ascending: true });
 
-            if (allComplete) {
-              const signedUrls = await Promise.all(
-                uploads.map(async (u: any) => {
-                  const { data } = await supabase.storage
-                    .from('application-documents')
-                    .createSignedUrl(u.file_path, 60 * 60 * 24 * 7);
-                  return { ...u, signedUrl: data?.signedUrl || null };
-                })
-              );
+          const uploads = allUploads || [];
+          const requiredKeys = getRequiredDocKeys(quote.project_cost);
+          const uploadedKeys = new Set(uploads.map((u: any) => u.document_type));
+          const allComplete = requiredKeys.every(k => uploadedKeys.has(k));
 
-              const docRows = signedUrls.map((u: any) => `
-                <tr>
-                  <td style="padding:10px 0;border-bottom:1px solid #E5E7EB;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td>
-                          <p style="margin:0;font-size:14px;font-weight:600;color:#3A475B;font-family:Arial,sans-serif;">${formatDocType(u.document_type)}</p>
-                          <p style="margin:2px 0 0;font-size:12px;color:#6B7280;font-family:Arial,sans-serif;">${u.file_name}</p>
-                        </td>
-                        <td align="right" style="white-space:nowrap;">
-                          ${u.signedUrl ? `<a href="${u.signedUrl}" style="display:inline-block;background-color:#28AA48;color:#ffffff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;">Download</a>` : '<span style="font-size:12px;color:#9CA3AF;font-family:Arial,sans-serif;">Unavailable</span>'}
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>`).join('');
+          if (!allComplete) return;
 
-              const html = `<!DOCTYPE html>
+          const { data: siteSettings } = await supabase
+            .from('site_settings')
+            .select('pipedrive_api_key, pipedrive_deal_id')
+            .maybeSingle();
+
+          const pipedriveApiKey = siteSettings?.pipedrive_api_key;
+          const pipedriveDealId = siteSettings?.pipedrive_deal_id;
+
+          if (pipedriveApiKey && pipedriveDealId) {
+            const docList = uploads.map((u: any) =>
+              `• ${formatDocType(u.document_type)} (${u.file_name})`
+            ).join('\n');
+
+            const noteContent = [
+              `✅ All documents uploaded — ${quoteNum}`,
+              ``,
+              `Client: ${clientName}`,
+              quote.recipient_email ? `Email: ${quote.recipient_email}` : '',
+              `Project Cost: ${formatCurrency(quote.project_cost)}`,
+              `Completed: ${new Date().toLocaleString('en-AU', { timeZone: 'Australia/Brisbane' })}`,
+              ``,
+              `Uploaded Documents (${uploads.length}):`,
+              docList,
+            ].filter(line => line !== null && line !== undefined).join('\n');
+
+            await postPipedriveNote(pipedriveApiKey, pipedriveDealId, noteContent);
+          }
+
+          if (elasticEmailApiKey) {
+            const signedUrls = await Promise.all(
+              uploads.map(async (u: any) => {
+                const { data } = await supabase.storage
+                  .from('application-documents')
+                  .createSignedUrl(u.file_path, 60 * 60 * 24 * 7);
+                return { ...u, signedUrl: data?.signedUrl || null };
+              })
+            );
+
+            const docRows = signedUrls.map((u: any) => `
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #E5E7EB;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td>
+                        <p style="margin:0;font-size:14px;font-weight:600;color:#3A475B;font-family:Arial,sans-serif;">${formatDocType(u.document_type)}</p>
+                        <p style="margin:2px 0 0;font-size:12px;color:#6B7280;font-family:Arial,sans-serif;">${u.file_name}</p>
+                      </td>
+                      <td align="right" style="white-space:nowrap;">
+                        ${u.signedUrl ? `<a href="${u.signedUrl}" style="display:inline-block;background-color:#28AA48;color:#ffffff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:6px;text-decoration:none;font-family:Arial,sans-serif;">Download</a>` : '<span style="font-size:12px;color:#9CA3AF;font-family:Arial,sans-serif;">Unavailable</span>'}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`).join('');
+
+            const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"/></head>
 <body style="margin:0;padding:24px;background-color:#f5f5f5;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -229,7 +275,7 @@ Deno.serve(async (req: Request) => {
         <tr>
           <td style="padding:32px;">
             <p style="font-size:20px;font-weight:700;color:#1a2e3b;margin:0 0 4px;font-family:Arial,sans-serif;">All Documents Uploaded</p>
-            <p style="font-size:13px;color:#6B7280;margin:0 0 24px;font-family:Arial,sans-serif;">Quote ${quoteNum} — ${clientName}</p>
+            <p style="font-size:13px;color:#6B7280;margin:0 0 24px;font-family:Arial,sans-serif;">Proposal ${quoteNum} — ${clientName}</p>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;margin-bottom:24px;">
               <tr>
@@ -237,7 +283,7 @@ Deno.serve(async (req: Request) => {
                   <p style="margin:0;font-size:13px;font-weight:700;color:#166534;font-family:Arial,sans-serif;">Application Details</p>
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
                     <tr>
-                      <td style="font-size:13px;color:#374151;padding:3px 0;font-family:Arial,sans-serif;width:40%;"><strong>Quote Number</strong></td>
+                      <td style="font-size:13px;color:#374151;padding:3px 0;font-family:Arial,sans-serif;width:40%;"><strong>Proposal Number</strong></td>
                       <td style="font-size:13px;color:#374151;padding:3px 0;font-family:Arial,sans-serif;">${quoteNum}</td>
                     </tr>
                     <tr>
@@ -270,28 +316,27 @@ Deno.serve(async (req: Request) => {
   </table>
 </body></html>`;
 
-              await fetch('https://api.elasticemail.com/v4/emails', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-ElasticEmail-ApiKey': elasticEmailApiKey,
+            await fetch('https://api.elasticemail.com/v4/emails', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-ElasticEmail-ApiKey': elasticEmailApiKey,
+              },
+              body: JSON.stringify({
+                Recipients: [{ Email: 'solutions@greenfunding.com.au' }],
+                Content: {
+                  From: 'noreply@portal.greenfunding.com.au',
+                  ReplyTo: 'solutions@greenfunding.com.au',
+                  Subject: `All Documents Uploaded — ${quoteNum} — ${clientName}`,
+                  Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: html }],
                 },
-                body: JSON.stringify({
-                  Recipients: [{ Email: 'solutions@greenfunding.com.au' }],
-                  Content: {
-                    From: 'noreply@portal.greenfunding.com.au',
-                    ReplyTo: 'solutions@greenfunding.com.au',
-                    Subject: `All Documents Uploaded — ${quoteNum} — ${clientName}`,
-                    Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: html }],
-                  },
-                }),
-              });
-            }
-          } catch (e) {
-            console.error('Failed to send completion email:', e);
+              }),
+            });
           }
-        })());
-      }
+        } catch (e) {
+          console.error('Failed to send completion notifications:', e);
+        }
+      })());
 
       return new Response(JSON.stringify({ success: true, filePath }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -28,6 +28,8 @@ Deno.serve(async (req: Request) => {
       serviced_rental_description,
       intro_email_subject,
       intro_email_body,
+      pipedrive_api_key,
+      pipedrive_deal_id,
     } = await req.json();
 
     const { data: settings, error: fetchError } = await supabase
@@ -49,6 +51,8 @@ Deno.serve(async (req: Request) => {
     if (serviced_rental_description !== undefined) updateData.serviced_rental_description = serviced_rental_description;
     if (intro_email_subject !== undefined) updateData.intro_email_subject = intro_email_subject;
     if (intro_email_body !== undefined) updateData.intro_email_body = intro_email_body;
+    if (pipedrive_api_key !== undefined) updateData.pipedrive_api_key = pipedrive_api_key;
+    if (pipedrive_deal_id !== undefined) updateData.pipedrive_deal_id = pipedrive_deal_id;
 
     if (settings) {
       const { error: updateError } = await supabase

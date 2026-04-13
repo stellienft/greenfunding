@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, AlertCircle, CheckCircle, Code } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Code, Link } from 'lucide-react';
 import { DangerZone } from './DangerZone';
 
 export function SiteSettings() {
@@ -10,6 +10,8 @@ export function SiteSettings() {
   const [servicedRentalManagementFee, setServicedRentalManagementFee] = useState('5.00');
   const [servicedRentalName, setServicedRentalName] = useState('Serviced Rental');
   const [servicedRentalDescription, setServicedRentalDescription] = useState('Finance your solar system with included annual maintenance service');
+  const [pipedriveApiKey, setPipedriveApiKey] = useState('');
+  const [pipedriveDealId, setPipedriveDealId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -23,7 +25,7 @@ export function SiteSettings() {
     try {
       const { data, error } = await supabase
         .from('site_settings')
-        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description')
+        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id')
         .maybeSingle();
 
       if (error) throw error;
@@ -34,6 +36,8 @@ export function SiteSettings() {
         setServicedRentalManagementFee(data.serviced_rental_management_fee_percent?.toString() || '5.00');
         setServicedRentalName(data.serviced_rental_name || 'Serviced Rental');
         setServicedRentalDescription(data.serviced_rental_description || 'Finance your solar system with included annual maintenance service');
+        setPipedriveApiKey(data.pipedrive_api_key || '');
+        setPipedriveDealId(data.pipedrive_deal_id || '');
       }
     } catch (error: any) {
       console.error('Error loading settings:', error);
@@ -63,6 +67,8 @@ export function SiteSettings() {
           serviced_rental_management_fee_percent: parseFloat(servicedRentalManagementFee),
           serviced_rental_name: servicedRentalName.trim(),
           serviced_rental_description: servicedRentalDescription.trim(),
+          pipedrive_api_key: pipedriveApiKey.trim(),
+          pipedrive_deal_id: pipedriveDealId.trim(),
         }),
       });
 
@@ -306,6 +312,73 @@ export function SiteSettings() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
+        <div className="flex items-start gap-3">
+          <Link className="w-5 h-5 text-[#3A475B] mt-1 flex-shrink-0" />
+          <div className="flex-1 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-[#3A475B]">Pipedrive Integration</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                When a client completes all document uploads, a note is automatically added to the specified Pipedrive deal.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Pipedrive API Token
+                </label>
+                <input
+                  type="password"
+                  value={pipedriveApiKey}
+                  onChange={(e) => setPipedriveApiKey(e.target.value)}
+                  placeholder="Your Pipedrive API token"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Found in Pipedrive under Settings → Personal preferences → API
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Pipedrive Deal ID
+                </label>
+                <input
+                  type="text"
+                  value={pipedriveDealId}
+                  onChange={(e) => setPipedriveDealId(e.target.value)}
+                  placeholder="e.g. 12345"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The numeric ID from the deal URL in Pipedrive
+                </p>
+              </div>
+            </div>
+
+            {pipedriveApiKey && pipedriveDealId && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-800">
+                  Pipedrive is configured. A note will be posted to deal <strong>#{pipedriveDealId}</strong> when all client documents are uploaded.
+                </p>
+              </div>
+            )}
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">What gets posted to Pipedrive:</h4>
+              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li>Client name, company, and email</li>
+                <li>Proposal number and project cost</li>
+                <li>List of all uploaded document names</li>
+                <li>Timestamp of completion</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
