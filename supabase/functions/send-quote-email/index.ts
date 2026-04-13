@@ -272,7 +272,8 @@ async function generateQuotePdf(
   }
 
   function drawSectionLabel(page: ReturnType<typeof pdfDoc.addPage>, label: string, x: number, y: number) {
-    dt(page, label.toUpperCase(), x, y, 7, true, C.GRAY_LIGHT);
+    dr(page, x, y - 1, 3, 10, C.GREEN, 0.8);
+    dt(page, label.toUpperCase(), x + 8, y, 7, true, C.GRAY_TEXT);
   }
 
   function drawLabelValue(page: ReturnType<typeof pdfDoc.addPage>, label: string, value: string, x: number, y: number, maxW: number): number {
@@ -281,16 +282,17 @@ async function generateQuotePdf(
   }
 
   function drawInfoCard(page: ReturnType<typeof pdfDoc.addPage>, x: number, y: number, w: number, h: number, label: string, value: string, bold: boolean, bgColor: { r: number; g: number; b: number }, labelColor: { r: number; g: number; b: number }, valueColor: { r: number; g: number; b: number }, borderColor?: { r: number; g: number; b: number }, sublabel?: string) {
-    dr(page, x, y - h, w, h, bgColor, 1, borderColor, borderColor ? 0.75 : 0, 6);
+    const isGreen = bgColor.r < 0.3 && bgColor.g > 0.5;
+    dr(page, x, y - h, w, h, bgColor, isGreen ? 1 : 0.06, isGreen ? undefined : C.BORDER, isGreen ? 0 : 0.6, 8);
     const labelY = y - 11;
-    const lW = tw(label, false, 7);
-    dt(page, label, x + (w - lW) / 2, labelY, 7, false, labelColor);
+    const lW = tw(label, false, 6.5);
+    dt(page, label, x + (w - lW) / 2, labelY, 6.5, false, isGreen ? { r:1,g:1,b:1 } : C.GRAY_TEXT, isGreen ? 0.85 : 1);
     const sublabelY = y - h + 9;
     if (sublabel) {
-      const slW = tw(sublabel, false, 6.5);
-      dt(page, sublabel, x + (w - slW) / 2, sublabelY, 6.5, false, labelColor, 0.7);
+      const slW = tw(sublabel, false, 6);
+      dt(page, sublabel, x + (w - slW) / 2, sublabelY, 6, false, isGreen ? { r:1,g:1,b:1 } : C.GRAY_LIGHT, 0.65);
     }
-    const valueSize = bold ? 11 : 9;
+    const valueSize = bold ? 12 : 9;
     const vLines = wrapText(value, bold, valueSize, w - 12);
     const contentAreaTop = labelY - 8;
     const contentAreaBottom = sublabel ? sublabelY + 10 : y - h + 8;
@@ -299,7 +301,7 @@ async function generateQuotePdf(
     const vStartY = contentAreaBottom + contentAreaH / 2 + totalTextH / 2 - 2;
     for (let i = 0; i < vLines.length; i++) {
       const vW = tw(vLines[i], bold, valueSize);
-      dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, valueSize, bold, valueColor);
+      dt(page, vLines[i], x + (w - vW) / 2, vStartY - i * 14, valueSize, bold, isGreen ? C.WHITE : valueColor);
     }
   }
 
@@ -313,34 +315,35 @@ async function generateQuotePdf(
     const colW = (CW - 8) / 2;
     const infoBoxH = 88;
 
-    dr(page, PL, y - infoBoxH, colW, infoBoxH, C.GRAY_BG, 1, C.BORDER, 0.75, 8);
-    dr(page, PL + colW + 8, y - infoBoxH, colW, infoBoxH, C.GRAY_BG, 1, C.BORDER, 0.75, 8);
+    dl(page, PL, y, PL + CW, y, C.BORDER, 0.75);
+    dl(page, PL, y - infoBoxH, PL + CW, y - infoBoxH, C.BORDER, 0.75);
+    dl(page, PL + colW + 4, y - 8, PL + colW + 4, y - infoBoxH + 8, C.BORDER, 0.5);
 
-    drawSectionLabel(page, 'Prepared By', PL + 12, y - 12);
+    drawSectionLabel(page, 'Prepared By', PL, y - 12);
     let byY = y - 28;
     if (installerCompany) {
-      byY -= dtWrapped(page, installerCompany, PL + 12, byY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
+      byY -= dtWrapped(page, installerCompany, PL, byY, 9.5, true, C.DARK_TEXT, colW - 12, 14);
     }
     if (installerName && installerCompany) {
-      dt(page, installerName, PL + 12, byY, 8, false, C.GRAY_TEXT);
+      dt(page, installerName, PL, byY, 8, false, C.GRAY_TEXT);
       byY -= 13;
     } else if (installerName) {
-      byY -= dtWrapped(page, installerName, PL + 12, byY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
+      byY -= dtWrapped(page, installerName, PL, byY, 9.5, true, C.DARK_TEXT, colW - 12, 14);
     }
     if (installerEmail) {
-      dt(page, installerEmail, PL + 12, byY, 7.5, false, C.GRAY_TEXT);
+      dt(page, installerEmail, PL, byY, 7.5, false, C.GRAY_TEXT);
       byY -= 12;
     }
     if (installerPhone) {
-      dt(page, installerPhone, PL + 12, byY, 7.5, false, C.GRAY_TEXT);
+      dt(page, installerPhone, PL, byY, 7.5, false, C.GRAY_TEXT);
     }
 
-    const forX = PL + colW + 20;
+    const forX = PL + colW + 16;
     drawSectionLabel(page, 'Prepared For', forX, y - 12);
     let forY = y - 28;
-    forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9.5, true, C.DARK_TEXT, colW - 24, 14);
+    forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9.5, true, C.DARK_TEXT, colW - 12, 14);
     if (siteAddress) {
-      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 24, 12);
+      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 12, 12);
     }
     if (clientEmail) {
       dt(page, clientEmail, forX, forY, 7.5, false, C.GRAY_TEXT);
@@ -350,7 +353,7 @@ async function generateQuotePdf(
       dt(page, clientPhone, forX, forY, 7.5, false, C.GRAY_TEXT);
     }
 
-    y -= infoBoxH + 16;
+    y -= infoBoxH + 20;
 
     drawSectionLabel(page, 'Project Summary', PL, y);
     y -= 14;
@@ -412,36 +415,39 @@ async function generateQuotePdf(
         currentBill *= (1 + GROWTH_RATE);
       }
 
-      const sCardH = 44;
-      const sCardGap = 6;
+      const sCardH = 48;
+      const sCardGap = 8;
       const sCardCount = 3;
       const sCardW = (CW - sCardGap * (sCardCount - 1)) / sCardCount;
 
-      dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, C.BORDER, 0.5, 6);
-      const c1Label = 'Electricity bill without solar';
+      // Card 1 — dark
+      dr(page, PL, y - sCardH, sCardW, sCardH, C.DARK, 1, undefined, 0, 8);
+      const c1Label = 'Without solar';
       const c1LabelW = tw(c1Label, false, 6.5);
-      dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 12, 6.5, false, C.WHITE, 0.7);
+      dt(page, c1Label, PL + (sCardW - c1LabelW) / 2, y - 11, 6.5, false, C.WHITE, 0.6);
       const c1Val = formatCurrencyAU(effectiveEnergySavings) + '/yr';
-      const c1ValW = tw(c1Val, true, 9);
-      dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 28, 9, true, C.WHITE);
+      const c1ValW = tw(c1Val, true, 10);
+      dt(page, c1Val, PL + (sCardW - c1ValW) / 2, y - 29, 10, true, C.WHITE);
 
-      dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.15, C.TEAL, 0.4, 6);
-      const c2Label = 'Electricity bill with solar';
+      // Card 2 — teal tint
+      dr(page, PL + sCardW + sCardGap, y - sCardH, sCardW, sCardH, C.TEAL, 0.1, C.TEAL, 0.25, 8);
+      const c2Label = 'With solar';
       const c2LabelW = tw(c2Label, false, 6.5);
-      dt(page, c2Label, PL + sCardW + sCardGap + (sCardW - c2LabelW) / 2, y - 12, 6.5, false, C.TEAL);
+      dt(page, c2Label, PL + sCardW + sCardGap + (sCardW - c2LabelW) / 2, y - 11, 6.5, false, C.TEAL, 0.9);
       const c2Val = formatCurrencyAU(electricityBillWithSolar) + '/yr';
-      const c2ValW = tw(c2Val, true, 9);
-      dt(page, c2Val, PL + sCardW + sCardGap + (sCardW - c2ValW) / 2, y - 28, 9, true, C.TEAL);
+      const c2ValW = tw(c2Val, true, 10);
+      dt(page, c2Val, PL + sCardW + sCardGap + (sCardW - c2ValW) / 2, y - 29, 10, true, C.TEAL);
 
-      dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.1, C.GREEN, 0.3, 6);
-      const c3Label = firstTermYears ? `Annual payments (${firstTermYears} yr)` : '25-Year Net Savings';
+      // Card 3 — green tint
+      dr(page, PL + (sCardW + sCardGap) * 2, y - sCardH, sCardW, sCardH, C.GREEN, 0.08, C.GREEN, 0.25, 8);
+      const c3Label = firstTermYears ? `Finance payments/yr` : '25-yr net savings';
       const c3LabelW = tw(c3Label, false, 6.5);
-      dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 12, 6.5, false, C.GREEN);
+      dt(page, c3Label, PL + (sCardW + sCardGap) * 2 + (sCardW - c3LabelW) / 2, y - 11, 6.5, false, C.GREEN, 0.9);
       const c3Val = firstTermYears ? formatCurrencyAU(annualLoanCost) + '/yr' : formatCurrencyAU(chartData[YEARS - 1].cumulativeSavings);
-      const c3ValW = tw(c3Val, true, 9);
-      dt(page, c3Val, PL + (sCardW + sCardGap) * 2 + (sCardW - c3ValW) / 2, y - 28, 9, true, C.GREEN);
+      const c3ValW = tw(c3Val, true, 10);
+      dt(page, c3Val, PL + (sCardW + sCardGap) * 2 + (sCardW - c3ValW) / 2, y - 29, 10, true, C.GREEN);
 
-      y -= sCardH + 12;
+      y -= sCardH + 14;
 
       const legendItems = [
         { label: 'Electricity bill without solar', color: C.DARK },
@@ -522,12 +528,11 @@ async function generateQuotePdf(
         y -= 20;
       }
 
-      const cumHeaderH = 30;
-      const cumBodyH = 58;
-      const cumH = cumHeaderH + cumBodyH;
-      dr(page, PL, y - cumH, CW, cumH, C.DARK, 1, C.BORDER, 0.3, 8);
-      dt(page, 'Estimated Cumulative Savings', PL + 14, y - 11, 9, true, C.WHITE);
-      dl(page, PL, y - cumHeaderH, PL + CW, y - cumHeaderH, { r: 1, g: 1, b: 1 }, 0.12);
+      drawSectionLabel(page, 'Estimated Cumulative Savings', PL, y);
+      y -= 14;
+
+      dl(page, PL, y, PL + CW, y, C.BORDER, 0.75);
+      y -= 6;
 
       const colBoxes = [
         {
@@ -540,22 +545,24 @@ async function generateQuotePdf(
       ];
 
       const colW3 = CW / 3;
-      const bodyTopY = y - cumHeaderH;
+      const cumRowH = 52;
       for (let ci = 0; ci < colBoxes.length; ci++) {
         const box = colBoxes[ci];
         const cx = PL + colW3 * ci;
-        if (ci > 0) dl(page, cx, bodyTopY, cx, bodyTopY - cumBodyH, { r: 1, g: 1, b: 1 }, 0.12);
+        if (ci > 0) dl(page, cx, y, cx, y - cumRowH, C.BORDER, 0.4);
         const subLabelW = tw(box.sublabel, false, 6.5);
-        dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, bodyTopY - 10, 6.5, false, { r: 1, g: 1, b: 1 }, 0.5);
-        const mainLabelW = tw(box.label, true, 8);
-        dt(page, box.label, cx + (colW3 - mainLabelW) / 2, bodyTopY - 22, 8, true, C.WHITE);
+        dt(page, box.sublabel, cx + (colW3 - subLabelW) / 2, y - 8, 6.5, false, C.GRAY_LIGHT);
+        const mainLabelW = tw(box.label, true, 8.5);
+        dt(page, box.label, cx + (colW3 - mainLabelW) / 2, y - 20, 8.5, true, C.DARK_TEXT);
         const valColor = box.value >= 0 ? C.GREEN : hexToRgb('#ef4444');
         const valText = formatCurrencyAU(box.value);
-        const valW = tw(valText, true, 13);
-        dt(page, valText, cx + (colW3 - valW) / 2, bodyTopY - 40, 13, true, valColor);
+        const valW = tw(valText, true, 14);
+        dt(page, valText, cx + (colW3 - valW) / 2, y - 40, 14, true, valColor);
       }
 
-      y -= cumH + 10;
+      y -= cumRowH;
+      dl(page, PL, y, PL + CW, y, C.BORDER, 0.75);
+      y -= 10;
 
       const indicativeNote = '* Indicative only. Based on 3% annual energy price growth.';
       const inW = tw(indicativeNote, false, 6.5);
@@ -568,59 +575,59 @@ async function generateQuotePdf(
 
   function drawPaymentOptionsSection(page: ReturnType<typeof pdfDoc.addPage>, y: number): number {
     drawSectionLabel(page, 'Payment Options', PL, y);
-    y -= 14;
+    y -= 16;
 
-    const tableHeaderH = 28;
-    const tableBodyH = 36 * sortedTerms.length;
-    const tableTotalH = tableHeaderH + tableBodyH;
-    dr(page, PL, y - tableTotalH, CW, tableTotalH, C.WHITE, 1, C.BORDER, 0.75, 8);
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH, C.DARK, 1, undefined, 0, 8);
-    dr(page, PL, y - tableHeaderH, CW, tableHeaderH / 2 + 2, C.DARK);
+    const rowH = 40;
+    const tableBodyH = rowH * sortedTerms.length;
 
-    dt(page, 'Loan Term', PL + 14, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
-    dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 7.5) - 10, y - 11, 7.5, true, { r: 1, g: 1, b: 1 }, 0.8);
+    dl(page, PL, y, PL + CW, y, C.BORDER, 0.75);
 
-    y -= tableHeaderH;
+    dt(page, 'Loan Term', PL, y - 10, 6.5, true, C.GRAY_TEXT);
+    dt(page, 'Monthly Payment (Ex. GST)', W - PR - tw('Monthly Payment (Ex. GST)', true, 6.5), y - 10, 6.5, true, C.GRAY_TEXT);
+
+    y -= 18;
+    dl(page, PL, y, PL + CW, y, C.BORDER, 0.4);
+    y -= 2;
 
     sortedTerms.forEach((t, i) => {
-      const rowH = 36;
       const rowY = y - rowH * i;
-      if (i % 2 !== 0) dr(page, PL, rowY - rowH, CW, rowH, C.GRAY_BG2);
-      if (i > 0) dl(page, PL + 10, rowY, PL + CW - 10, rowY, C.BORDER, 0.5);
+      if (i > 0) dl(page, PL, rowY, PL + CW, rowY, C.BORDER, 0.35);
 
-      const dotX = PL + 16;
+      const dotX = PL + 6;
       const dotY = rowY - rowH / 2 - 1;
-      page.drawCircle({ x: dotX, y: dotY, size: 4, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
+      page.drawCircle({ x: dotX, y: dotY, size: 3.5, color: rgb(C.GREEN.r, C.GREEN.g, C.GREEN.b) });
 
       const termLabel = `${t.years} Year${t.years !== 1 ? 's' : ''}`;
-      dt(page, termLabel, PL + 28, rowY - rowH / 2 - 4, 10, true, C.DARK_TEXT);
+      dt(page, termLabel, PL + 18, rowY - rowH / 2 - 4, 11, true, C.DARK_TEXT);
 
       const amtText = formatCurrencyDecimals(t.monthlyPayment);
-      const amtW = tw(amtText, true, 13);
+      const amtW = tw(amtText, true, 14);
 
       if (t.costPerKwhCents && t.costPerKwhCents > 0) {
-        dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 1, 13, true, C.GREEN);
-        dt(page, '/mo', W - PR - 30, rowY - rowH / 2 + 1, 8, false, C.GRAY_LIGHT);
+        dt(page, amtText, W - PR - amtW - 28, rowY - rowH / 2 - 1, 14, true, C.GREEN);
+        dt(page, '/mo', W - PR - 22, rowY - rowH / 2 + 1, 7.5, false, C.GRAY_LIGHT);
         const kwhText = `Estimate per kWh: ${t.costPerKwhCents.toFixed(2)}¢`;
-        const kwhW = tw(kwhText, false, 7);
-        dt(page, kwhText, W - PR - kwhW - 30, rowY - rowH / 2 - 12, 7, false, C.GRAY_LIGHT);
+        const kwhW = tw(kwhText, false, 6.5);
+        dt(page, kwhText, W - PR - kwhW - 22, rowY - rowH / 2 - 13, 6.5, false, C.GRAY_LIGHT);
       } else {
-        dt(page, amtText, W - PR - amtW - 36, rowY - rowH / 2 - 5, 13, true, C.GREEN);
-        dt(page, '/mo', W - PR - 30, rowY - rowH / 2 - 3, 8, false, C.GRAY_LIGHT);
+        dt(page, amtText, W - PR - amtW - 28, rowY - rowH / 2 - 5, 14, true, C.GREEN);
+        dt(page, '/mo', W - PR - 22, rowY - rowH / 2 - 3, 7.5, false, C.GRAY_LIGHT);
       }
     });
 
-    y -= 36 * sortedTerms.length;
+    y -= rowH * sortedTerms.length;
+    dl(page, PL, y, PL + CW, y, C.BORDER, 0.75);
+    y -= 12;
 
     const noteText = `* Quote valid for 30 days from ${quoteDate}.`;
-    dt(page, noteText, PL, y - 10, 7, false, C.GRAY_LIGHT);
-    y -= 16;
+    dt(page, noteText, PL, y - 4, 7, false, C.GRAY_LIGHT);
+    y -= 14;
     if (hasSolar && annualSolarGenerationKwh) {
-      const kwhNote = '* This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.';
-      dtWrapped(page, kwhNote, PL, y - 10, 7, false, C.GRAY_LIGHT, CW, 11);
-      y -= 22;
+      const kwhNote = '* Cents per kWh shown for comparison only. Billing is based on fixed monthly installments.';
+      dtWrapped(page, kwhNote, PL, y - 4, 7, false, C.GRAY_LIGHT, CW, 11);
+      y -= 16;
     }
-    y -= 10;
+    y -= 8;
 
     return y;
   }
