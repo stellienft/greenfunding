@@ -241,16 +241,16 @@ export function ClientUploadDocuments() {
               </div>
               <h1 className="text-2xl font-bold text-[#3A475B] text-center mb-2">Low Doc Requirements Client Portal</h1>
               <p className="text-gray-500 text-sm text-center mb-8">
-                Enter your name and email address to securely access your document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
+                Enter your company name and email address to securely access your document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
               </p>
               <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
                 <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Your Full Name</label>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Your Company Name</label>
                   <input
                     type="text"
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your company name"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                     required
                   />

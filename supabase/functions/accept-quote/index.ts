@@ -127,7 +127,7 @@ function generateClientUploadEmailHtml(
                 <tr>
                   <td style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 18px;">
                     <p style="color: #92400E; font-size: 13px; margin: 0; font-family: Arial, sans-serif;">
-                      <strong>Secure access:</strong> Log in with your name <strong>${clientName}</strong>, your email address, and the access code above. This link is unique to your application and expires in 90 days.
+                      <strong>Secure access:</strong> Log in with your company name <strong>${clientName}</strong>, your email address, and the access code above. This link is unique to your application and expires in 90 days.
                     </p>
                   </td>
                 </tr>
