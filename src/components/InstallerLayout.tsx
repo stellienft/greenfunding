@@ -124,7 +124,7 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-screen bg-gray-50 flex overflow-hidden">
       <aside className="hidden lg:flex flex-col w-56 bg-white border-r border-gray-200 fixed inset-y-0 left-0 z-30 shadow-sm">
         {sidebarContent}
       </aside>
@@ -147,8 +147,8 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col lg:ml-56 min-w-0">
-        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-20">
+      <div className="flex-1 flex flex-col lg:ml-56 min-w-0 h-screen overflow-hidden">
+        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 z-20">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
@@ -165,11 +165,11 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
           )}
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
           {children}
         </main>
 
-        <footer className="px-6 lg:px-8 py-4 border-t border-gray-100 bg-white">
+        <footer className="flex-shrink-0 px-6 lg:px-8 py-4 border-t border-gray-100 bg-white">
           <div className="flex items-center gap-3">
             <a href="https://greenfunding.com.au" target="_blank" rel="noopener noreferrer">
               <img src="/image copy copy.png" alt="Green Funding" className="h-5 opacity-70 hover:opacity-100 transition-opacity" />
