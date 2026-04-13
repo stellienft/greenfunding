@@ -260,16 +260,9 @@ Deno.serve(async (req: Request) => {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:8px;overflow:hidden;">
         <tr>
-          <td style="background-color:#1a2e3b;padding:28px 32px;">
-            <table cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="background-color:#28AA48;border-radius:6px;padding:7px 14px;">
-                  <span style="color:#ffffff;font-size:18px;font-weight:900;font-family:Arial,sans-serif;">Green</span>
-                  <span style="color:#AFD235;font-size:18px;font-weight:900;font-family:Arial,sans-serif;">Funding</span>
-                </td>
-              </tr>
-            </table>
-            <p style="color:rgba(255,255,255,0.65);font-size:13px;margin:10px 0 0;font-family:Arial,sans-serif;">Finance Solutions for Clean Energy</p>
+          <td style="background:linear-gradient(135deg,#28AA48 0%,#34AC48 50%,#AFD235 100%);padding:28px 32px;">
+            <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" width="183" height="33" style="display:block;height:33px;width:183px;border:0;" />
+            <p style="color:rgba(255,255,255,0.85);font-size:13px;margin:10px 0 0;font-family:Arial,sans-serif;">Finance Solutions for Clean Energy</p>
           </td>
         </tr>
         <tr>

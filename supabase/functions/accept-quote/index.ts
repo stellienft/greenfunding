@@ -82,9 +82,9 @@ function generateClientUploadEmailHtml(
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
-            <td style="background-color: #1a2e3b; padding: 32px 36px;">
+            <td style="background: linear-gradient(135deg, #28AA48 0%, #34AC48 50%, #AFD235 100%); padding: 32px 36px;">
               <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" width="183" height="33" style="display: block; height: 33px; width: 183px; border: 0;" />
-              <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 12px 0 0 0; font-family: Arial, sans-serif;">Finance Solutions for Clean Energy</p>
+              <p style="color: rgba(255,255,255,0.85); font-size: 13px; margin: 12px 0 0 0; font-family: Arial, sans-serif;">Finance Solutions for Clean Energy</p>
             </td>
           </tr>
           <tr>
@@ -173,9 +173,10 @@ function generateAdminNotificationHtml(
 <body style="font-family: Arial, sans-serif; background: #f5f5f5; padding: 24px;">
   <table width="600" style="background: white; border-radius: 8px; overflow: hidden; margin: 0 auto;">
     <tr>
-      <td style="background: linear-gradient(135deg, #1a2e3b, #2D3A4A); padding: 24px 32px;">
+      <td style="background: linear-gradient(135deg, #28AA48 0%, #34AC48 50%, #AFD235 100%); padding: 24px 32px;">
+        <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" width="150" height="27" style="display: block; height: 27px; width: 150px; border: 0; margin-bottom: 10px;" />
         <p style="color: white; font-size: 20px; font-weight: 700; margin: 0;">Quote Accepted</p>
-        <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin: 4px 0 0;">New accepted quote — document upload link sent to client</p>
+        <p style="color: rgba(255,255,255,0.85); font-size: 13px; margin: 4px 0 0;">New accepted quote — document upload link sent to client</p>
       </td>
     </tr>
     <tr>

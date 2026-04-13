@@ -59,10 +59,10 @@ Deno.serve(async (req: Request) => {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #3A475B; background-color: #f5f5f5; padding: 20px; }
             .email-wrapper { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.07); }
-            .header { background: white; padding: 40px 32px; text-align: center; border-bottom: 2px solid #E5E7EB; }
-            .header img { max-width: 280px; height: auto; margin: 0 auto 24px; display: block; }
-            .header h1 { color: #3A475B; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
-            .header p { color: #6B7280; font-size: 15px; font-weight: 500; }
+            .header { background: linear-gradient(135deg, #28AA48 0%, #34AC48 50%, #AFD235 100%); padding: 40px 32px; text-align: center; }
+            .header img { max-width: 220px; height: auto; margin: 0 auto 20px; display: block; }
+            .header h1 { color: white; font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+            .header p { color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500; }
             .content { padding: 32px; }
             .welcome-message { font-size: 16px; color: #3A475B; line-height: 1.7; margin-bottom: 32px; }
             .role-badge { display: inline-block; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 6px; padding: 4px 12px; font-size: 13px; font-weight: 600; margin-bottom: 24px; }
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
         <body>
           <div class="email-wrapper">
             <div class="header">
-              <img src="https://portal.greenfunding.com.au/image%20copy.png" alt="Green Funding" />
+              <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" />
               <h1>Green Funding Admin Portal</h1>
               <p>Moderator Account Created</p>
             </div>

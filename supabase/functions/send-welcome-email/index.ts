@@ -59,19 +59,18 @@ Deno.serve(async (req: Request) => {
               box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
             }
             .header {
-              background: white;
+              background: linear-gradient(135deg, #28AA48 0%, #34AC48 50%, #AFD235 100%);
               padding: 40px 32px;
               text-align: center;
-              border-bottom: 2px solid #E5E7EB;
             }
             .header img {
-              max-width: 280px;
+              max-width: 220px;
               height: auto;
-              margin: 0 auto 24px;
+              margin: 0 auto 20px;
               display: block;
             }
             .header h1 {
-              color: #3A475B;
+              color: white;
               font-size: 26px;
               font-weight: 800;
               letter-spacing: -0.5px;
@@ -79,7 +78,7 @@ Deno.serve(async (req: Request) => {
               line-height: 1.3;
             }
             .header p {
-              color: #6B7280;
+              color: rgba(255,255,255,0.9);
               font-size: 15px;
               font-weight: 500;
             }
@@ -193,7 +192,7 @@ Deno.serve(async (req: Request) => {
         <body>
           <div class="email-wrapper">
             <div class="header">
-              <img src="https://portal.greenfunding.com.au/image%20copy.png" alt="Green Funding" />
+              <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" />
               <h1>Green Funding Installer Portal</h1>
               <p>Welcome to Your Account</p>
             </div>
