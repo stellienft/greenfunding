@@ -465,7 +465,7 @@ export function Step3() {
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <h2 className="text-3xl font-bold text-[#3A475B] mb-2">
-              Your Financing Quote
+              Your Financing Proposal
             </h2>
             <p className="text-gray-600 mb-8">
               Choose the loan term that works best for you
