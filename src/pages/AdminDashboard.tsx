@@ -50,8 +50,8 @@ const NAV_GROUPS = [
   {
     label: 'Activity',
     items: [
-      { id: 'quotes' as Tab, label: 'Quotes', icon: Send },
-      { id: 'accepted-quotes' as Tab, label: 'Accepted Quotes', icon: CheckSquare },
+      { id: 'quotes' as Tab, label: 'Proposals', icon: Send },
+      { id: 'accepted-quotes' as Tab, label: 'Accepted Proposals', icon: CheckSquare },
       { id: 'documents' as Tab, label: 'Documents', icon: FileText },
     ],
   },

@@ -117,9 +117,9 @@ export function DangerZone() {
                 <Trash2 className="w-4 h-4 text-red-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#3A475B]">Delete All Quotes</p>
+                <p className="text-sm font-semibold text-[#3A475B]">Delete All Proposals</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Permanently removes every quote from the system. This cannot be undone.
+                  Permanently removes every proposal from the system. This cannot be undone.
                 </p>
               </div>
             </div>
@@ -129,7 +129,7 @@ export function DangerZone() {
               className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
             >
               <Trash2 className="w-4 h-4" />
-              Delete All Quotes
+              Delete All Proposals
             </button>
           </div>
         )}
@@ -141,7 +141,7 @@ export function DangerZone() {
             <div className="bg-red-600 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-white" />
-                <span className="text-white font-bold text-sm">Delete All Quotes</span>
+                <span className="text-white font-bold text-sm">Delete All Proposals</span>
               </div>
               <button onClick={handleCancel} className="text-white/80 hover:text-white transition-colors">
                 <X className="w-5 h-5" />
@@ -155,11 +155,11 @@ export function DangerZone() {
                   <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
                     <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-bold text-red-800">This will permanently delete all quotes.</p>
+                      <p className="text-sm font-bold text-red-800">This will permanently delete all proposals.</p>
                       <p className="text-xs text-red-700 mt-1 leading-relaxed">
                         {quoteCount !== null
-                          ? `There are currently ${quoteCount.toLocaleString()} quote${quoteCount !== 1 ? 's' : ''} in the system.`
-                          : 'All quotes in the system will be removed.'}
+                          ? `There are currently ${quoteCount.toLocaleString()} proposal${quoteCount !== 1 ? 's' : ''} in the system.`
+                          : 'All proposals in the system will be removed.'}
                         {' '}This action <strong>cannot be undone</strong>. There is no backup or recovery option.
                       </p>
                     </div>
@@ -167,9 +167,9 @@ export function DangerZone() {
 
                   <ul className="space-y-2 text-xs text-gray-600">
                     {[
-                      'All sent quotes and their data will be erased',
-                      'Installer quote history will be cleared',
-                      'Quote PDFs will no longer be accessible',
+                      'All sent proposals and their data will be erased',
+                      'Installer proposal history will be cleared',
+                      'Proposal PDFs will no longer be accessible',
                       'This will not affect applications or user accounts',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2">

@@ -319,7 +319,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
     subtitle: CALC_LABELS[q.calculator_type] ?? q.calculator_type,
     value: Number(q.project_cost),
     created_at: q.created_at,
-    tag: 'Quote',
+    tag: 'Proposal',
     tagColor: 'bg-blue-50 text-blue-700 border-blue-100',
   }));
 
@@ -337,7 +337,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
   const alerts: { msg: string; color: string }[] = [];
   if (quotesToday === 0 && new Date().getHours() > 10) {
-    alerts.push({ msg: 'No quotes generated today yet', color: 'text-amber-700 bg-amber-50 border-amber-200' });
+    alerts.push({ msg: 'No proposals generated today yet', color: 'text-amber-700 bg-amber-50 border-amber-200' });
   }
   const inactiveInstallers = installers.filter(i => {
     const lastQ = quotes.filter(q => q.installer_id === i.id).sort((a, b) =>
@@ -409,7 +409,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label="Total Quotes"
+          label="Total Proposals"
           value={quotes.length.toLocaleString()}
           sub="All time in period"
           icon={BarChart2}
@@ -418,7 +418,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesPrev30}
         />
         <StatCard
-          label="Total Quote Value"
+          label="Total Proposal Value"
           value={fmt(totalQuoteValue)}
           sub="Combined project costs"
           icon={DollarSign}
@@ -429,7 +429,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
         <StatCard
           label="Average Deal Size"
           value={fmt(avgDealSize)}
-          sub="Per quote"
+          sub="Per proposal"
           icon={TrendingUp}
           iconBg="bg-teal-50 text-teal-500"
           current={avgDealSize}
@@ -438,7 +438,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
         <StatCard
           label="Most Active Installer"
           value={topInstallers[0] ? (topInstallers[0].company_name || topInstallers[0].full_name) : '—'}
-          sub={topInstallers[0] ? `${topInstallers[0].recentQuotes} quotes` : 'No activity yet'}
+          sub={topInstallers[0] ? `${topInstallers[0].recentQuotes} proposals` : 'No activity yet'}
           icon={Users}
           iconBg="bg-orange-50 text-orange-500"
           onClick={() => onNavigate?.('users')}
@@ -452,7 +452,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           onClick={() => onNavigate?.('users')}
         />
         <StatCard
-          label="Quotes Today"
+          label="Proposals Today"
           value={quotesToday.toString()}
           sub={`${quotesYesterday} yesterday`}
           icon={Zap}
@@ -461,7 +461,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesYesterday}
         />
         <StatCard
-          label="Quotes (30 days)"
+          label="Proposals (30 days)"
           value={quotesLast30.toString()}
           sub="vs prior 30 days"
           icon={FileText}
@@ -470,7 +470,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={quotesPrev30}
         />
         <StatCard
-          label="Accepted Quotes"
+          label="Accepted Proposals"
           value={acceptedQuotes.toLocaleString()}
           sub={`${acceptanceRate}% acceptance · ${fmt(acceptedValue)}`}
           icon={CheckSquare}
@@ -484,7 +484,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#1e293b]">Daily Quotes — Last 7 Days</h3>
+            <h3 className="text-sm font-semibold text-[#1e293b]">Daily Proposals — Last 7 Days</h3>
             <MiniSparkline data={daily7} />
           </div>
           <div className="flex items-end gap-1.5 h-20">
@@ -498,7 +498,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#1e293b] text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    {count} quote{count !== 1 ? 's' : ''}
+                    {count} proposal{count !== 1 ? 's' : ''}
                   </div>
                   <div
                     className={`w-full rounded-t-sm transition-all ${isToday ? 'bg-[#28AA48]' : 'bg-gray-200 group-hover:bg-gray-300'}`}
@@ -558,7 +558,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-[#1e293b] truncate">{inst.company_name || inst.full_name}</p>
-                    <p className="text-[10px] text-gray-400">{inst.recentQuotes} quotes &middot; {fmt(inst.recentValue)}</p>
+                    <p className="text-[10px] text-gray-400">{inst.recentQuotes} proposals &middot; {fmt(inst.recentValue)}</p>
                   </div>
                 </div>
               ))}
@@ -606,7 +606,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           <div className="space-y-4">
             {[
               {
-                label: 'Total Quotes All Time',
+                label: 'Total Proposals All Time',
                 value: quotes.length.toLocaleString(),
                 icon: FileText,
                 color: 'text-blue-500 bg-blue-50',
@@ -649,7 +649,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-[#1e293b]">Loan Structure Insights</h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">Based on quotes in last 30 days</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Based on proposals in last 30 days</p>
           </div>
           {quotesLast30 === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No data</p>
@@ -725,13 +725,13 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
-                <p className="text-xs font-medium text-gray-500">Avg Quotes per Installer</p>
+                <p className="text-xs font-medium text-gray-500">Avg Proposals per Installer</p>
                 <p className="text-sm font-bold text-[#1e293b]">{avgQuotesPerInstaller.toFixed(1)}</p>
               </div>
 
               <div className="py-2.5 border-b border-gray-50">
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-xs font-medium text-gray-500">Repeat Users (2+ quotes)</p>
+                  <p className="text-xs font-medium text-gray-500">Repeat Users (2+ proposals)</p>
                   <p className="text-sm font-bold text-[#1e293b]">{repeatUsersPct}%</p>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -742,7 +742,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
               <div className="py-2.5 border-b border-gray-50">
                 <div className="flex items-center justify-between mb-1.5">
-                  <p className="text-xs font-medium text-gray-500">Power Users (3+ quotes)</p>
+                  <p className="text-xs font-medium text-gray-500">Power Users (3+ proposals)</p>
                   <p className="text-sm font-bold text-[#1e293b]">{powerUsersPct}%</p>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -752,12 +752,12 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
               </div>
 
               <div className="pt-1">
-                <p className="text-xs font-medium text-gray-500 mb-2">Quote Distribution</p>
+                <p className="text-xs font-medium text-gray-500 mb-2">Proposal Distribution</p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: '1 quote', count: installersWithQuotes.filter(i => i.allTimeQuotes === 1).length, color: 'bg-gray-100 text-gray-600' },
-                    { label: '2–4 quotes', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 2 && i.allTimeQuotes <= 4).length, color: 'bg-blue-50 text-blue-700' },
-                    { label: '5+ quotes', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 5).length, color: 'bg-[#28AA48]/10 text-[#28AA48]' },
+                    { label: '1 proposal', count: installersWithQuotes.filter(i => i.allTimeQuotes === 1).length, color: 'bg-gray-100 text-gray-600' },
+                    { label: '2–4 proposals', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 2 && i.allTimeQuotes <= 4).length, color: 'bg-blue-50 text-blue-700' },
+                    { label: '5+ proposals', count: installersWithQuotes.filter(i => i.allTimeQuotes >= 5).length, color: 'bg-[#28AA48]/10 text-[#28AA48]' },
                   ].map(({ label, count, color }) => (
                     <div key={label} className={`rounded-xl p-2.5 text-center ${color}`}>
                       <p className="text-base font-bold">{count}</p>

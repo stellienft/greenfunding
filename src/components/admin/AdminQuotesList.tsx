@@ -63,9 +63,9 @@ function statusBadge(status: string) {
     case 'application_started':
       return { label: 'Application Started', cls: 'bg-blue-100 text-blue-800 border-blue-200' };
     case 'accepted':
-      return { label: 'Quote Accepted', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      return { label: 'Proposal Accepted', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
     default:
-      return { label: 'Quote Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
+      return { label: 'Proposal Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
   }
 }
 
@@ -193,7 +193,7 @@ function SendUploadLinkModal({ quote, onClose, onSent }: SendModalProps) {
               </div>
             )}
             <div className="flex justify-between items-start gap-2">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Quote</span>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Proposal</span>
               <span className="text-sm font-semibold text-[#28AA48]">#{String(quote.quote_number).padStart(6, '0')}</span>
             </div>
             <div className="flex justify-between items-start gap-2">
@@ -259,7 +259,7 @@ function SendUploadLinkModal({ quote, onClose, onSent }: SendModalProps) {
             </button>
           </div>
           {!quote.recipient_email && (
-            <p className="text-xs text-red-600 text-center">This quote has no client email address — cannot send link.</p>
+            <p className="text-xs text-red-600 text-center">This proposal has no client email address — cannot send link.</p>
           )}
         </div>
       </div>
@@ -346,7 +346,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Quote Details</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Proposal Details</p>
           <div className="space-y-1">
             <p className="text-sm text-gray-700">
               <span className="text-gray-400">Service type:</span>{' '}
@@ -408,7 +408,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#28AA48]/10 hover:bg-[#28AA48]/20 border border-[#28AA48]/30 rounded-lg text-sm font-semibold text-[#28AA48] transition-colors"
           >
             <Download className="w-4 h-4" />
-            Download Quote PDF
+            Download Proposal PDF
           </a>
         </div>
       )}
@@ -425,7 +425,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
               className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white text-sm font-bold rounded-xl hover:shadow-md transition-all"
             >
               <Send className="w-4 h-4" />
-              Quote Accepted
+              Proposal Accepted
             </button>
           </div>
         </div>
@@ -574,7 +574,7 @@ export function AdminQuotesList() {
   function exportCSV() {
     if (filtered.length === 0) return;
     const headers = [
-      'Quote Number', 'Date', 'Installer Name', 'Installer Company', 'Installer Email',
+      'Proposal Number', 'Date', 'Installer Name', 'Installer Company', 'Installer Email',
       'Client Name', 'Client Company', 'Client Email', 'Client Phone',
       'Site Address', 'System Size', 'Service Type', 'Payment Timing',
       'Project Cost', 'Status',
@@ -619,9 +619,9 @@ export function AdminQuotesList() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl font-bold text-[#3A475B]">All Quotes</h2>
+          <h2 className="text-xl font-bold text-[#3A475B]">All Proposals</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {filtered.length} quote{filtered.length !== 1 ? 's' : ''}
+            {filtered.length} proposal{filtered.length !== 1 ? 's' : ''}
             {filtered.length > 0 && <> &mdash; total value {formatCurrency(totalValue)}</>}
           </p>
         </div>
@@ -667,8 +667,8 @@ export function AdminQuotesList() {
           className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] bg-white"
         >
           <option value="all">All Statuses</option>
-          <option value="generated">Quote Generated</option>
-          <option value="accepted">Quote Accepted</option>
+          <option value="generated">Proposal Generated</option>
+          <option value="accepted">Proposal Accepted</option>
           <option value="application_started">Application Started</option>
           <option value="application_submitted">Application Submitted</option>
         </select>
@@ -688,7 +688,7 @@ export function AdminQuotesList() {
           <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <FileText className="w-7 h-7 text-gray-400" />
           </div>
-          <p className="text-gray-600 font-medium">No quotes found</p>
+          <p className="text-gray-600 font-medium">No proposals found</p>
           <p className="text-gray-400 text-sm mt-1">Try adjusting your filters</p>
         </div>
       ) : (

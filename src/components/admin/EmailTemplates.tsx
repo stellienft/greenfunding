@@ -201,11 +201,11 @@ export function EmailTemplates() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
             <h4 className="text-sm font-bold text-blue-900 mb-2">How It Works</h4>
             <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside">
-              <li>Installer opens the Email Quote modal on the quote page</li>
+              <li>Installer opens the Email Proposal modal on the proposal page</li>
               <li>An "Intro Email" tab shows this template with tokens replaced</li>
               <li>The installer can edit the text before copying</li>
               <li>They copy it and paste into their own email client</li>
-              <li>They then switch to "Quote Details" to send the PDF quote</li>
+              <li>They then switch to "Proposal Details" to send the PDF proposal</li>
             </ol>
           </div>
         </div>
