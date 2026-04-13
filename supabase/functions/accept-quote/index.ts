@@ -83,14 +83,7 @@ function generateClientUploadEmailHtml(
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden;">
           <tr>
             <td style="background-color: #1a2e3b; padding: 32px 36px;">
-              <table cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background-color: #28AA48; border-radius: 6px; padding: 8px 16px;">
-                    <span style="color: #ffffff; font-size: 20px; font-weight: 900; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Green</span>
-                    <span style="color: #AFD235; font-size: 20px; font-weight: 900; font-family: Arial, sans-serif; letter-spacing: -0.5px;">Funding</span>
-                  </td>
-                </tr>
-              </table>
+              <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" width="183" height="33" style="display: block; height: 33px; width: 183px; border: 0;" />
               <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 12px 0 0 0; font-family: Arial, sans-serif;">Finance Solutions for Clean Energy</p>
             </td>
           </tr>
