@@ -312,12 +312,12 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   async function loadUploads() {
     setLoadingUploads(true);
     try {
-      const { data } = await supabase
-        .from('quote_document_uploads')
-        .select('id, document_type, file_name, uploaded_at')
-        .eq('quote_id', quote.id)
-        .order('uploaded_at', { ascending: true });
-      if (data) setUploads(data);
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-quotes/uploads?quote_id=${quote.id}`,
+        { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` } }
+      );
+      const json = await res.json();
+      if (json.uploads) setUploads(json.uploads);
     } finally {
       setLoadingUploads(false);
     }
