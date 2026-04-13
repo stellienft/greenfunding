@@ -21,6 +21,32 @@ interface DocumentUpload {
   uploaded_at: string;
 }
 
+function getRequiredDocs(projectCost: number): Array<{ key: string; label: string }> {
+  if (projectCost >= 250000) {
+    const docs = [
+      { key: 'financials', label: 'FY24 & FY25 Accountant Prepared Financials' },
+      { key: 'mgt_financials', label: 'Mgt YTD Dec 25 Financials' },
+      { key: 'finance_commitment', label: 'Finance Commitment Schedule' },
+      { key: 'ato_statement', label: 'Current ATO Portal Statement' },
+      { key: 'business_overview', label: 'Business Overview and Major Clients' },
+      { key: 'asset_liability', label: 'Asset and Liability Statement' },
+    ];
+    if (projectCost >= 500000) docs.push({ key: 'aged_debtors', label: 'Aged Debtors and Creditors' });
+    if (projectCost >= 1000000) docs.push({ key: 'cashflow', label: 'Cashflow Projections' });
+    return docs;
+  }
+  const base = [
+    { key: 'directors_licence', label: "Director's Drivers Licence" },
+    { key: 'medicare_card', label: "Director's Medicare Card" },
+    { key: 'privacy_consent', label: 'Privacy Consent (signed)' },
+    { key: 'asset_liability', label: 'Asset and Liability Statement (signed)' },
+  ];
+  if (projectCost >= 150000) {
+    base.splice(2, 0, { key: 'bank_statements', label: '6 Months Business Bank Statements' });
+  }
+  return base;
+}
+
 interface AdminQuote {
   id: string;
   quote_number: number;
@@ -275,7 +301,6 @@ interface ExpandedQuoteRowProps {
 function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [uploads, setUploads] = useState<DocumentUpload[]>([]);
   const [loadingUploads, setLoadingUploads] = useState(false);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [showSendModal, setShowSendModal] = useState(false);
 
   useEffect(() => {
@@ -289,25 +314,13 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
     try {
       const { data } = await supabase
         .from('quote_document_uploads')
-        .select('id, document_type, file_name, file_path, uploaded_at')
+        .select('id, document_type, file_name, uploaded_at')
         .eq('quote_id', quote.id)
         .order('uploaded_at', { ascending: true });
       if (data) setUploads(data);
     } finally {
       setLoadingUploads(false);
     }
-  }
-
-  async function getSignedUrl(filePath: string): Promise<string | null> {
-    if (signedUrls[filePath]) return signedUrls[filePath];
-    const { data } = await supabase.storage
-      .from('application-documents')
-      .createSignedUrl(filePath, 60 * 60);
-    if (data?.signedUrl) {
-      setSignedUrls(prev => ({ ...prev, [filePath]: data.signedUrl }));
-      return data.signedUrl;
-    }
-    return null;
   }
 
   const appUrl = window.location.origin;
@@ -476,30 +489,24 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <Loader className="w-3.5 h-3.5 animate-spin" /> Loading documents…
             </div>
-          ) : uploads.length === 0 ? (
-            <p className="text-xs text-gray-400 italic">No documents uploaded yet. Client has been emailed their upload link.</p>
           ) : (
-            <div className="space-y-2">
-              {uploads.map(upload => (
-                <div key={upload.id} className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CheckCircle2 className="w-4 h-4 text-[#28AA48] flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-[#3A475B] capitalize">{upload.document_type.replace(/_/g, ' ')}</p>
-                      <p className="text-xs text-gray-400 truncate">{upload.file_name}</p>
-                    </div>
+            <div className="space-y-1.5">
+              {getRequiredDocs(quote.project_cost ?? 0).map(doc => {
+                const uploaded = uploads.some(u => u.document_type === doc.key);
+                return (
+                  <div key={doc.key} className="flex items-center gap-2">
+                    {uploaded ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#28AA48] flex-shrink-0" />
+                    ) : (
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-200 flex-shrink-0" />
+                    )}
+                    <span className={`text-xs ${uploaded ? 'text-[#3A475B] font-medium' : 'text-gray-400'}`}>{doc.label}</span>
                   </div>
-                  <button
-                    onClick={async () => {
-                      const url = await getSignedUrl(upload.file_path);
-                      if (url) window.open(url, '_blank');
-                    }}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-[#28AA48] hover:underline"
-                  >
-                    <Download className="w-3 h-3" /> Download
-                  </button>
-                </div>
-              ))}
+                );
+              })}
+              {uploads.length === 0 && (
+                <p className="text-xs text-gray-400 italic mt-1">No documents uploaded yet. Client has been emailed their upload link.</p>
+              )}
             </div>
           )}
         </div>
