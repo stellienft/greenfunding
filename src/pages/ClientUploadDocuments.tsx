@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Upload, CheckCircle2, FileText, X, Loader, ExternalLink, AlertCircle
+  Upload, CheckCircle2, FileText, X, Loader, ExternalLink, AlertCircle, PartyPopper
 } from 'lucide-react';
 
 interface QuoteInfo {
@@ -107,6 +107,8 @@ export function ClientUploadDocuments() {
 
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [localUploaded, setLocalUploaded] = useState<Record<string, string>>({});
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionModalShown, setCompletionModalShown] = useState(false);
 
   useEffect(() => {
     if (token) loadQuote();
@@ -189,6 +191,13 @@ export function ClientUploadDocuments() {
   }
 
   const allDone = quote && getDocFields(quote.project_cost).every(f => isUploaded(f.key));
+
+  useEffect(() => {
+    if (allDone && loggedIn && !completionModalShown) {
+      setShowCompletionModal(true);
+      setCompletionModalShown(true);
+    }
+  }, [allDone, loggedIn]);
 
   if (loading) {
     return (
@@ -400,6 +409,32 @@ export function ClientUploadDocuments() {
           </div>
         )}
       </div>
+
+      {showCompletionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center relative animate-fade-in">
+            <button
+              onClick={() => setShowCompletionModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: 'linear-gradient(135deg, #34AC48, #AFD235)' }}>
+              <PartyPopper className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-[#3A475B] mb-3">Documents Submitted!</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+              Thank you for uploading your required documents. You can now close this page and we will be in contact with you soon.
+            </p>
+            <button
+              onClick={() => setShowCompletionModal(false)}
+              className="w-full py-3 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-md transition-all text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
