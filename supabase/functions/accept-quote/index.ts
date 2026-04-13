@@ -141,11 +141,14 @@ function generateClientUploadEmailHtml(
           <tr>
             <td style="border-top: 2px solid #E5E7EB; padding: 24px 36px; text-align: center;">
               <p style="font-size: 13px; font-weight: 700; color: #3A475B; margin: 0 0 6px 0; font-family: Arial, sans-serif;">Green Funding</p>
-              <p style="font-size: 12px; color: #9CA3AF; line-height: 1.8; margin: 0; font-family: Arial, sans-serif;">
+              <p style="font-size: 12px; color: #9CA3AF; line-height: 1.8; margin: 0 0 16px 0; font-family: Arial, sans-serif;">
                 Level 18, 324 Queen Street, Brisbane QLD 4000<br/>
                 <a href="tel:1300403100" style="color: #28AA48; text-decoration: none;">1300 403 100</a> &bull;
                 <a href="mailto:solutions@greenfunding.com.au" style="color: #28AA48; text-decoration: none;">solutions@greenfunding.com.au</a> &bull;
                 <a href="https://greenfunding.com.au" style="color: #28AA48; text-decoration: none;">greenfunding.com.au</a>
+              </p>
+              <p style="font-size: 10px; color: #B0B8C1; line-height: 1.6; margin: 0; font-family: Arial, sans-serif; text-align: left; border-top: 1px solid #E5E7EB; padding-top: 16px;">
+                By providing your information, you consent to Green Funding Pty Ltd collecting, using, and disclosing your personal information for the purpose of assessing and managing your finance application, including sharing it with lenders, credit reporting bodies, and relevant service providers. Your information is handled in accordance with the <a href="https://www.legislation.gov.au/C2004A03712/latest/text" style="color: #9CA3AF;">Privacy Act 1988 (Cth)</a> and our <a href="https://greenfunding.com.au/privacy-policy/" style="color: #9CA3AF;">Privacy Policy</a>, and may be disclosed to third parties located in Australia or overseas where required to facilitate your application.
               </p>
             </td>
           </tr>
