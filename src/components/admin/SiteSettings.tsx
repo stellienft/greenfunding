@@ -12,6 +12,8 @@ export function SiteSettings() {
   const [servicedRentalDescription, setServicedRentalDescription] = useState('Finance your solar system with included annual maintenance service');
   const [pipedriveApiKey, setPipedriveApiKey] = useState('');
   const [pipedriveDealId, setPipedriveDealId] = useState('');
+  const [pipedrivePipelineId, setPipedrivePipelineId] = useState('');
+  const [pipedriveStageId, setPipedriveStageId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -25,7 +27,7 @@ export function SiteSettings() {
     try {
       const { data, error } = await supabase
         .from('site_settings')
-        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id')
+        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id')
         .maybeSingle();
 
       if (error) throw error;
@@ -38,6 +40,8 @@ export function SiteSettings() {
         setServicedRentalDescription(data.serviced_rental_description || 'Finance your solar system with included annual maintenance service');
         setPipedriveApiKey(data.pipedrive_api_key || '');
         setPipedriveDealId(data.pipedrive_deal_id || '');
+        setPipedrivePipelineId(data.pipedrive_pipeline_id || '');
+        setPipedriveStageId(data.pipedrive_stage_id || '');
       }
     } catch (error: any) {
       console.error('Error loading settings:', error);
@@ -69,6 +73,8 @@ export function SiteSettings() {
           serviced_rental_description: servicedRentalDescription.trim(),
           pipedrive_api_key: pipedriveApiKey.trim(),
           pipedrive_deal_id: pipedriveDealId.trim(),
+          pipedrive_pipeline_id: pipedrivePipelineId.trim(),
+          pipedrive_stage_id: pipedriveStageId.trim(),
         }),
       });
 
@@ -323,7 +329,7 @@ export function SiteSettings() {
             <div>
               <h3 className="text-lg font-bold text-[#3A475B]">Pipedrive Integration</h3>
               <p className="text-sm text-gray-600 mt-1">
-                When a client completes all document uploads, a note is automatically added to the specified Pipedrive deal.
+                Configure your Pipedrive connection and set which pipeline and stage new deals should be placed into.
               </p>
             </div>
 
@@ -356,7 +362,41 @@ export function SiteSettings() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  When a client completes all document uploads, a note is posted to this deal. Individual proposals can be sent to any deal from the Quotes list.
+                  Optional. When all client documents are uploaded, a completion note is posted to this deal.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Pipeline ID
+                </label>
+                <input
+                  type="text"
+                  value={pipedrivePipelineId}
+                  onChange={(e) => setPipedrivePipelineId(e.target.value)}
+                  placeholder="e.g. 2"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The pipeline new deals are created in. Found in Pipedrive under Pipeline settings — the number in the URL.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                  Stage ID (Deal Flow)
+                </label>
+                <input
+                  type="text"
+                  value={pipedriveStageId}
+                  onChange={(e) => setPipedriveStageId(e.target.value)}
+                  placeholder="e.g. 4"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The stage within that pipeline where new deals are placed. Use the Pipedrive API or stage settings URL to find the ID.
                 </p>
               </div>
             </div>
@@ -364,11 +404,19 @@ export function SiteSettings() {
             {pipedriveApiKey && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-green-800 space-y-0.5">
+                <div className="text-sm text-green-800 space-y-1">
                   <p className="font-semibold">Pipedrive API is configured.</p>
+                  {(pipedrivePipelineId || pipedriveStageId) && (
+                    <p>
+                      New deals will be created in
+                      {pipedrivePipelineId ? <> pipeline <strong>#{pipedrivePipelineId}</strong></> : ''}
+                      {pipedrivePipelineId && pipedriveStageId ? ',' : ''}
+                      {pipedriveStageId ? <> stage <strong>#{pipedriveStageId}</strong></> : ''}.
+                    </p>
+                  )}
                   {pipedriveDealId
                     ? <p>Document upload notifications will be posted to deal <strong>#{pipedriveDealId}</strong>.</p>
-                    : <p className="text-green-700">No default deal ID set — document upload notifications will be skipped. You can still send individual proposals to any deal from the Quotes list.</p>
+                    : <p className="text-green-700">No default deal ID set — document upload notifications will be skipped.</p>
                   }
                 </div>
               </div>
@@ -377,8 +425,8 @@ export function SiteSettings() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">How Pipedrive integration works:</h4>
               <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                <li>From the <strong>Quotes list</strong>, use "Send to Pipedrive" on any proposal — enter an existing deal ID to attach to it, or leave blank to create a new deal automatically</li>
-                <li>When a client completes all document uploads, a note is automatically added to the default deal ID configured above</li>
+                <li>From the <strong>Quotes list</strong>, use "Send to Pipedrive" on any proposal — enter an existing deal ID to attach to it, or leave blank to create a new deal in the configured pipeline and stage</li>
+                <li>When a client completes all document uploads, a completion note is posted to the default deal ID above</li>
                 <li>Each synced proposal stores a direct link back to its Pipedrive deal</li>
               </ul>
             </div>

@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: quote, error: quoteError } = await supabase
         .from('sent_quotes')
-        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at, portal_access_code')
+        .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token_expires_at, portal_access_code, pipedrive_deal_id')
         .eq('upload_token', token)
         .maybeSingle();
 
@@ -200,13 +200,13 @@ Deno.serve(async (req: Request) => {
 
           const { data: siteSettings } = await supabase
             .from('site_settings')
-            .select('pipedrive_api_key, pipedrive_deal_id')
+            .select('pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id')
             .maybeSingle();
 
           const pipedriveApiKey = siteSettings?.pipedrive_api_key;
           const pipedriveDealId = siteSettings?.pipedrive_deal_id;
 
-          if (pipedriveApiKey && pipedriveDealId) {
+          if (pipedriveApiKey) {
             const docList = uploads.map((u: any) =>
               `• ${formatDocType(u.document_type)} (${u.file_name})`
             ).join('\n');
@@ -223,7 +223,22 @@ Deno.serve(async (req: Request) => {
               docList,
             ].filter(line => line !== null && line !== undefined).join('\n');
 
-            await postPipedriveNote(pipedriveApiKey, pipedriveDealId, noteContent);
+            const noteDealId = quote.pipedrive_deal_id || pipedriveDealId;
+            if (noteDealId) {
+              await postPipedriveNote(pipedriveApiKey, noteDealId, noteContent);
+            }
+
+            const pipelineId = siteSettings?.pipedrive_pipeline_id;
+            const stageId = siteSettings?.pipedrive_stage_id;
+            if (quote.pipedrive_deal_id && stageId) {
+              const updatePayload: Record<string, unknown> = { stage_id: Number(stageId) };
+              if (pipelineId) updatePayload.pipeline_id = Number(pipelineId);
+              await fetch(`https://api.pipedrive.com/v1/deals/${quote.pipedrive_deal_id}?api_token=${pipedriveApiKey}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatePayload),
+              });
+            }
           }
 
           if (elasticEmailApiKey) {

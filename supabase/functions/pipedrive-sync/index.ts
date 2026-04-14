@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: siteSettings, error: settingsError } = await supabase
       .from('site_settings')
-      .select('pipedrive_api_key')
+      .select('pipedrive_api_key, pipedrive_pipeline_id, pipedrive_stage_id')
       .maybeSingle();
 
     if (settingsError || !siteSettings?.pipedrive_api_key) {
@@ -87,6 +87,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const apiToken = siteSettings.pipedrive_api_key;
+    const configuredPipelineId = siteSettings.pipedrive_pipeline_id;
+    const configuredStageId = siteSettings.pipedrive_stage_id;
 
     const { data: quote, error: quoteError } = await supabase
       .from('sent_quotes')
@@ -183,6 +185,8 @@ Deno.serve(async (req: Request) => {
       };
       if (personId) dealPayload.person_id = personId;
       if (orgId) dealPayload.org_id = orgId;
+      if (configuredPipelineId) dealPayload.pipeline_id = Number(configuredPipelineId);
+      if (configuredStageId) dealPayload.stage_id = Number(configuredStageId);
 
       const dealRes = await fetch(`https://api.pipedrive.com/v1/deals?api_token=${apiToken}`, {
         method: 'POST',
