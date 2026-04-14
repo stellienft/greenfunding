@@ -31,6 +31,7 @@ interface SentQuote {
   pdf_url: string | null;
   pipedrive_synced_at: string | null;
   pipedrive_deal_url: string | null;
+  pipedrive_stage_name: string | null;
 }
 
 interface UploadedFile {
@@ -504,6 +505,12 @@ export function QuoteDetail() {
                     <span className="inline-flex items-center gap-1 mt-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
                       <CheckCircle2 className="w-3 h-3" />
                       In Pipedrive
+                    </span>
+                  )}
+                  {quote.pipedrive_synced_at && quote.pipedrive_stage_name && (
+                    <span className="inline-flex items-center gap-1.5 mt-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#AFD235] inline-block flex-shrink-0"></span>
+                      {quote.pipedrive_stage_name}
                     </span>
                   )}
                 </div>

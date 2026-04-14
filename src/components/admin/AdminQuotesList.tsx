@@ -70,6 +70,8 @@ interface AdminQuote {
   pipedrive_synced_at: string | null;
   pipedrive_deal_id: string | null;
   pipedrive_deal_url: string | null;
+  pipedrive_stage_name: string | null;
+  pipedrive_stage_updated_at: string | null;
   installer: {
     full_name: string | null;
     company_name: string | null;
@@ -308,6 +310,9 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [sendingPipedrive, setSendingPipedrive] = useState(false);
   const [pipedriveError, setPipedriveError] = useState<string | null>(null);
   const [pipedriveDealInput, setPipedriveDealInput] = useState('');
+  const [stageName, setStageName] = useState<string | null>(quote.pipedrive_stage_name);
+  const [stageUpdatedAt, setStageUpdatedAt] = useState<string | null>(quote.pipedrive_stage_updated_at);
+  const [refreshingStage, setRefreshingStage] = useState(false);
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -355,6 +360,30 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
       setPipedriveError(err.message || 'Failed to sync to Pipedrive');
     } finally {
       setSendingPipedrive(false);
+    }
+  }
+
+  async function refreshStage() {
+    setRefreshingStage(true);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipedrive-deal-status`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quoteId: quote.id }),
+        }
+      );
+      const json = await res.json();
+      if (res.ok) {
+        setStageName(json.stageName || null);
+        setStageUpdatedAt(new Date().toISOString());
+      }
+    } finally {
+      setRefreshingStage(false);
     }
   }
 
@@ -496,25 +525,57 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
           Pipedrive CRM
         </p>
         {quote.pipedrive_synced_at && (
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-              <CheckCircle2 className="w-3 h-3" />
-              Sent to Pipedrive
-            </span>
-            <span className="text-xs text-gray-400">
-              {new Date(quote.pipedrive_synced_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
-            </span>
-            {quote.pipedrive_deal_url && (
-              <a
-                href={quote.pipedrive_deal_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-[#28AA48] font-semibold hover:underline"
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="w-3 h-3" />
+                Sent to Pipedrive
+              </span>
+              <span className="text-xs text-gray-400">
+                {new Date(quote.pipedrive_synced_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+              {quote.pipedrive_deal_url && (
+                <a
+                  href={quote.pipedrive_deal_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-[#28AA48] font-semibold hover:underline"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  View Deal #{quote.pipedrive_deal_id}
+                </a>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-gray-500">Pipeline stage:</span>
+              {stageName ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2.5 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block"></span>
+                  {stageName}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400 italic">Unknown — click refresh</span>
+              )}
+              <button
+                onClick={refreshStage}
+                disabled={refreshingStage}
+                title="Refresh stage from Pipedrive"
+                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#1a2e3b] transition-colors disabled:opacity-50"
               >
-                <ExternalLink className="w-3 h-3" />
-                View Deal #{quote.pipedrive_deal_id}
-              </a>
-            )}
+                <svg
+                  className={`w-3.5 h-3.5 ${refreshingStage ? 'animate-spin' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {refreshingStage ? 'Refreshing…' : 'Refresh'}
+              </button>
+              {stageUpdatedAt && (
+                <span className="text-xs text-gray-400">
+                  Updated {new Date(stageUpdatedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
           </div>
         )}
         {!quote.pipedrive_synced_at && (

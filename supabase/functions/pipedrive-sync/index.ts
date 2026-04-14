@@ -259,16 +259,33 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
+    let stageName: string | null = null;
+    try {
+      const dealDetailRes = await fetch(`https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`);
+      if (dealDetailRes.ok) {
+        const dealDetail = await dealDetailRes.json();
+        const stageId = dealDetail?.data?.stage_id;
+        if (stageId) {
+          const stageRes = await fetch(`https://api.pipedrive.com/v1/stages/${stageId}?api_token=${apiToken}`);
+          if (stageRes.ok) {
+            const stageData = await stageRes.json();
+            stageName = stageData?.data?.name || null;
+          }
+        }
+      }
+    } catch (_) {}
+
     await supabase
       .from('sent_quotes')
       .update({
         pipedrive_synced_at: new Date().toISOString(),
         pipedrive_deal_id: String(dealId),
         pipedrive_deal_url: dealUrl,
+        ...(stageName ? { pipedrive_stage_name: stageName, pipedrive_stage_updated_at: new Date().toISOString() } : {}),
       })
       .eq('id', quoteId);
 
-    return new Response(JSON.stringify({ success: true, dealId, dealUrl }), {
+    return new Response(JSON.stringify({ success: true, dealId, dealUrl, stageName }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: unknown) {

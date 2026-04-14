@@ -21,6 +21,7 @@ interface SentQuote {
   payment_timing: string;
   status: string;
   pipedrive_synced_at: string | null;
+  pipedrive_stage_name: string | null;
 }
 
 function formatQuoteNumber(n: number) {
@@ -68,7 +69,7 @@ export function MyQuotes() {
       setLoading(true);
       const { data, error } = await supabase
         .from('sent_quotes')
-        .select('id, quote_number, created_at, recipient_name, recipient_company, recipient_email, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, status, pipedrive_synced_at')
+        .select('id, quote_number, created_at, recipient_name, recipient_company, recipient_email, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, status, pipedrive_synced_at, pipedrive_stage_name')
         .eq('installer_id', installerProfile!.id)
         .order('created_at', { ascending: false });
 
@@ -162,6 +163,12 @@ export function MyQuotes() {
                                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                                   <CheckCircle2 className="w-3 h-3" />
                                   In Pipedrive
+                                </span>
+                              )}
+                              {q.pipedrive_synced_at && q.pipedrive_stage_name && (
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2.5 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
+                                  {q.pipedrive_stage_name}
                                 </span>
                               )}
                             </div>
