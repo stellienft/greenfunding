@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   FileText, Calendar, User, Building2, MapPin, Download,
   ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen,
-  Send, AlertCircle, ExternalLink, RefreshCw
+  Send, AlertCircle, ExternalLink
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -517,42 +517,38 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             )}
           </div>
         )}
-        <div className="flex items-end gap-3 flex-wrap">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-500 mb-1">
-              {quote.pipedrive_synced_at ? 'Re-sync to deal (leave blank to create new)' : 'Existing deal ID (leave blank to create new deal)'}
-            </label>
-            <input
-              type="text"
-              value={pipedriveDealInput}
-              onChange={e => setPipedriveDealInput(e.target.value)}
-              placeholder="e.g. 12345"
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-            />
-            <p className="text-xs text-gray-400 mt-0.5">From the deal URL: pipedrive.com/deal/<strong>12345</strong></p>
-          </div>
-          <div className="flex flex-col items-end gap-2 pb-5">
-            <button
-              onClick={handleSendToPipedrive}
-              disabled={sendingPipedrive}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
-                quote.pipedrive_synced_at
-                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  : 'bg-[#1a2e3b] text-white hover:bg-[#2e3847]'
-              }`}
-            >
-              {sendingPipedrive
-                ? <><div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" /> Sending…</>
-                : quote.pipedrive_synced_at
-                  ? <><RefreshCw className="w-4 h-4" /> Re-sync to Pipedrive</>
+        {!quote.pipedrive_synced_at && (
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Existing deal ID (leave blank to create new deal)
+              </label>
+              <input
+                type="text"
+                value={pipedriveDealInput}
+                onChange={e => setPipedriveDealInput(e.target.value)}
+                placeholder="e.g. 12345"
+                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+              />
+              <p className="text-xs text-gray-400 mt-0.5">From the deal URL: pipedrive.com/deal/<strong>12345</strong></p>
+            </div>
+            <div className="flex flex-col items-end gap-2 pb-5">
+              <button
+                onClick={handleSendToPipedrive}
+                disabled={sendingPipedrive}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed bg-[#1a2e3b] text-white hover:bg-[#2e3847]"
+              >
+                {sendingPipedrive
+                  ? <><div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" /> Sending…</>
                   : <><Send className="w-4 h-4" /> Send to Pipedrive</>
-              }
-            </button>
-            {pipedriveError && (
-              <p className="text-xs text-red-600 text-right max-w-xs">{pipedriveError}</p>
-            )}
+                }
+              </button>
+              {pipedriveError && (
+                <p className="text-xs text-red-600 text-right max-w-xs">{pipedriveError}</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {(quote.status === 'accepted' || quote.accepted_at) && (
