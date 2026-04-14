@@ -346,37 +346,40 @@ export function SiteSettings() {
 
               <div>
                 <label className="block text-sm font-semibold text-[#3A475B] mb-2">
-                  Pipedrive Deal ID
+                  Default Deal ID for Document Notifications
                 </label>
                 <input
                   type="text"
                   value={pipedriveDealId}
                   onChange={(e) => setPipedriveDealId(e.target.value)}
                   placeholder="e.g. 12345"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  The numeric ID from the deal URL in Pipedrive
+                  When a client completes all document uploads, a note is posted to this deal. Individual proposals can be sent to any deal from the Quotes list.
                 </p>
               </div>
             </div>
 
-            {pipedriveApiKey && pipedriveDealId && (
+            {pipedriveApiKey && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-800">
-                  Pipedrive is configured. A note will be posted to deal <strong>#{pipedriveDealId}</strong> when all client documents are uploaded.
-                </p>
+                <div className="text-sm text-green-800 space-y-0.5">
+                  <p className="font-semibold">Pipedrive API is configured.</p>
+                  {pipedriveDealId
+                    ? <p>Document upload notifications will be posted to deal <strong>#{pipedriveDealId}</strong>.</p>
+                    : <p className="text-green-700">No default deal ID set — document upload notifications will be skipped. You can still send individual proposals to any deal from the Quotes list.</p>
+                  }
+                </div>
               </div>
             )}
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">What gets posted to Pipedrive:</h4>
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">How Pipedrive integration works:</h4>
               <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                <li>Client name, company, and email</li>
-                <li>Proposal number and project cost</li>
-                <li>List of all uploaded document names</li>
-                <li>Timestamp of completion</li>
+                <li>From the <strong>Quotes list</strong>, use "Send to Pipedrive" on any proposal — enter an existing deal ID to attach to it, or leave blank to create a new deal automatically</li>
+                <li>When a client completes all document uploads, a note is automatically added to the default deal ID configured above</li>
+                <li>Each synced proposal stores a direct link back to its Pipedrive deal</li>
               </ul>
             </div>
           </div>

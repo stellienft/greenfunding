@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { quoteId } = await req.json();
+    const { quoteId, existingDealId } = await req.json();
     if (!quoteId) {
       return new Response(JSON.stringify({ error: 'quoteId is required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,74 +120,92 @@ Deno.serve(async (req: Request) => {
 
     const quoteNum = formatQuoteNumber(quote.quote_number);
     const clientName = quote.recipient_company || quote.recipient_name || 'Unknown Client';
-    const dealTitle = `${quoteNum} — ${clientName}`;
-
-    const personPayload: Record<string, unknown> = {
-      name: quote.recipient_name || clientName,
-    };
-    if (quote.recipient_email) {
-      personPayload.email = [{ value: quote.recipient_email, primary: true }];
-    }
-    if (quote.client_phone) {
-      personPayload.phone = [{ value: quote.client_phone, primary: true }];
-    }
-
-    const personRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(personPayload),
-    });
-    const personJson = await personRes.json();
-    const personId = personJson?.data?.id;
-
-    let orgId: number | undefined;
-    if (quote.recipient_company) {
-      const orgRes = await fetch(`https://api.pipedrive.com/v1/organizations?api_token=${apiToken}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: quote.recipient_company }),
-      });
-      const orgJson = await orgRes.json();
-      orgId = orgJson?.data?.id;
-    }
 
     const lowestTerm = quote.term_options?.length
       ? quote.term_options.reduce((a: { years: number }, b: { years: number }) => a.years < b.years ? a : b)
       : null;
 
-    const dealPayload: Record<string, unknown> = {
-      title: dealTitle,
-      value: quote.project_cost,
-      currency: 'AUD',
-      status: 'open',
-    };
-    if (personId) dealPayload.person_id = personId;
-    if (orgId) dealPayload.org_id = orgId;
+    let dealId: number;
+    let dealUrl: string;
 
-    const dealRes = await fetch(`https://api.pipedrive.com/v1/deals?api_token=${apiToken}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dealPayload),
-    });
+    if (existingDealId) {
+      const verifyRes = await fetch(`https://api.pipedrive.com/v1/deals/${existingDealId}?api_token=${apiToken}`);
+      if (!verifyRes.ok) {
+        return new Response(JSON.stringify({ error: `Could not find Pipedrive deal #${existingDealId}. Please check the deal ID and try again.` }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const verifyJson = await verifyRes.json();
+      if (!verifyJson?.data?.id) {
+        return new Response(JSON.stringify({ error: `Pipedrive deal #${existingDealId} not found.` }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      dealId = verifyJson.data.id;
+      dealUrl = `https://app.pipedrive.com/deal/${dealId}`;
+    } else {
+      const dealTitle = `${quoteNum} — ${clientName}`;
 
-    if (!dealRes.ok) {
-      const body = await dealRes.text();
-      console.error('Pipedrive deal creation error:', dealRes.status, body);
-      return new Response(JSON.stringify({ error: `Pipedrive API error: ${dealRes.status}` }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      const personPayload: Record<string, unknown> = {
+        name: quote.recipient_name || clientName,
+      };
+      if (quote.recipient_email) {
+        personPayload.email = [{ value: quote.recipient_email, primary: true }];
+      }
+      if (quote.client_phone) {
+        personPayload.phone = [{ value: quote.client_phone, primary: true }];
+      }
+
+      const personRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(personPayload),
       });
-    }
+      const personJson = await personRes.json();
+      const personId = personJson?.data?.id;
 
-    const dealJson = await dealRes.json();
-    const dealId = dealJson?.data?.id;
-    const dealUrl = dealJson?.data?.id
-      ? `https://app.pipedrive.com/deal/${dealJson.data.id}`
-      : null;
+      let orgId: number | undefined;
+      if (quote.recipient_company) {
+        const orgRes = await fetch(`https://api.pipedrive.com/v1/organizations?api_token=${apiToken}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: quote.recipient_company }),
+        });
+        const orgJson = await orgRes.json();
+        orgId = orgJson?.data?.id;
+      }
 
-    if (!dealId) {
-      return new Response(JSON.stringify({ error: 'Failed to create Pipedrive deal' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      const dealPayload: Record<string, unknown> = {
+        title: dealTitle,
+        value: quote.project_cost,
+        currency: 'AUD',
+        status: 'open',
+      };
+      if (personId) dealPayload.person_id = personId;
+      if (orgId) dealPayload.org_id = orgId;
+
+      const dealRes = await fetch(`https://api.pipedrive.com/v1/deals?api_token=${apiToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dealPayload),
       });
+
+      if (!dealRes.ok) {
+        const body = await dealRes.text();
+        console.error('Pipedrive deal creation error:', dealRes.status, body);
+        return new Response(JSON.stringify({ error: `Pipedrive API error: ${dealRes.status}` }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const dealJson = await dealRes.json();
+      if (!dealJson?.data?.id) {
+        return new Response(JSON.stringify({ error: 'Failed to create Pipedrive deal' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      dealId = dealJson.data.id;
+      dealUrl = `https://app.pipedrive.com/deal/${dealId}`;
     }
 
     const requiredKeys = getRequiredDocKeys(quote.project_cost);

@@ -307,6 +307,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendingPipedrive, setSendingPipedrive] = useState(false);
   const [pipedriveError, setPipedriveError] = useState<string | null>(null);
+  const [pipedriveDealInput, setPipedriveDealInput] = useState('');
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -332,6 +333,9 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
     setSendingPipedrive(true);
     setPipedriveError(null);
     try {
+      const body: Record<string, unknown> = { quoteId: quote.id };
+      const trimmed = pipedriveDealInput.trim();
+      if (trimmed) body.existingDealId = trimmed;
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipedrive-sync`,
         {
@@ -340,11 +344,12 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ quoteId: quote.id }),
+          body: JSON.stringify(body),
         }
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to sync to Pipedrive');
+      setPipedriveDealInput('');
       onQuoteUpdated();
     } catch (err: any) {
       setPipedriveError(err.message || 'Failed to sync to Pipedrive');
@@ -486,38 +491,47 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
       )}
 
       <div className="mt-5 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5 flex items-center gap-1.5">
-              <img src="https://www.pipedrive.com/favicon.ico" alt="" className="w-3.5 h-3.5" onError={e => (e.currentTarget.style.display = 'none')} />
-              Pipedrive CRM
-            </p>
-            {quote.pipedrive_synced_at ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Sent to Pipedrive
-                </span>
-                <span className="text-xs text-gray-400">
-                  {new Date(quote.pipedrive_synced_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </span>
-                {quote.pipedrive_deal_url && (
-                  <a
-                    href={quote.pipedrive_deal_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-[#28AA48] font-semibold hover:underline"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    View Deal
-                  </a>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">Not yet sent to Pipedrive</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+          <img src="https://www.pipedrive.com/favicon.ico" alt="" className="w-3.5 h-3.5" onError={e => (e.currentTarget.style.display = 'none')} />
+          Pipedrive CRM
+        </p>
+        {quote.pipedrive_synced_at && (
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3" />
+              Sent to Pipedrive
+            </span>
+            <span className="text-xs text-gray-400">
+              {new Date(quote.pipedrive_synced_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+            {quote.pipedrive_deal_url && (
+              <a
+                href={quote.pipedrive_deal_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-[#28AA48] font-semibold hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                View Deal #{quote.pipedrive_deal_id}
+              </a>
             )}
           </div>
-          <div className="flex flex-col items-end gap-2">
+        )}
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-semibold text-gray-500 mb-1">
+              {quote.pipedrive_synced_at ? 'Re-sync to deal (leave blank to create new)' : 'Existing deal ID (leave blank to create new deal)'}
+            </label>
+            <input
+              type="text"
+              value={pipedriveDealInput}
+              onChange={e => setPipedriveDealInput(e.target.value)}
+              placeholder="e.g. 12345"
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
+            />
+            <p className="text-xs text-gray-400 mt-0.5">From the deal URL: pipedrive.com/deal/<strong>12345</strong></p>
+          </div>
+          <div className="flex flex-col items-end gap-2 pb-5">
             <button
               onClick={handleSendToPipedrive}
               disabled={sendingPipedrive}
