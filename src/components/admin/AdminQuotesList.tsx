@@ -318,6 +318,13 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
     if (quote.status === 'accepted' || quote.accepted_at) {
       loadUploads();
     }
+    if (quote.pipedrive_deal_id) {
+      const lastUpdated = quote.pipedrive_stage_updated_at ? new Date(quote.pipedrive_stage_updated_at).getTime() : 0;
+      const staleThreshold = 24 * 60 * 60 * 1000;
+      if (Date.now() - lastUpdated > staleThreshold) {
+        refreshStage(true);
+      }
+    }
   }, [quote.id]);
 
   async function loadUploads() {
@@ -354,6 +361,10 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to sync to Pipedrive');
+      if (json.stageName) {
+        setStageName(json.stageName);
+        setStageUpdatedAt(new Date().toISOString());
+      }
       setPipedriveDealInput('');
       onQuoteUpdated();
     } catch (err: any) {
@@ -363,8 +374,8 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
     }
   }
 
-  async function refreshStage() {
-    setRefreshingStage(true);
+  async function refreshStage(silent = false) {
+    if (!silent) setRefreshingStage(true);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipedrive-deal-status`,
@@ -383,7 +394,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         setStageUpdatedAt(new Date().toISOString());
       }
     } finally {
-      setRefreshingStage(false);
+      if (!silent) setRefreshingStage(false);
     }
   }
 
