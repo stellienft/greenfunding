@@ -29,6 +29,8 @@ interface SentQuote {
   payment_timing: string;
   status: string;
   pdf_url: string | null;
+  pipedrive_synced_at: string | null;
+  pipedrive_deal_url: string | null;
 }
 
 interface UploadedFile {
@@ -496,6 +498,12 @@ export function QuoteDetail() {
                   {alreadySubmitted && (
                     <span className="inline-block mt-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
                       Application Submitted
+                    </span>
+                  )}
+                  {quote.pipedrive_synced_at && (
+                    <span className="inline-flex items-center gap-1 mt-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" />
+                      In Pipedrive
                     </span>
                   )}
                 </div>

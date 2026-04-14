@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   FileText, Calendar, User, Building2, MapPin, Download,
   ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen,
-  Send, AlertCircle, ExternalLink
+  Send, AlertCircle, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -67,6 +67,9 @@ interface AdminQuote {
   pdf_url: string | null;
   accepted_at: string | null;
   upload_token: string | null;
+  pipedrive_synced_at: string | null;
+  pipedrive_deal_id: string | null;
+  pipedrive_deal_url: string | null;
   installer: {
     full_name: string | null;
     company_name: string | null;
@@ -302,6 +305,8 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [uploads, setUploads] = useState<DocumentUpload[]>([]);
   const [loadingUploads, setLoadingUploads] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [sendingPipedrive, setSendingPipedrive] = useState(false);
+  const [pipedriveError, setPipedriveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -320,6 +325,31 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
       if (json.uploads) setUploads(json.uploads);
     } finally {
       setLoadingUploads(false);
+    }
+  }
+
+  async function handleSendToPipedrive() {
+    setSendingPipedrive(true);
+    setPipedriveError(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pipedrive-sync`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quoteId: quote.id }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to sync to Pipedrive');
+      onQuoteUpdated();
+    } catch (err: any) {
+      setPipedriveError(err.message || 'Failed to sync to Pipedrive');
+    } finally {
+      setSendingPipedrive(false);
     }
   }
 
@@ -454,6 +484,62 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
           }}
         />
       )}
+
+      <div className="mt-5 pt-4 border-t border-gray-200">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5 flex items-center gap-1.5">
+              <img src="https://www.pipedrive.com/favicon.ico" alt="" className="w-3.5 h-3.5" onError={e => (e.currentTarget.style.display = 'none')} />
+              Pipedrive CRM
+            </p>
+            {quote.pipedrive_synced_at ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Sent to Pipedrive
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(quote.pipedrive_synced_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+                {quote.pipedrive_deal_url && (
+                  <a
+                    href={quote.pipedrive_deal_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-[#28AA48] font-semibold hover:underline"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    View Deal
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">Not yet sent to Pipedrive</p>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={handleSendToPipedrive}
+              disabled={sendingPipedrive}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                quote.pipedrive_synced_at
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-[#1a2e3b] text-white hover:bg-[#2e3847]'
+              }`}
+            >
+              {sendingPipedrive
+                ? <><div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" /> Sending…</>
+                : quote.pipedrive_synced_at
+                  ? <><RefreshCw className="w-4 h-4" /> Re-sync to Pipedrive</>
+                  : <><Send className="w-4 h-4" /> Send to Pipedrive</>
+              }
+            </button>
+            {pipedriveError && (
+              <p className="text-xs text-red-600 text-right max-w-xs">{pipedriveError}</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {(quote.status === 'accepted' || quote.accepted_at) && (
         <div className="mt-5 pt-4 border-t border-gray-200">
@@ -729,6 +815,12 @@ export function AdminQuotesList() {
                           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${calcTypeColor(q.calculator_type)}`}>
                             {calcTypeLabel(q.calculator_type)}
                           </span>
+                          {q.pipedrive_synced_at && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              <CheckCircle2 className="w-3 h-3" />
+                              In Pipedrive
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                           <span className="text-xs text-[#28AA48] font-semibold">{formatQuoteNumber(q.quote_number)}</span>
