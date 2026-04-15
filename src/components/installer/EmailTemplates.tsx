@@ -32,66 +32,6 @@ function buildTemplates(
       subject: resolved(introSubject),
       body: resolved(introBody),
     },
-    {
-      id: 'drivers_licence',
-      title: 'Request: Drivers Licence & Medicare Card',
-      description: 'Send to request the first low doc requirement.',
-      subject: 'Action Required: Drivers Licence & Medicare Card',
-      body: `Hi [Client Name],
-
-As part of the low doc finance application process with Green Funding, we require a copy of the following documents from each company director:
-
-  • Drivers Licence (front and back)
-  • Medicare Card
-
-These are used for identity verification purposes and are handled securely.
-
-Please reply to this email with clear photos or scans at your earliest convenience.
-
-If you have any questions, feel free to get in touch.
-
-Kind regards,
-${installerName}
-${installerCompany}`,
-    },
-    {
-      id: 'privacy_consent',
-      title: 'Request: Privacy Consent Form',
-      description: 'Send to request the Privacy Consent document.',
-      subject: 'Action Required: Privacy Consent Form',
-      body: `Hi [Client Name],
-
-To proceed with your Green Funding finance application, we need you to complete and return a signed Privacy Consent Form.
-
-This form authorises Green Funding to conduct the necessary checks as part of the application process.
-
-Please download, sign, and return the form by replying to this email.
-
-If you have any questions about the form or the process, please don't hesitate to reach out.
-
-Kind regards,
-${installerName}
-${installerCompany}`,
-    },
-    {
-      id: 'asset_liability',
-      title: 'Request: Asset & Liability Statement',
-      description: 'Send to request the Asset & Liability Statement.',
-      subject: 'Action Required: Asset & Liability Statement',
-      body: `Hi [Client Name],
-
-As part of your Green Funding finance application, we require a completed Asset & Liability Statement from each company director.
-
-This document provides a snapshot of your personal financial position and is a standard requirement for low doc finance applications.
-
-Please download the form, complete all sections, and return it to us by replying to this email.
-
-If you need any guidance filling out the form, I'm happy to assist.
-
-Kind regards,
-${installerName}
-${installerCompany}`,
-    },
   ];
 }
 
