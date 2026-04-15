@@ -337,7 +337,7 @@ export function Step1() {
                   )}
                 </div>
 
-                <div className="bg-[#34AC48] rounded-2xl p-4 mb-2 text-center">
+                <div className="bg-[#34AC48] rounded-2xl p-4 mb-4 text-center">
                   <div className="text-white text-4xl font-bold mb-1">
                     {formatCurrency(projectCost)}
                   </div>
@@ -346,14 +346,6 @@ export function Step1() {
                   </div>
                 </div>
 
-                {config.gstEnabled && (
-                  <div className="text-center text-sm text-gray-500 mb-4">
-                    {gstMode === 'inc'
-                      ? `Ex. GST: ${formatCurrency(Math.round((projectCost / (1 + (config.gstRate ?? 0.1))) * 100) / 100)}`
-                      : `Inc. GST: ${formatCurrency(Math.round(projectCost * (1 + (config.gstRate ?? 0.1)) * 100) / 100)}`
-                    }
-                  </div>
-                )}
 
                 <div className="mb-4">
                   <input
