@@ -25,6 +25,7 @@ export function Step1() {
   const [residualPercentage, setResidualPercentage] = useState<number | undefined>(state.residualPercentage);
   const [paymentTiming, setPaymentTiming] = useState<'advance' | 'arrears'>(state.paymentTiming || 'arrears');
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [gstMode, setGstMode] = useState<'inc' | 'ex'>('inc');
 
   useEffect(() => {
     if (config && !state.projectCost) {
@@ -110,8 +111,12 @@ export function Step1() {
       return;
     }
 
+    const projectCostIncGst = gstMode === 'ex' && config.gstEnabled
+      ? Math.round(projectCost * (1 + (config.gstRate ?? 0.1)) * 100) / 100
+      : projectCost;
+
     updateState({
-      projectCost,
+      projectCost: projectCostIncGst,
       selectedAssetIds: selectedAssets,
       annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
       currentElectricityBill: hasEnergyGenerationAsset() ? currentElectricityBill : undefined,
@@ -162,8 +167,12 @@ export function Step1() {
         return;
       }
 
+      const projectCostIncGstModal = gstMode === 'ex' && config.gstEnabled
+        ? Math.round(projectCost * (1 + (config.gstRate ?? 0.1)) * 100) / 100
+        : projectCost;
+
       updateState({
-        projectCost,
+        projectCost: projectCostIncGstModal,
         selectedAssetIds: selectedAssets,
         annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
         specialPricingRequested: true,
@@ -292,11 +301,43 @@ export function Step1() {
               </div>
 
               <div>
-                <label className="block text-base font-semibold text-[#3A475B] mb-3">
-                  Invoice Amount (inc. GST)
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-base font-semibold text-[#3A475B]">
+                    Invoice Amount ({gstMode === 'inc' ? 'inc. GST' : 'ex. GST'})
+                  </label>
+                  {config.gstEnabled && (
+                    <div className="flex items-center bg-gray-100 rounded-lg p-0.5 text-xs font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (gstMode !== 'inc') {
+                            const gstRate = config.gstRate ?? 0.1;
+                            setProjectCost(Math.round(projectCost * (1 + gstRate) * 100) / 100);
+                            setGstMode('inc');
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-md transition-all ${gstMode === 'inc' ? 'bg-[#34AC48] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Inc. GST
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (gstMode !== 'ex') {
+                            const gstRate = config.gstRate ?? 0.1;
+                            setProjectCost(Math.round((projectCost / (1 + gstRate)) * 100) / 100);
+                            setGstMode('ex');
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-md transition-all ${gstMode === 'ex' ? 'bg-[#34AC48] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Ex. GST
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-                <div className="bg-[#34AC48] rounded-2xl p-4 mb-4 text-center">
+                <div className="bg-[#34AC48] rounded-2xl p-4 mb-2 text-center">
                   <div className="text-white text-4xl font-bold mb-1">
                     {formatCurrency(projectCost)}
                   </div>
@@ -304,6 +345,15 @@ export function Step1() {
                     Total Invoice Amount
                   </div>
                 </div>
+
+                {config.gstEnabled && (
+                  <div className="text-center text-sm text-gray-500 mb-4">
+                    {gstMode === 'inc'
+                      ? `Ex. GST: ${formatCurrency(Math.round((projectCost / (1 + (config.gstRate ?? 0.1))) * 100) / 100)}`
+                      : `Inc. GST: ${formatCurrency(Math.round(projectCost * (1 + (config.gstRate ?? 0.1)) * 100) / 100)}`
+                    }
+                  </div>
+                )}
 
                 <div className="mb-4">
                   <input
