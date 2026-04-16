@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
-import { supabase, Asset } from '../../lib/supabase';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Asset } from '../../lib/supabase';
+import { Plus, CreditCard as Edit2, Trash2, Save, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAdmin } from '../../context/AdminContext';
+
+const API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-assets`;
+const API_HEADERS = {
+  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+};
 
 export function AssetsManager() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -10,6 +17,7 @@ export function AssetsManager() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const { refreshAssets } = useApp();
+  const { admin } = useAdmin();
 
   useEffect(() => {
     loadAssets();
@@ -18,12 +26,13 @@ export function AssetsManager() {
   const loadAssets = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('assets')
-        .select('*')
-        .order('ordering');
-
-      if (error) throw error;
+      const res = await fetch(`${API_URL}?action=list`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify({ adminId: admin?.id }),
+      });
+      const { data, error } = await res.json();
+      if (error) throw new Error(error);
       if (data) setAssets(data);
     } catch (error) {
       console.error('Error loading assets:', error);
@@ -45,28 +54,34 @@ export function AssetsManager() {
       icon: 'Package',
       ordering: assets.length + 1,
       active: true,
-      risk_adjustment: 1.0
+      risk_adjustment: 1.0,
     });
   };
 
   const handleSave = async () => {
     try {
       if (creating) {
-        const { error } = await supabase.from('assets').insert(editForm);
-        if (error) throw error;
+        const res = await fetch(`${API_URL}?action=create`, {
+          method: 'POST',
+          headers: API_HEADERS,
+          body: JSON.stringify({ adminId: admin?.id, asset: editForm }),
+        });
+        const { error } = await res.json();
+        if (error) throw new Error(error);
       } else if (editing) {
-        const { error } = await supabase
-          .from('assets')
-          .update(editForm)
-          .eq('id', editing);
-        if (error) throw error;
+        const res = await fetch(`${API_URL}?action=update`, {
+          method: 'POST',
+          headers: API_HEADERS,
+          body: JSON.stringify({ adminId: admin?.id, id: editing, asset: editForm }),
+        });
+        const { error } = await res.json();
+        if (error) throw new Error(error);
       }
 
       setEditing(null);
       setCreating(false);
       setEditForm({});
 
-      // Refresh both local and global state
       await refreshAssets();
       await loadAssets();
     } catch (error: any) {
@@ -78,10 +93,14 @@ export function AssetsManager() {
     if (!confirm('Are you sure you want to delete this asset?')) return;
 
     try {
-      const { error } = await supabase.from('assets').delete().eq('id', id);
-      if (error) throw error;
+      const res = await fetch(`${API_URL}?action=delete`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify({ adminId: admin?.id, id }),
+      });
+      const { error } = await res.json();
+      if (error) throw new Error(error);
 
-      // Refresh both local and global state
       await refreshAssets();
       await loadAssets();
     } catch (error: any) {
@@ -118,9 +137,7 @@ export function AssetsManager() {
           <div className="bg-gray-50 border-2 border-[#28AA48] rounded-lg p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                  Name
-                </label>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-1">Name</label>
                 <input
                   type="text"
                   value={editForm.name || ''}
@@ -129,9 +146,7 @@ export function AssetsManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                  Icon (Lucide React)
-                </label>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-1">Icon (Lucide React)</label>
                 <input
                   type="text"
                   value={editForm.icon || ''}
@@ -140,9 +155,7 @@ export function AssetsManager() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                  Description
-                </label>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-1">Description</label>
                 <input
                   type="text"
                   value={editForm.description || ''}
@@ -151,9 +164,7 @@ export function AssetsManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                  Ordering
-                </label>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-1">Ordering</label>
                 <input
                   type="number"
                   value={editForm.ordering || 0}
@@ -162,9 +173,7 @@ export function AssetsManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                  Risk Adjustment
-                </label>
+                <label className="block text-sm font-semibold text-[#3A475B] mb-1">Risk Adjustment</label>
                 <input
                   type="number"
                   value={editForm.risk_adjustment || 1.0}
@@ -205,18 +214,13 @@ export function AssetsManager() {
         {assets.map(asset => (
           <div
             key={asset.id}
-            className={`
-              bg-white border rounded-lg p-4
-              ${editing === asset.id ? 'border-[#28AA48] border-2' : 'border-gray-200'}
-            `}
+            className={`bg-white border rounded-lg p-4 ${editing === asset.id ? 'border-[#28AA48] border-2' : 'border-gray-200'}`}
           >
             {editing === asset.id ? (
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                      Name
-                    </label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">Name</label>
                     <input
                       type="text"
                       value={editForm.name || ''}
@@ -225,9 +229,7 @@ export function AssetsManager() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                      Icon
-                    </label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">Icon</label>
                     <input
                       type="text"
                       value={editForm.icon || ''}
@@ -236,9 +238,7 @@ export function AssetsManager() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                      Description
-                    </label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">Description</label>
                     <input
                       type="text"
                       value={editForm.description || ''}
@@ -247,9 +247,7 @@ export function AssetsManager() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                      Ordering
-                    </label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">Ordering</label>
                     <input
                       type="number"
                       value={editForm.ordering || 0}
@@ -258,9 +256,7 @@ export function AssetsManager() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">
-                      Risk Adjustment
-                    </label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1">Risk Adjustment</label>
                     <input
                       type="number"
                       value={editForm.risk_adjustment || 1.0}
@@ -302,9 +298,7 @@ export function AssetsManager() {
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-bold text-[#3A475B]">{asset.name}</h3>
                     {!asset.active && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                        Inactive
-                      </span>
+                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Inactive</span>
                     )}
                   </div>
                   <p className="text-sm text-gray-600">{asset.description}</p>
