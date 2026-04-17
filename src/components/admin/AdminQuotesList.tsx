@@ -314,6 +314,9 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [stageName, setStageName] = useState<string | null>(quote.pipedrive_stage_name);
   const [stageUpdatedAt, setStageUpdatedAt] = useState<string | null>(quote.pipedrive_stage_updated_at);
   const [refreshingStage, setRefreshingStage] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resentOk, setResentOk] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -399,6 +402,31 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
     }
   }
 
+  async function handleResend() {
+    setResending(true);
+    setResendError(null);
+    setResentOk(false);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-quote-email?mode=send-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ quoteId: quote.id }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Failed to resend');
+      setResentOk(true);
+      setTimeout(() => setResentOk(false), 4000);
+    } catch (err: any) {
+      setResendError(err.message || 'Failed to resend proposal');
+    } finally {
+      setResending(false);
+    }
+  }
+
   const appUrl = window.location.origin;
   const uploadPageUrl = quote.upload_token ? `${appUrl}/upload-documents/${quote.upload_token}` : null;
 
@@ -408,15 +436,14 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Client Details</p>
           <div className="space-y-1">
-            {quote.recipient_name && <p className="text-sm text-gray-700">{quote.recipient_name}</p>}
-            {quote.recipient_company && <p className="text-sm text-gray-500">{quote.recipient_company}</p>}
+            {quote.recipient_company && <p className="text-sm text-gray-700">{quote.recipient_company}</p>}
+            {quote.recipient_name && quote.recipient_name !== quote.recipient_company && (
+              <p className="text-sm text-gray-500">{quote.recipient_name}</p>
+            )}
             {quote.recipient_email && <p className="text-sm text-gray-500">{quote.recipient_email}</p>}
             {quote.client_phone && <p className="text-sm text-gray-500">{quote.client_phone}</p>}
             {quote.site_address && (
-              <p className="flex items-center gap-1 text-sm text-gray-500">
-                <MapPin className="w-3 h-3 flex-shrink-0" />
-                {quote.site_address}
-              </p>
+              <p className="text-sm text-gray-500">{quote.site_address}</p>
             )}
           </div>
         </div>
@@ -497,8 +524,8 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         </div>
       )}
 
-      {quote.pdf_url && (
-        <div className="mt-4">
+      <div className="mt-4 flex items-center flex-wrap gap-2">
+        {quote.pdf_url && (
           <a
             href={quote.pdf_url}
             target="_blank"
@@ -508,8 +535,19 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             <Download className="w-4 h-4" />
             Download Proposal PDF
           </a>
-        </div>
-      )}
+        )}
+        {quote.recipient_email && (
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-[#3A475B] transition-colors disabled:opacity-60"
+          >
+            {resending ? <Loader className="w-4 h-4 animate-spin" /> : resentOk ? <CheckCircle2 className="w-4 h-4 text-[#28AA48]" /> : <Send className="w-4 h-4" />}
+            {resentOk ? 'Proposal Sent!' : 'Resend Proposal'}
+          </button>
+        )}
+        {resendError && <p className="text-xs text-red-500">{resendError}</p>}
+      </div>
 
       {!quote.accepted_at && quote.status !== 'accepted' && (
         <div className="mt-5 pt-4 border-t border-gray-200">
