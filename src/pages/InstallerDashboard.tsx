@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
 import {
   FileText, TrendingUp, ArrowRight,
-  DollarSign, Tag, MapPin, Calculator, Users
+  DollarSign, Tag, MapPin, Calculator, Users, CheckCircle2
 } from 'lucide-react';
 import { InstallerEmailTemplates } from '../components/installer/EmailTemplates';
 
@@ -21,6 +21,8 @@ interface QuoteSummary {
   status: string;
   site_address: string | null;
   term_options: Array<{ years: number; monthlyPayment: number }>;
+  pipedrive_synced_at: string | null;
+  pipedrive_stage_name: string | null;
 }
 
 interface MonthlyCount {
@@ -87,7 +89,7 @@ export function InstallerDashboard() {
       const [quotesResult, configResult] = await Promise.all([
         supabase
           .from('sent_quotes')
-          .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options')
+          .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options, pipedrive_synced_at, pipedrive_stage_name')
           .eq('installer_id', installerProfile.id)
           .order('created_at', { ascending: false }),
         supabase
@@ -217,7 +219,7 @@ export function InstallerDashboard() {
               <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                 <FileText className="w-4 h-4 text-blue-600" />
               </div>
-              <span className="text-xs font-medium text-gray-500">Total Quotes</span>
+              <span className="text-xs font-medium text-gray-500">Total Proposals</span>
             </div>
             <div className="text-3xl font-bold text-[#3A475B]">{quoteCount}</div>
             <div className="text-xs text-gray-400 mt-1">Finance calculations</div>
@@ -255,7 +257,7 @@ export function InstallerDashboard() {
 
         {monthlyData.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-[#3A475B] mb-4">Quote Activity (Last 6 Months)</h3>
+            <h3 className="text-sm font-semibold text-[#3A475B] mb-4">Proposal Activity (Last 6 Months)</h3>
             <MiniBar data={monthlyData} />
             <div className="flex justify-between mt-2">
               {monthlyData.map((d, i) => (
@@ -267,7 +269,7 @@ export function InstallerDashboard() {
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#3A475B]">Recent Quotes</h3>
+            <h3 className="text-sm font-semibold text-[#3A475B]">Recent Proposals</h3>
             <button
               onClick={() => navigate('/quotes')}
               className="flex items-center gap-1 text-xs font-medium text-[#6EAE3C] hover:underline"
@@ -284,7 +286,7 @@ export function InstallerDashboard() {
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FileText className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-sm text-gray-500">No quotes yet — use the calculator above to get started</p>
+              <p className="text-sm text-gray-500">No proposals yet — use the calculator above to get started</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
@@ -306,6 +308,18 @@ export function InstallerDashboard() {
                         <span className="text-sm font-semibold text-[#3A475B] truncate">
                           {q.recipient_company || q.recipient_name || 'Unnamed Client'}
                         </span>
+                        {q.pipedrive_stage_name && (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
+                            {q.pipedrive_stage_name}
+                          </span>
+                        )}
+                        {q.pipedrive_synced_at && !q.pipedrive_stage_name && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Submitted
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                         <span className="text-xs text-[#28AA48] font-semibold">{formatQuoteNumber(q.quote_number)}</span>

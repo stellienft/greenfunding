@@ -21,7 +21,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, matchPrefix: '/dashboard' },
   { path: '/calculator/step1', label: 'Calculator', icon: Calculator, matchPrefix: '/calculator' },
-  { path: '/quotes', label: 'My Quotes', icon: FileText },
+  { path: '/quotes', label: 'My Proposals', icon: FileText },
   { path: '/my-account', label: 'My Account', icon: User },
   { path: '/support', label: 'Support', icon: LifeBuoy },
 ];

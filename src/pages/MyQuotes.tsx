@@ -39,7 +39,7 @@ function statusBadge(status: string) {
     case 'application_started':
       return { label: 'Application Started', cls: 'bg-blue-100 text-blue-800 border-blue-200' };
     default:
-      return { label: 'Quote Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
+      return { label: 'Proposal Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
   }
 }
 
@@ -91,7 +91,7 @@ export function MyQuotes() {
       setQuotes(prev => prev.filter(q => q.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch {
-      alert('Failed to delete quote. Please try again.');
+      alert('Failed to delete proposal. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -101,8 +101,8 @@ export function MyQuotes() {
     <InstallerLayout>
       <div className="max-w-5xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#3A475B] mb-1">My Quotes</h1>
-            <p className="text-gray-500 text-sm">View and continue quotes you have generated for your clients</p>
+            <h1 className="text-3xl font-bold text-[#3A475B] mb-1">My Proposals</h1>
+            <p className="text-gray-500 text-sm">View and continue proposals you have generated for your clients</p>
           </div>
 
           {loading ? (
@@ -118,9 +118,9 @@ export function MyQuotes() {
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold text-[#3A475B] mb-2">No quotes yet</h3>
+              <h3 className="text-lg font-bold text-[#3A475B] mb-2">No proposals yet</h3>
               <p className="text-gray-500 text-sm mb-6">
-                Generate a quote from the calculator to get started.
+                Generate a proposal from the calculator to get started.
               </p>
               <button
                 onClick={() => navigate('/dashboard')}
@@ -159,16 +159,16 @@ export function MyQuotes() {
                               <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${badge.cls}`}>
                                 {badge.label}
                               </span>
-                              {q.pipedrive_synced_at && (
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  In Pipedrive
-                                </span>
-                              )}
                               {q.pipedrive_synced_at && q.pipedrive_stage_name && (
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2.5 py-0.5 rounded-full">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
                                   {q.pipedrive_stage_name}
+                                </span>
+                              )}
+                              {q.pipedrive_synced_at && !q.pipedrive_stage_name && (
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Submitted
                                 </span>
                               )}
                             </div>
@@ -209,7 +209,7 @@ export function MyQuotes() {
                           <button
                             onClick={e => { e.stopPropagation(); setDeleteTarget(q); }}
                             className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete quote"
+                            title="Delete proposal"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -249,9 +249,9 @@ export function MyQuotes() {
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <h2 className="text-base font-bold text-[#3A475B] mb-2">Delete Quote?</h2>
+            <h2 className="text-base font-bold text-[#3A475B] mb-2">Delete Proposal?</h2>
             <p className="text-sm text-gray-500 mb-6">
-              This will permanently delete quote {formatQuoteNumber(deleteTarget.quote_number)} for <strong>{deleteTarget.recipient_company || deleteTarget.recipient_name || 'this client'}</strong>. This action cannot be undone.
+              This will permanently delete proposal {formatQuoteNumber(deleteTarget.quote_number)} for <strong>{deleteTarget.recipient_company || deleteTarget.recipient_name || 'this client'}</strong>. This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
