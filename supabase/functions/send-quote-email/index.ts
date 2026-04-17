@@ -1158,6 +1158,8 @@ Deno.serve(async (req: Request) => {
       introEmailBody,
       annualSolarGenerationKwh,
       energySavings,
+      currentElectricityBill,
+      anticipatedElectricityBillWithSolar,
       disclaimerText,
       installerEmail: payloadInstallerEmail,
       installerPhone: payloadInstallerPhone,
@@ -1297,6 +1299,10 @@ Deno.serve(async (req: Request) => {
         term_options: termOptions,
         payment_timing: paymentTiming || 'arrears',
         calculator_type: calculatorType || 'rental',
+        annual_solar_generation_kwh: annualSolarGenerationKwh || null,
+        energy_savings: energySavings || null,
+        current_electricity_bill: currentElectricityBill || null,
+        anticipated_electricity_bill_with_solar: anticipatedElectricityBillWithSolar ?? null,
       })
       .select('id, quote_number, created_at')
       .single();
