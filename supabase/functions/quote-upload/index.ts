@@ -204,40 +204,19 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
 
           const pipedriveApiKey = siteSettings?.pipedrive_api_key;
-          const pipedriveDealId = siteSettings?.pipedrive_deal_id;
 
           if (pipedriveApiKey) {
-            const docList = uploads.map((u: any) =>
-              `• ${formatDocType(u.document_type)} (${u.file_name})`
-            ).join('\n');
-
-            const noteContent = [
-              `✅ All documents uploaded — ${quoteNum}`,
-              ``,
-              `Client: ${clientName}`,
-              quote.recipient_email ? `Email: ${quote.recipient_email}` : '',
-              `Project Cost: ${formatCurrency(quote.project_cost)}`,
-              `Completed: ${new Date().toLocaleString('en-AU', { timeZone: 'Australia/Brisbane' })}`,
-              ``,
-              `Uploaded Documents (${uploads.length}):`,
-              docList,
-            ].filter(line => line !== null && line !== undefined).join('\n');
-
-            const noteDealId = quote.pipedrive_deal_id || pipedriveDealId;
-            if (noteDealId) {
-              await postPipedriveNote(pipedriveApiKey, noteDealId, noteContent);
-            }
-
-            const pipelineId = siteSettings?.pipedrive_pipeline_id;
-            const stageId = siteSettings?.pipedrive_stage_id;
-            if (quote.pipedrive_deal_id && stageId) {
-              const updatePayload: Record<string, unknown> = { stage_id: Number(stageId) };
-              if (pipelineId) updatePayload.pipeline_id = Number(pipelineId);
-              await fetch(`https://api.pipedrive.com/v1/deals/${quote.pipedrive_deal_id}?api_token=${pipedriveApiKey}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatePayload),
-              });
+            const syncRes = await fetch(`${supabaseUrl}/functions/v1/pipedrive-sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ quoteId: quote.id }),
+            });
+            if (!syncRes.ok) {
+              const body = await syncRes.text();
+              console.error('Auto pipedrive-sync failed:', syncRes.status, body);
             }
           }
 
