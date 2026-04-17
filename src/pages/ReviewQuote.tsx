@@ -392,7 +392,7 @@ export function ReviewQuote() {
                             {term.years} Year{term.years !== 1 ? 's' : ''}
                           </td>
                           <td className="py-3 text-right text-sm font-bold text-[#3A475B]">
-                            {formatCurrencyDecimals(term.monthlyPayment / 1.1)}/mo
+                            {formatCurrencyDecimals(term.monthlyPayment)}/mo
                           </td>
                         </tr>
                       ))}
