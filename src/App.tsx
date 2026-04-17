@@ -17,6 +17,7 @@ import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
 import { OnlineQuote } from './pages/OnlineQuote';
 import { ClientUploadDocuments } from './pages/ClientUploadDocuments';
+import { AcceptProposal } from './pages/AcceptProposal';
 import { Setup2FA } from './pages/Setup2FA';
 import { Verify2FA } from './pages/Verify2FA';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -161,6 +162,7 @@ function App() {
                 }
               />
               <Route path="/upload-documents/:token" element={<ClientUploadDocuments />} />
+              <Route path="/accept/:quoteId" element={<AcceptProposal />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route
