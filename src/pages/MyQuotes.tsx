@@ -250,12 +250,17 @@ function QuoteRow({ q, isLast, onNavigate, onDelete }: QuoteRowProps) {
             {badge.icon && <CheckCircle2 className="w-3 h-3" />}
             {badge.label}
           </span>
-          {q.pipedrive_stage_name && (
+          {q.pipedrive_stage_name ? (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
               {q.pipedrive_stage_name}
             </span>
-          )}
+          ) : (q.accepted_at && !q.pipedrive_synced_at) ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block flex-shrink-0"></span>
+              Pending CRM sync
+            </span>
+          ) : null}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs text-[#28AA48] font-semibold">{formatQuoteNumber(q.quote_number)}</span>
