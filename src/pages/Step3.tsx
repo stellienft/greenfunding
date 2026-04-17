@@ -39,7 +39,7 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
-  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: '' });
+  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: '', abn: '', entityName: '', incorporationDate: '', natureOfBusiness: '', clientPersonName: '', siteAddressSameAsCompany: false });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -350,8 +350,8 @@ export function Step3() {
           installerId: user?.id,
           recipientName: quoteClientFields.clientName.trim() || undefined,
           recipientEmail: quoteClientFields.clientEmail.trim() || undefined,
-          siteAddress: quoteClientFields.clientAddress.trim() || undefined,
-          clientPhone: quoteClientFields.companyPhone.trim() || undefined,
+          siteAddress: (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim() || undefined,
+          clientPhone: quoteClientFields.clientPhone.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
           annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
           energySavings: state.energySavings || undefined,
@@ -374,9 +374,9 @@ export function Step3() {
           pdfUrl: result.pdfUrl || null,
           quoteDate,
           clientName: quoteClientFields.clientName.trim(),
-          clientAddress: quoteClientFields.clientAddress.trim(),
+          clientAddress: (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim(),
           clientEmail: quoteClientFields.clientEmail.trim() || undefined,
-          clientPhone: quoteClientFields.companyPhone.trim() || undefined,
+          clientPhone: quoteClientFields.clientPhone.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
           projectCost: state.projectCost,
           assetNames: result.assetNames || [],
@@ -813,7 +813,7 @@ export function Step3() {
               quoteError={quoteError}
               generatedQuoteNumber={generatedQuoteNumber}
               clientFields={quoteClientFields}
-              onClientFieldChange={(field, value) => setQuoteClientFields(prev => ({ ...prev, [field]: value }))}
+              onClientFieldChange={(field, value) => setQuoteClientFields(prev => ({ ...prev, [field]: value as any }))}
               onGenerate={handleGenerateQuote}
               onReset={() => { setPdfGenerated(false); setQuoteError(null); setGeneratedQuoteNumber(null); }}
               formatCurrency={formatCurrency}
