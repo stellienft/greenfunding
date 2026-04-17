@@ -199,7 +199,6 @@ export function QuoteSection({
 
   const canSubmit =
     selectedQuoteTerms.length > 0 &&
-    clientFields.clientName.trim() !== '' &&
     clientFields.abn.trim() !== '' &&
     abnClean.length === 11 &&
     clientFields.natureOfBusiness.trim() !== '' &&
@@ -255,22 +254,6 @@ export function QuoteSection({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Company Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={clientFields.clientName}
-                    onChange={e => onClientFieldChange('clientName', e.target.value)}
-                    placeholder="e.g. Smith Enterprises"
-                    className={inputClass(touched && !clientFields.clientName.trim())}
-                  />
-                  {touched && !clientFields.clientName.trim() && (
-                    <p className="text-xs text-red-500 mt-1">Company name is required</p>
-                  )}
-                </div>
-
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">ABN <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
