@@ -73,6 +73,7 @@ export function InstallerDashboard() {
   const { installerProfile } = useAuth();
   const { updateState, resetState } = useApp();
   const [recentQuotes, setRecentQuotes] = useState<QuoteSummary[]>([]);
+  const [acceptedQuotes, setAcceptedQuotes] = useState<QuoteSummary[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyCount[]>([]);
   const [totalProjectValue, setTotalProjectValue] = useState(0);
   const [calcStates, setCalcStates] = useState<CalcConfig>({ rental: true, serviced_rental: false, progress_payment_rental: false });
@@ -86,11 +87,17 @@ export function InstallerDashboard() {
     if (!installerProfile) return;
     setLoading(true);
     try {
-      const [quotesResult, configResult] = await Promise.all([
+      const [quotesResult, acceptedResult, configResult] = await Promise.all([
         supabase
           .from('sent_quotes')
           .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options, pipedrive_synced_at, pipedrive_stage_name')
           .eq('installer_id', installerProfile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('sent_quotes')
+          .select('id, quote_number, created_at, recipient_name, recipient_company, project_cost, calculator_type, status, site_address, term_options, pipedrive_synced_at, pipedrive_stage_name')
+          .eq('installer_id', installerProfile.id)
+          .eq('status', 'accepted')
           .order('created_at', { ascending: false }),
         supabase
           .from('calculator_config')
@@ -101,6 +108,10 @@ export function InstallerDashboard() {
         const states: Record<string, boolean> = {};
         configResult.data.forEach(row => { states[row.calculator_type] = row.enabled || false; });
         setCalcStates(states as CalcConfig);
+      }
+
+      if (acceptedResult.data) {
+        setAcceptedQuotes(acceptedResult.data);
       }
 
       if (quotesResult.data) {
@@ -353,6 +364,99 @@ export function InstallerDashboard() {
             </div>
           )}
         </div>
+
+        {!loading && (
+          <div className="bg-white rounded-xl border border-green-200 shadow-sm">
+            <div className="px-5 py-4 border-b border-green-100 flex items-center justify-between bg-green-50/50 rounded-t-xl">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                </div>
+                <h3 className="text-sm font-semibold text-[#3A475B]">Accepted Proposals</h3>
+                {acceptedQuotes.length > 0 && (
+                  <span className="text-xs font-bold text-white bg-green-500 px-2 py-0.5 rounded-full">{acceptedQuotes.length}</span>
+                )}
+              </div>
+              <button
+                onClick={() => navigate('/quotes')}
+                className="flex items-center gap-1 text-xs font-medium text-[#6EAE3C] hover:underline"
+              >
+                View all
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {acceptedQuotes.length === 0 ? (
+              <div className="py-10 text-center">
+                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle2 className="w-5 h-5 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-500">No accepted proposals yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {acceptedQuotes.map(q => {
+                  const lowestPayment = q.term_options?.length
+                    ? Math.min(...q.term_options.map(t => t.monthlyPayment))
+                    : null;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => navigate(`/quotes/${q.id}`)}
+                      className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-green-50/40 transition-colors text-left group"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-[#34AC48] to-[#AFD235] rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-[#3A475B] truncate">
+                            {q.recipient_company || q.recipient_name || 'Unnamed Client'}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Accepted
+                          </span>
+                          {q.pipedrive_stage_name && (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2 py-0.5 rounded-full">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
+                              {q.pipedrive_stage_name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                          <span className="text-xs text-[#28AA48] font-semibold">{formatQuoteNumber(q.quote_number)}</span>
+                          <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <Tag className="w-3 h-3" />
+                            {calcTypeLabel(q.calculator_type)}
+                          </span>
+                          {q.site_address && (
+                            <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400">
+                              <MapPin className="w-3 h-3" />
+                              {q.site_address}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 hidden sm:block">
+                        <div className="text-sm font-bold text-[#3A475B]">{formatCurrency(q.project_cost)}</div>
+                        {lowestPayment && (
+                          <div className="text-xs text-[#28AA48]">{formatCurrency(lowestPayment)}/mo</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-gray-400">
+                          {new Date(q.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' })}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#6EAE3C] transition-colors" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <InstallerEmailTemplates />
       </div>
