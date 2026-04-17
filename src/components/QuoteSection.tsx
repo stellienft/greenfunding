@@ -155,7 +155,7 @@ export function QuoteSection({
   const [abnError, setAbnError] = useState<string | null>(null);
   const [abnLookedUp, setAbnLookedUp] = useState(false);
 
-  const canSubmit = selectedQuoteTerms.length > 0 && clientFields.clientName.trim() !== '' && clientFields.clientAddress.trim() !== '';
+  const abnClean = clientFields.abn.replace(/\s/g, '');
 
   const handleSubmitClick = () => {
     setTouched(true);
@@ -196,6 +196,18 @@ export function QuoteSection({
     `w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${invalid ? 'border-red-400 bg-red-50' : 'border-gray-300'}`;
 
   const siteAddress = clientFields.siteAddressSameAsCompany ? clientFields.companyAddress : clientFields.clientAddress;
+
+  const canSubmit =
+    selectedQuoteTerms.length > 0 &&
+    clientFields.clientName.trim() !== '' &&
+    clientFields.abn.trim() !== '' &&
+    abnClean.length === 11 &&
+    clientFields.natureOfBusiness.trim() !== '' &&
+    clientFields.companyAddress.trim() !== '' &&
+    clientFields.clientPersonName.trim() !== '' &&
+    clientFields.clientEmail.trim() !== '' &&
+    clientFields.clientPhone.trim() !== '' &&
+    siteAddress.trim() !== '';
 
   return (
     <div className="mt-6 border border-gray-200 rounded-xl overflow-hidden">
@@ -260,7 +272,7 @@ export function QuoteSection({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">ABN</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">ABN <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -272,7 +284,7 @@ export function QuoteSection({
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAbnLookup(); } }}
                       placeholder="e.g. 51 824 753 556"
-                      className={inputClass()}
+                      className={inputClass(touched && (clientFields.abn.trim() === '' || abnClean.length !== 11))}
                     />
                     <button
                       type="button"
@@ -285,6 +297,8 @@ export function QuoteSection({
                     </button>
                   </div>
                   {abnError && <p className="text-xs text-red-500 mt-1">{abnError}</p>}
+                  {touched && clientFields.abn.trim() === '' && !abnError && <p className="text-xs text-red-500 mt-1">ABN is required</p>}
+                  {touched && clientFields.abn.trim() !== '' && abnClean.length !== 11 && !abnError && <p className="text-xs text-red-500 mt-1">Please enter a valid 11-digit ABN</p>}
                   {abnLookedUp && <p className="text-xs text-[#28AA48] mt-1">Details auto-filled from ABR</p>}
                 </div>
 
@@ -321,24 +335,30 @@ export function QuoteSection({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Nature of Business</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Nature of Business <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={clientFields.natureOfBusiness}
                     onChange={e => onClientFieldChange('natureOfBusiness', e.target.value)}
                     placeholder="e.g. Butcher, Baker, Candlestick Maker"
-                    className={inputClass()}
+                    className={inputClass(touched && !clientFields.natureOfBusiness.trim())}
                   />
+                  {touched && !clientFields.natureOfBusiness.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Nature of business is required</p>
+                  )}
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Address</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Address <span className="text-red-500">*</span></label>
                   <AddressAutocomplete
                     value={clientFields.companyAddress}
                     onChange={v => onClientFieldChange('companyAddress', v)}
                     placeholder="e.g. Level 2, 100 King St, Sydney NSW"
-                    className={`${inputClass()} pr-8`}
+                    className={`${inputClass(touched && !clientFields.companyAddress.trim())} pr-8`}
                   />
+                  {touched && !clientFields.companyAddress.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Company address is required</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -352,36 +372,45 @@ export function QuoteSection({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Name</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Client Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={clientFields.clientPersonName}
                     onChange={e => onClientFieldChange('clientPersonName', e.target.value)}
                     placeholder="e.g. John Smith"
-                    className={inputClass()}
+                    className={inputClass(touched && !clientFields.clientPersonName.trim())}
                   />
+                  {touched && !clientFields.clientPersonName.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Client name is required</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Email Address</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Email Address <span className="text-red-500">*</span></label>
                   <input
                     type="email"
                     value={clientFields.clientEmail}
                     onChange={e => onClientFieldChange('clientEmail', e.target.value)}
                     placeholder="e.g. contact@business.com.au"
-                    className={inputClass()}
+                    className={inputClass(touched && !clientFields.clientEmail.trim())}
                   />
+                  {touched && !clientFields.clientEmail.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Email address is required</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Phone Number</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Phone Number <span className="text-red-500">*</span></label>
                   <input
                     type="tel"
                     value={clientFields.clientPhone}
                     onChange={e => onClientFieldChange('clientPhone', e.target.value)}
                     placeholder="e.g. 0400 000 000"
-                    className={inputClass()}
+                    className={inputClass(touched && !clientFields.clientPhone.trim())}
                   />
+                  {touched && !clientFields.clientPhone.trim() && (
+                    <p className="text-xs text-red-500 mt-1">Phone number is required</p>
+                  )}
                 </div>
 
                 <div className="sm:col-span-2">
