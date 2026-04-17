@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check, ExternalLink, Loader } from 'lucide-react';
+import { ArrowLeft, Download, Check, ExternalLink, Loader, Send, ThumbsUp, X as XIcon } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
 import { CheckCircle2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -37,6 +37,12 @@ export interface OnlineQuoteData {
   currentElectricityBill?: number;
   anticipatedElectricityBillWithSolar?: number;
   disclaimerText?: string;
+  entityName?: string;
+  companyAddress?: string;
+  clientPersonName?: string;
+  abn?: string;
+  natureOfBusiness?: string;
+  siteAddress?: string;
 }
 
 function formatCurrency(n: number): string {
@@ -146,9 +152,24 @@ export function OnlineQuote() {
     anticipatedElectricityBillWithSolar,
     disclaimerText,
     pdfUrl,
+    entityName,
+    companyAddress,
+    clientPersonName,
+    siteAddress,
   } = quoteData;
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendingQuote, setSendingQuote] = useState(false);
+  const [quoteSent, setQuoteSent] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [approvingQuote, setApprovingQuote] = useState(false);
+  const [quoteApproved, setQuoteApproved] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+
+  const displaySiteAddress = siteAddress || clientAddress;
+  const displayPreparedFor = entityName || clientName;
 
   const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
@@ -179,6 +200,62 @@ export function OnlineQuote() {
     }
   };
 
+  const handleSendQuoteToClient = async () => {
+    if (!quoteData.quoteId || !clientEmail) return;
+    setSendingQuote(true);
+    setSendError(null);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-quote-email?mode=send-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+          'Apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({ quoteId: quoteData.quoteId }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Failed to send');
+      setQuoteSent(true);
+    } catch (err: any) {
+      setSendError(err.message || 'Failed to send quote link');
+    } finally {
+      setSendingQuote(false);
+    }
+  };
+
+  const handleApproveQuote = async () => {
+    if (!quoteData.quoteId) return;
+    setApprovingQuote(true);
+    setApproveError(null);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/functions/v1/accept-quote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+          'Apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({ quoteId: quoteData.quoteId }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Failed to approve');
+      setQuoteApproved(true);
+      setShowApproveConfirm(false);
+    } catch (err: any) {
+      setApproveError(err.message || 'Failed to approve quote');
+      setShowApproveConfirm(false);
+    } finally {
+      setApprovingQuote(false);
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -193,22 +270,43 @@ export function OnlineQuote() {
       `}</style>
 
       <div className="min-h-screen bg-gray-50">
-        <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#3A475B] transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#3A475B] transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Calculator
+            <span className="hidden sm:inline">Back to Calculator</span>
           </button>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloadingPdf}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-60"
-          >
-            {downloadingPdf ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download PDF
-          </button>
+          <div className="flex items-center gap-2">
+            {quoteData.quoteId && clientEmail && (
+              <button
+                onClick={() => setShowSendModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#3A475B] text-white font-semibold rounded-lg hover:bg-[#2d3848] transition-all text-sm"
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Send to Client</span>
+              </button>
+            )}
+            {quoteData.quoteId && (
+              <button
+                onClick={() => setShowApproveConfirm(true)}
+                disabled={quoteApproved || approvingQuote}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#28AA48] text-white font-semibold rounded-lg hover:bg-[#229940] transition-all text-sm disabled:opacity-60"
+              >
+                {approvingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
+                <span className="hidden sm:inline">{quoteApproved ? 'Approved' : 'Approve Quote'}</span>
+              </button>
+            )}
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-60"
+            >
+              {downloadingPdf ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <span className="hidden sm:inline">Download PDF</span>
+            </button>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-8 print-container space-y-8">
@@ -232,22 +330,36 @@ export function OnlineQuote() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 border-b border-gray-100">
               <div className="px-8 py-6 border-r border-gray-100">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Prepared By</p>
-                {installerCompany && <p className="font-bold text-[#3A475B] text-base">{installerCompany}</p>}
-                {installerName && <p className="text-gray-600 text-sm mt-0.5">{installerName}</p>}
+                {installerCompany ? (
+                  <>
+                    <p className="font-bold text-[#3A475B] text-base">{installerCompany}</p>
+                    {installerName && <p className="text-gray-600 text-sm mt-0.5">{installerName}</p>}
+                  </>
+                ) : installerName ? (
+                  <p className="font-bold text-[#3A475B] text-base">{installerName}</p>
+                ) : (
+                  <p className="font-bold text-[#3A475B] text-base">Green Funding</p>
+                )}
                 {installerEmail && <p className="text-gray-500 text-sm mt-0.5">{installerEmail}</p>}
                 {installerPhone && <p className="text-gray-500 text-sm mt-0.5">{installerPhone}</p>}
               </div>
               <div className="px-8 py-6">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Prepared For</p>
-                <p className="font-bold text-[#3A475B] text-base">{clientName}</p>
-                <p className="text-gray-600 text-sm mt-0.5">{clientAddress}</p>
+                <p className="font-bold text-[#3A475B] text-base">{displayPreparedFor}</p>
+                {clientPersonName && entityName && <p className="text-gray-600 text-sm mt-0.5">{clientPersonName}</p>}
+                {companyAddress && <p className="text-gray-500 text-sm mt-0.5">{companyAddress}</p>}
                 {clientEmail && <p className="text-gray-500 text-sm mt-0.5">{clientEmail}</p>}
                 {clientPhone && <p className="text-gray-500 text-sm mt-0.5">{clientPhone}</p>}
               </div>
             </div>
 
             <div className="px-8 py-6 border-b border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Project Summary</p>
+              <div className="flex items-baseline gap-3 mb-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Project Summary</p>
+                {displaySiteAddress && (
+                  <p className="text-xs text-gray-500"><span className="font-semibold text-gray-600">Site:</span> {displaySiteAddress}</p>
+                )}
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #28AA48, #7DC241)' }}>
                   <p className="text-white/80 text-xs mb-1">Project Cost (Inc. GST)</p>
@@ -445,17 +557,122 @@ export function OnlineQuote() {
 
         </div>
 
-        <div className="no-print mt-6 flex justify-center pb-8">
+        <div className="no-print mt-6 flex flex-wrap justify-center gap-3 pb-8">
+          {quoteData.quoteId && clientEmail && (
+            <button
+              onClick={() => setShowSendModal(true)}
+              className="flex items-center gap-2 px-7 py-3.5 bg-[#3A475B] text-white font-bold rounded-xl hover:bg-[#2d3848] transition-all shadow-md text-base"
+            >
+              <Send className="w-5 h-5" />
+              Send to Client
+            </button>
+          )}
+          {quoteData.quoteId && (
+            <button
+              onClick={() => setShowApproveConfirm(true)}
+              disabled={quoteApproved || approvingQuote}
+              className="flex items-center gap-2 px-7 py-3.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] transition-all shadow-md text-base disabled:opacity-60"
+            >
+              {approvingQuote ? <Loader className="w-5 h-5 animate-spin" /> : <ThumbsUp className="w-5 h-5" />}
+              {quoteApproved ? 'Quote Approved' : 'Approve Quote'}
+            </button>
+          )}
           <button
             onClick={handleDownloadPdf}
             disabled={downloadingPdf}
-            className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
+            className="flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
           >
             {downloadingPdf ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
             Download PDF
           </button>
         </div>
       </div>
+
+      {/* Send to Client Modal */}
+      {showSendModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+            <button onClick={() => { setShowSendModal(false); setQuoteSent(false); setSendError(null); }} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <XIcon className="w-5 h-5" />
+            </button>
+            {quoteSent ? (
+              <div className="text-center py-4">
+                <div className="flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-[#28AA48]" />
+                </div>
+                <h3 className="text-lg font-bold text-[#3A475B] mb-2">Quote Sent!</h3>
+                <p className="text-gray-500 text-sm">A unique link has been sent to <span className="font-semibold text-[#3A475B]">{clientEmail}</span> for them to review and approve the quote.</p>
+                <button onClick={() => { setShowSendModal(false); setQuoteSent(false); }} className="mt-5 w-full px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl">Done</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center justify-center w-10 h-10 bg-[#3A475B]/10 rounded-xl flex-shrink-0">
+                    <Send className="w-5 h-5 text-[#3A475B]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#3A475B]">Send Quote to Client</h3>
+                    <p className="text-xs text-gray-500">A unique review link will be emailed</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-gray-500 mb-0.5">Sending to</p>
+                  <p className="font-semibold text-[#3A475B] text-sm">{displayPreparedFor}</p>
+                  <p className="text-sm text-gray-600">{clientEmail}</p>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">The client will receive a unique link with a secure access code to review and approve the quote online.</p>
+                {sendError && <p className="text-xs text-red-500 mb-3">{sendError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={() => setShowSendModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
+                  <button onClick={handleSendQuoteToClient} disabled={sendingQuote} className="flex-1 px-4 py-2.5 bg-[#3A475B] text-white font-bold rounded-xl hover:bg-[#2d3848] disabled:opacity-60 text-sm flex items-center justify-center gap-2">
+                    {sendingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Send Now
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Approve Quote Confirm Modal */}
+      {showApproveConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+            <button onClick={() => setShowApproveConfirm(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <XIcon className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 bg-[#28AA48]/10 rounded-xl flex-shrink-0">
+                <ThumbsUp className="w-5 h-5 text-[#28AA48]" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#3A475B]">Approve This Quote</h3>
+                <p className="text-xs text-gray-500">This will trigger the low doc process</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Approving will mark this quote as accepted and automatically send <span className="font-semibold text-[#3A475B]">{clientEmail || displayPreparedFor}</span> a unique link to begin the low doc document requirements.
+            </p>
+            {approveError && <p className="text-xs text-red-500 mb-3">{approveError}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => setShowApproveConfirm(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
+              <button onClick={handleApproveQuote} disabled={approvingQuote} className="flex-1 px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] disabled:opacity-60 text-sm flex items-center justify-center gap-2">
+                {approvingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quote Approved Success */}
+      {quoteApproved && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#28AA48] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-semibold">
+          <CheckCircle2 className="w-5 h-5" />
+          Quote approved — client emailed with document upload link
+        </div>
+      )}
     </>
   );
 }

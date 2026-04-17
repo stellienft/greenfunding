@@ -348,10 +348,16 @@ export function Step3() {
           paymentTiming: state.paymentTiming,
           calculatorType: state.calculatorType,
           installerId: user?.id,
-          recipientName: quoteClientFields.clientName.trim() || undefined,
+          recipientName: quoteClientFields.entityName.trim() || quoteClientFields.clientName.trim() || undefined,
           recipientEmail: quoteClientFields.clientEmail.trim() || undefined,
+          recipientCompany: quoteClientFields.entityName.trim() || undefined,
           siteAddress: (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim() || undefined,
+          companyAddress: quoteClientFields.companyAddress.trim() || undefined,
           clientPhone: quoteClientFields.clientPhone.trim() || undefined,
+          clientPersonName: quoteClientFields.clientPersonName.trim() || undefined,
+          abn: quoteClientFields.abn.trim() || undefined,
+          natureOfBusiness: quoteClientFields.natureOfBusiness.trim() || undefined,
+          entityName: quoteClientFields.entityName.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
           annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
           energySavings: state.energySavings || undefined,
@@ -367,14 +373,16 @@ export function Step3() {
 
       const quoteDate = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
+      const siteAddr = (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim();
       navigate('/quote-preview', {
         state: {
           quoteNumber: result.quoteNumber,
           quoteId: result.quoteId || null,
           pdfUrl: result.pdfUrl || null,
           quoteDate,
-          clientName: quoteClientFields.clientName.trim(),
-          clientAddress: (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim(),
+          clientName: quoteClientFields.entityName.trim() || quoteClientFields.clientName.trim(),
+          clientAddress: siteAddr,
+          siteAddress: siteAddr,
           clientEmail: quoteClientFields.clientEmail.trim() || undefined,
           clientPhone: quoteClientFields.clientPhone.trim() || undefined,
           systemSize: quoteClientFields.systemSize.trim() || undefined,
@@ -398,6 +406,11 @@ export function Step3() {
           currentElectricityBill: state.currentElectricityBill || undefined,
           anticipatedElectricityBillWithSolar: state.anticipatedElectricityBillWithSolar ?? undefined,
           disclaimerText: undefined,
+          entityName: quoteClientFields.entityName.trim() || undefined,
+          companyAddress: quoteClientFields.companyAddress.trim() || undefined,
+          clientPersonName: quoteClientFields.clientPersonName.trim() || undefined,
+          abn: quoteClientFields.abn.trim() || undefined,
+          natureOfBusiness: quoteClientFields.natureOfBusiness.trim() || undefined,
         },
       });
     } catch (err: any) {

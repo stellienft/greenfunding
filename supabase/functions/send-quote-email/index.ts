@@ -20,9 +20,14 @@ interface QuotePayload {
   recipientName?: string;
   recipientCompany?: string;
   siteAddress?: string;
+  companyAddress?: string;
   systemSize?: string;
   contribution?: string;
   clientPhone?: string;
+  clientPersonName?: string;
+  abn?: string;
+  natureOfBusiness?: string;
+  entityName?: string;
   projectCost: number;
   selectedAssetIds: string[];
   termOptions: TermOption[];
@@ -36,6 +41,7 @@ interface QuotePayload {
   disclaimerText?: string;
   installerEmail?: string;
   installerPhone?: string;
+  quoteId?: string;
 }
 
 const formatCurrencyAU = (amount: number): string => {
@@ -135,6 +141,8 @@ async function generateQuotePdf(
   annualSolarGenerationKwh?: number,
   energySavings?: number,
   disclaimerText?: string,
+  companyAddress?: string,
+  clientPersonName?: string,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -342,8 +350,12 @@ async function generateQuotePdf(
     drawSectionLabel(page, 'Prepared For', forX, y - 12);
     let forY = y - 28;
     forY -= dtWrapped(page, recipientCompany || recipientName || '', forX, forY, 9.5, true, C.DARK_TEXT, colW - 12, 14);
-    if (siteAddress) {
-      forY -= dtWrapped(page, siteAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 12, 12);
+    if (clientPersonName && recipientCompany) {
+      dt(page, clientPersonName, forX, forY, 7.5, false, C.GRAY_TEXT);
+      forY -= 12;
+    }
+    if (companyAddress) {
+      forY -= dtWrapped(page, companyAddress, forX, forY, 7.5, false, C.GRAY_TEXT, colW - 12, 12);
     }
     if (clientEmail) {
       dt(page, clientEmail, forX, forY, 7.5, false, C.GRAY_TEXT);
@@ -356,6 +368,12 @@ async function generateQuotePdf(
     y -= infoBoxH + 20;
 
     drawSectionLabel(page, 'Project Summary', PL, y);
+    if (siteAddress) {
+      const siteLabel = 'Site: ';
+      const siteLabelW = tw(siteLabel, true, 7);
+      dt(page, siteLabel, PL + 80, y, 7, true, C.GRAY_TEXT);
+      dt(page, siteAddress, PL + 80 + siteLabelW, y, 7, false, C.GRAY_TEXT);
+    }
     y -= 14;
 
     const cardCount = 2 + (systemSize ? 1 : 0) + (hasSolar && annualSolarGenerationKwh ? 1 : 0);
@@ -1123,8 +1141,13 @@ Deno.serve(async (req: Request) => {
       recipientName,
       recipientCompany,
       siteAddress,
+      companyAddress,
       systemSize,
       clientPhone,
+      clientPersonName,
+      abn,
+      natureOfBusiness,
+      entityName,
       projectCost,
       selectedAssetIds,
       termOptions,
@@ -1138,7 +1161,68 @@ Deno.serve(async (req: Request) => {
       disclaimerText,
       installerEmail: payloadInstallerEmail,
       installerPhone: payloadInstallerPhone,
+      quoteId: payloadQuoteId,
     } = payload;
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Handle send-link mode: email a unique review link to the client
+    if (mode === 'send-link') {
+      if (!payloadQuoteId) {
+        return new Response(JSON.stringify({ error: 'quoteId is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const { data: quote } = await supabase
+        .from('sent_quotes')
+        .select('id, quote_number, recipient_email, recipient_name, recipient_company, project_cost, pdf_url')
+        .eq('id', payloadQuoteId)
+        .maybeSingle();
+      if (!quote || !quote.recipient_email) {
+        return new Response(JSON.stringify({ error: 'Quote not found or missing email' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const tokenExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: updatedQuote } = await supabase
+        .from('sent_quotes')
+        .update({ portal_access_code: accessCode, upload_token_expires_at: tokenExpiry })
+        .eq('id', payloadQuoteId)
+        .select('upload_token')
+        .maybeSingle();
+      const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
+      const reviewUrl = `${appUrl}/review-quote/${payloadQuoteId}?code=${accessCode}`;
+      const qNum = formatQuoteNumber(quote.quote_number);
+      const clientName = quote.recipient_company || quote.recipient_name || 'Valued Customer';
+      const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
+      if (!elasticEmailApiKey) {
+        return new Response(JSON.stringify({ error: 'Email service not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const linkEmailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:24px;background:#f5f5f5;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:8px;overflow:hidden;">
+    <tr><td style="background:linear-gradient(135deg,#094325,#28AA48);padding:32px 36px;">
+      <span style="font-size:24px;font-weight:700;color:#fff;font-family:Arial,sans-serif;">Green Funding</span>
+    </td></tr>
+    <tr><td style="padding:36px;">
+      <p style="font-size:15px;color:#3A475B;margin:0 0 16px;line-height:1.6;">Dear ${clientName},</p>
+      <p style="font-size:15px;color:#4B5563;margin:0 0 16px;line-height:1.7;">Your finance proposal <strong>${qNum}</strong> is ready for your review. Please click the button below to view and approve your quote.</p>
+      <p style="font-size:14px;color:#6B7280;margin:0 0 8px;">Your access code: <strong style="font-size:20px;color:#094325;letter-spacing:4px;">${accessCode}</strong></p>
+      <p style="font-size:13px;color:#9CA3AF;margin:0 0 28px;">This link is valid for 30 days.</p>
+      <table cellpadding="0" cellspacing="0"><tr><td align="center">
+        <a href="${reviewUrl}" style="display:inline-block;background:#28AA48;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;">Review &amp; Approve Quote</a>
+      </td></tr></table>
+      <p style="font-size:12px;color:#9CA3AF;margin:24px 0 0;">Or copy this link: ${reviewUrl}</p>
+    </td></tr>
+    <tr><td style="border-top:2px solid #E5E7EB;padding:20px 36px;text-align:center;">
+      <p style="font-size:12px;color:#9CA3AF;margin:0;">Green Funding | 1300 403 100 | solutions@greenfunding.com.au</p>
+    </td></tr>
+  </table></td></tr></table></body></html>`;
+      const emailRes = await sendEmail(elasticEmailApiKey, quote.recipient_email, `Your Green Funding Quote ${qNum} is Ready`, linkEmailHtml);
+      if (!emailRes.ok) {
+        return new Response(JSON.stringify({ error: 'Failed to send email' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ success: true, quoteNumber: qNum }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     if (!termOptions || termOptions.length === 0) {
       return new Response(
@@ -1146,10 +1230,6 @@ Deno.serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const assetIds = selectedAssetIds || [];
     let assetNames: string[] = [];
@@ -1191,8 +1271,13 @@ Deno.serve(async (req: Request) => {
         recipient_name: recipientName || null,
         recipient_company: recipientCompany || null,
         site_address: siteAddress || null,
+        company_address: companyAddress || null,
         system_size: systemSize || null,
         client_phone: clientPhone || null,
+        client_person_name: clientPersonName || null,
+        abn: abn || null,
+        nature_of_business: natureOfBusiness || null,
+        entity_name: entityName || null,
         project_cost: projectCost,
         selected_asset_ids: assetIds,
         asset_names: assetNames,
@@ -1233,6 +1318,8 @@ Deno.serve(async (req: Request) => {
       annualSolarGenerationKwh,
       energySavings,
       disclaimerText,
+      companyAddress,
+      clientPersonName,
     );
 
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);
