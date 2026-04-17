@@ -1197,27 +1197,40 @@ Deno.serve(async (req: Request) => {
       if (!elasticEmailApiKey) {
         return new Response(JSON.stringify({ error: 'Email service not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      const linkEmailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head><body style="margin:0;padding:24px;background:#f5f5f5;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:8px;overflow:hidden;">
-    <tr><td style="background:linear-gradient(135deg,#094325,#28AA48);padding:32px 36px;">
-      <span style="font-size:24px;font-weight:700;color:#fff;font-family:Arial,sans-serif;">Green Funding</span>
-    </td></tr>
-    <tr><td style="padding:36px;">
-      <p style="font-size:15px;color:#3A475B;margin:0 0 16px;line-height:1.6;">Dear ${clientName},</p>
-      <p style="font-size:15px;color:#4B5563;margin:0 0 16px;line-height:1.7;">Your finance proposal <strong>${qNum}</strong> is ready for your review. Please click the button below to view and approve your quote.</p>
-      <p style="font-size:14px;color:#6B7280;margin:0 0 8px;">Your access code: <strong style="font-size:20px;color:#094325;letter-spacing:4px;">${accessCode}</strong></p>
-      <p style="font-size:13px;color:#9CA3AF;margin:0 0 28px;">This link is valid for 30 days.</p>
-      <table cellpadding="0" cellspacing="0"><tr><td align="center">
-        <a href="${reviewUrl}" style="display:inline-block;background:#28AA48;color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;">Review &amp; Approve Quote</a>
-      </td></tr></table>
-      <p style="font-size:12px;color:#9CA3AF;margin:24px 0 0;">Or copy this link: ${reviewUrl}</p>
-    </td></tr>
-    <tr><td style="border-top:2px solid #E5E7EB;padding:20px 36px;text-align:center;">
-      <p style="font-size:12px;color:#9CA3AF;margin:0;">Green Funding | 1300 403 100 | solutions@greenfunding.com.au</p>
-    </td></tr>
-  </table></td></tr></table></body></html>`;
-      const emailRes = await sendEmail(elasticEmailApiKey, quote.recipient_email, `Your Green Funding Quote ${qNum} is Ready`, linkEmailHtml);
+      const linkEmailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="margin:0;padding:0;background:#f0f2f0;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+  <tr><td style="background:linear-gradient(135deg,#094325 0%,#1a6b3a 50%,#28AA48 100%);padding:36px 40px;">
+    <table cellpadding="0" cellspacing="0" width="100%"><tr>
+      <td><img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" height="34" style="display:block;height:34px;" onerror="this.style.display='none'" /></td>
+      <td align="right"><span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;letter-spacing:0.5px;">FINANCE PROPOSAL</span></td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:40px 40px 32px;">
+    <p style="font-size:22px;font-weight:700;color:#094325;margin:0 0 8px;font-family:Arial,sans-serif;">Your Proposal is Ready</p>
+    <p style="font-size:15px;color:#6B7280;margin:0 0 28px;font-family:Arial,sans-serif;">Reference: <strong style="color:#3A475B;">${qNum}</strong></p>
+    <p style="font-size:15px;color:#3A475B;margin:0 0 16px;line-height:1.6;font-family:Arial,sans-serif;">Dear ${clientName},</p>
+    <p style="font-size:15px;color:#4B5563;margin:0 0 28px;line-height:1.7;font-family:Arial,sans-serif;">Your Green Funding finance proposal is ready for your review. Please use the button below to view your personalised proposal and approve when you are ready to proceed.</p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;"><tr><td>
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:20px 24px;display:inline-block;">
+        <p style="font-size:12px;color:#9CA3AF;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;font-family:Arial,sans-serif;">Your Access Code</p>
+        <p style="font-size:28px;font-weight:700;color:#094325;letter-spacing:8px;margin:0;font-family:Arial,sans-serif;">${accessCode}</p>
+      </div>
+    </td></tr></table>
+    <p style="font-size:13px;color:#9CA3AF;margin:0 0 28px;font-family:Arial,sans-serif;">This link is valid for 30 days.</p>
+    <table cellpadding="0" cellspacing="0"><tr><td>
+      <a href="${reviewUrl}" style="display:inline-block;background:linear-gradient(135deg,#28AA48,#7DC241);color:#fff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;letter-spacing:0.3px;">Review &amp; Approve Proposal</a>
+    </td></tr></table>
+    <p style="font-size:12px;color:#9CA3AF;margin:24px 0 0;font-family:Arial,sans-serif;word-break:break-all;">Or copy this link: <a href="${reviewUrl}" style="color:#28AA48;">${reviewUrl}</a></p>
+  </td></tr>
+  <tr><td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:24px 40px;">
+    <table cellpadding="0" cellspacing="0" width="100%"><tr>
+      <td><p style="font-size:13px;font-weight:700;color:#094325;margin:0;font-family:Arial,sans-serif;">Green Funding</p></td>
+      <td align="right"><p style="font-size:12px;color:#9CA3AF;margin:0;font-family:Arial,sans-serif;">1300 403 100 &nbsp;|&nbsp; <a href="mailto:solutions@greenfunding.com.au" style="color:#28AA48;text-decoration:none;">solutions@greenfunding.com.au</a></p></td>
+    </tr></table>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+      const emailRes = await sendEmail(elasticEmailApiKey, quote.recipient_email, `Your Green Funding Proposal ${qNum} is Ready`, linkEmailHtml);
       if (!emailRes.ok) {
         return new Response(JSON.stringify({ error: 'Failed to send email' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
