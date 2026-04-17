@@ -76,6 +76,7 @@ interface AdminQuote {
     full_name: string | null;
     company_name: string | null;
     email: string;
+    logo_url: string | null;
   } | null;
 }
 
@@ -423,10 +424,19 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Installer</p>
           {quote.installer ? (
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-700">{quote.installer.full_name || 'N/A'}</p>
-              {quote.installer.company_name && <p className="text-sm text-gray-500">{quote.installer.company_name}</p>}
-              <p className="text-sm text-gray-500">{quote.installer.email}</p>
+            <div className="space-y-2">
+              {quote.installer.logo_url && (
+                <img
+                  src={quote.installer.logo_url}
+                  alt={quote.installer.company_name || 'Installer logo'}
+                  className="h-8 max-w-[120px] object-contain rounded"
+                />
+              )}
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-gray-700">{quote.installer.full_name || 'N/A'}</p>
+                {quote.installer.company_name && <p className="text-sm text-gray-500">{quote.installer.company_name}</p>}
+                <p className="text-sm text-gray-500">{quote.installer.email}</p>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-gray-400 italic">Unknown installer</p>
@@ -715,7 +725,7 @@ export function AdminQuotesList() {
       const installerMap = new Map<string, AdminQuote['installer']>(
         (json.installers ?? []).map((i: NonNullable<AdminQuote['installer']> & { id: string }) => [
           i.id,
-          { full_name: i.full_name, company_name: i.company_name, email: i.email },
+          { full_name: i.full_name, company_name: i.company_name, email: i.email, logo_url: i.logo_url ?? null },
         ])
       );
 

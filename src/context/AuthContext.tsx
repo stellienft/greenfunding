@@ -150,10 +150,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const ext = file.name.split('.').pop();
     const path = `logos/${user.id}.${ext}`;
     const { error: uploadError } = await supabase.storage
-      .from('documents')
+      .from('installer-logos')
       .upload(path, file, { upsert: true, contentType: file.type });
     if (uploadError) throw uploadError;
-    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('installer-logos').getPublicUrl(path);
     const { error } = await supabase
       .from('installer_users')
       .update({ logo_url: publicUrl })

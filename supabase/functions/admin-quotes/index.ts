@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false }),
       supabase
         .from("installer_users")
-        .select("id, full_name, company_name, email, created_at, quote_count, application_count, user_type"),
+        .select("id, full_name, company_name, email, created_at, quote_count, application_count, user_type, logo_url"),
     ]);
 
     if (quotesRes.error) throw quotesRes.error;
