@@ -22,6 +22,7 @@ export function Step1() {
   const [showSpecialPricingModal, setShowSpecialPricingModal] = useState(false);
   const [specialPricingRequested, setSpecialPricingRequested] = useState(state.specialPricingRequested || false);
   const [hasShownModal, setHasShownModal] = useState(false);
+  const [gstConfirmed, setGstConfirmed] = useState(false);
   const [residualPercentage, setResidualPercentage] = useState<number | undefined>(state.residualPercentage);
   const [paymentTiming, setPaymentTiming] = useState<'advance' | 'arrears'>(state.paymentTiming || 'arrears');
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
@@ -33,12 +34,6 @@ export function Step1() {
     }
   }, [config]);
 
-  useEffect(() => {
-    if (projectCost > 1000000 && !hasShownModal) {
-      setShowSpecialPricingModal(true);
-      setHasShownModal(true);
-    }
-  }, [projectCost, hasShownModal]);
 
   const isSolarOnlyProject = () => {
     if (selectedAssets.length !== 1) return false;
@@ -108,6 +103,11 @@ export function Step1() {
   const handleContinue = () => {
     if (selectedAssets.length === 0) {
       alert('Please select at least one asset type');
+      return;
+    }
+
+    if (!gstConfirmed) {
+      alert('Please confirm whether the invoice amount includes or excludes GST before continuing.');
       return;
     }
 
@@ -201,10 +201,6 @@ export function Step1() {
       </InstallerLayout>
     );
   }
-
-  const minCost = config.costSliderMin || 10000;
-  const maxCost = config.costSliderMax || 5000000;
-  const step = config.costSliderStep || 5000;
 
   return (
     <InstallerLayout>
@@ -347,24 +343,8 @@ export function Step1() {
                 </div>
 
 
-                <div className="mb-4">
-                  <input
-                    type="range"
-                    value={projectCost}
-                    onChange={e => setProjectCost(Number(e.target.value))}
-                    min={minCost}
-                    max={maxCost}
-                    step={step}
-                    className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600 mt-2">
-                    <span>{formatCurrency(minCost)}</span>
-                    <span>{config.costSliderMaxLabel || formatCurrency(maxCost)}</span>
-                  </div>
-                </div>
-
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Or enter amount: $</span>
+                  <span className="text-sm text-gray-600">Enter amount: $</span>
                   <input
                     type="text"
                     value={isEditingInput ? inputValue : projectCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -379,14 +359,42 @@ export function Step1() {
                       const value = inputValue.replace(/,/g, '');
                       const numValue = parseFloat(value);
                       if (!isNaN(numValue) && numValue >= 0) {
-                        setProjectCost(Math.round(numValue * 100) / 100);
+                        const rounded = Math.round(numValue * 100) / 100;
+                        setProjectCost(rounded);
+                        if (rounded > 1000000 && !hasShownModal) {
+                          setShowSpecialPricingModal(true);
+                          setHasShownModal(true);
+                        }
                       }
                       setIsEditingInput(false);
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-right font-semibold"
                   />
                 </div>
+
+                <div
+                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${gstConfirmed ? 'border-[#28AA48] bg-[#28AA48]/5' : 'border-orange-300 bg-orange-50'}`}
+                  onClick={() => setGstConfirmed(v => !v)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={gstConfirmed}
+                    onChange={e => setGstConfirmed(e.target.checked)}
+                    className="mt-0.5 w-5 h-5 text-[#28AA48] rounded border-gray-300 focus:ring-[#28AA48] cursor-pointer flex-shrink-0"
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <span className="text-sm text-[#3A475B] font-medium leading-snug">
+                    I confirm the total invoice amount above is{' '}
+                    <strong>{gstMode === 'inc' ? 'including' : 'excluding'} GST</strong>
+                  </span>
+                </div>
               </div>
+
+              {hasEnergyGenerationAsset() && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm font-semibold text-blue-800 mb-1">To enable the solar savings chart, fill out the below information.</p>
+                </div>
+              )}
 
               {hasEnergyGenerationAsset() && (
                 <div>
@@ -538,28 +546,6 @@ export function Step1() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 28px;
-          height: 28px;
-          background: #28AA48;
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .slider::-moz-range-thumb {
-          width: 28px;
-          height: 28px;
-          background: #28AA48;
-          border-radius: 50%;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-      `}</style>
 
       {showRestartConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
