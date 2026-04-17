@@ -1098,7 +1098,7 @@ async function sendEmail(
   const body: Record<string, unknown> = {
     Recipients: [{ Email: to }],
     Content: {
-      From: 'noreply@portal.greenfunding.com.au',
+      From: 'Green Funding Portal <noreply@portal.greenfunding.com.au>',
       ReplyTo: 'solutions@greenfunding.com.au',
       Subject: subject,
       Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: htmlBody }],
@@ -1200,7 +1200,7 @@ Deno.serve(async (req: Request) => {
       const linkEmailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="margin:0;padding:0;background:#f0f2f0;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
-  <tr><td style="background:linear-gradient(135deg,#094325 0%,#1a6b3a 50%,#28AA48 100%);padding:36px 40px;">
+  <tr><td style="background-color:#094325;padding:36px 40px;">
     <table cellpadding="0" cellspacing="0" width="100%"><tr>
       <td><img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" height="34" style="display:block;height:34px;" onerror="this.style.display='none'" /></td>
       <td align="right"><span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;letter-spacing:0.5px;">FINANCE PROPOSAL</span></td>
@@ -1218,8 +1218,8 @@ Deno.serve(async (req: Request) => {
       </div>
     </td></tr></table>
     <p style="font-size:13px;color:#9CA3AF;margin:0 0 28px;font-family:Arial,sans-serif;">This link is valid for 30 days.</p>
-    <table cellpadding="0" cellspacing="0"><tr><td>
-      <a href="${reviewUrl}" style="display:inline-block;background:linear-gradient(135deg,#28AA48,#7DC241);color:#fff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;letter-spacing:0.3px;">Review &amp; Approve Proposal</a>
+    <table cellpadding="0" cellspacing="0"><tr><td style="background-color:#28AA48;border-radius:10px;">
+      <a href="${reviewUrl}" style="display:inline-block;background-color:#28AA48;color:#ffffff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;letter-spacing:0.3px;mso-padding-alt:0;">Review &amp; Approve Proposal</a>
     </td></tr></table>
     <p style="font-size:12px;color:#9CA3AF;margin:24px 0 0;font-family:Arial,sans-serif;word-break:break-all;">Or copy this link: <a href="${reviewUrl}" style="color:#28AA48;">${reviewUrl}</a></p>
   </td></tr>
