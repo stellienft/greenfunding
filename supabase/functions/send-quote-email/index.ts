@@ -749,7 +749,19 @@ async function generateQuotePdf(
       y -= docRowH * fullDocRows.length;
     }
 
-    y -= 20;
+    y -= 16;
+
+    const disclaimerText = 'Disclaimer  The repayment amounts and any other financial information set out in this document are indicative only and provided for illustrative purposes. They do not constitute a commitment, approval, or offer of finance. Final terms, including pricing and repayments, are subject to the submission of a formal application and approval by Green Funding in accordance with its lending criteria, terms, and conditions. This document is provided for information purposes only and does not constitute financial product advice, investment advice, or taxation advice, nor a recommendation. It has been prepared without taking into account the objectives, financial situation, or needs of any recipient. Recipients should make their own assessment and obtain appropriate independent advice before acting. Any projections, forecasts, models, or illustrative materials (including graphs) are based on information obtained from third parties and a range of assumptions, which have not been independently verified. Those assumptions may change, and actual outcomes may differ due to factors including changes in market conditions, regulations, energy pricing, inflation, interest rates, and site-specific variables. All applications are subject to standard approval criteria. Terms and conditions apply.';
+    const disclaimerLineH = 9;
+    const disclaimerLines = wrapText(disclaimerText, false, 6, CW - 8);
+    const disclaimerH = disclaimerLines.length * disclaimerLineH + 12;
+    dr(page, PL, y - disclaimerH, CW, disclaimerH, { r: 0.98, g: 0.98, b: 0.98 }, 1, C.BORDER, 0.5, 4);
+    let dY = y - 8;
+    for (const line of disclaimerLines) {
+      dt(page, line, PL + 6, dY, 6, false, { r: 0.5, g: 0.5, b: 0.5 });
+      dY -= disclaimerLineH;
+    }
+    y -= disclaimerH + 12;
 
     const getStartedH = 64;
     dr(page, PL, y - getStartedH, CW, getStartedH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);

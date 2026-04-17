@@ -417,6 +417,12 @@ export function OnlineQuote() {
               )}
             </div>
 
+            <div className="px-8 py-5 border-b border-gray-100">
+              <p className="text-[10px] leading-relaxed text-gray-400">
+                <span className="font-semibold text-gray-500">Disclaimer</span> The repayment amounts and any other financial information set out in this document are indicative only and provided for illustrative purposes. They do not constitute a commitment, approval, or offer of finance. Final terms, including pricing and repayments, are subject to the submission of a formal application and approval by Green Funding in accordance with its lending criteria, terms, and conditions. This document is provided for information purposes only and does not constitute financial product advice, investment advice, or taxation advice, nor a recommendation. It has been prepared without taking into account the objectives, financial situation, or needs of any recipient. Recipients should make their own assessment and obtain appropriate independent advice before acting. Any projections, forecasts, models, or illustrative materials (including graphs) are based on information obtained from third parties and a range of assumptions, which have not been independently verified. Those assumptions may change, and actual outcomes may differ due to factors including changes in market conditions, regulations, energy pricing, inflation, interest rates, and site-specific variables. All applications are subject to standard approval criteria. Terms and conditions apply.
+              </p>
+            </div>
+
             <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Get Started</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
