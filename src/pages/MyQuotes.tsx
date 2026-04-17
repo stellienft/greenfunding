@@ -160,7 +160,7 @@ export function MyQuotes() {
                                 {badge.label}
                               </span>
                               {q.pipedrive_synced_at && q.pipedrive_stage_name && (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2.5 py-0.5 rounded-full">
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded-full">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
                                   {q.pipedrive_stage_name}
                                 </span>

@@ -320,7 +320,7 @@ export function InstallerDashboard() {
                           {q.recipient_company || q.recipient_name || 'Unnamed Client'}
                         </span>
                         {q.pipedrive_stage_name && (
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-full">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
                             {q.pipedrive_stage_name}
                           </span>
@@ -418,7 +418,7 @@ export function InstallerDashboard() {
                             Accepted
                           </span>
                           {q.pipedrive_stage_name && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-[#1a2e3b]/8 border border-[#1a2e3b]/20 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1a2e3b] bg-slate-100 border border-slate-300 px-2 py-0.5 rounded-full">
                               <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48] inline-block flex-shrink-0"></span>
                               {q.pipedrive_stage_name}
                             </span>
