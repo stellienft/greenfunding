@@ -22,6 +22,8 @@ export interface QuoteClientFields {
   natureOfBusiness: string;
   clientPersonName: string;
   siteAddressSameAsCompany: boolean;
+  tradingName: string;
+  tradingNameEnabled: boolean;
 }
 
 interface AbnResult {
@@ -287,24 +289,34 @@ export function QuoteSection({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Entity Name</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Company Name</label>
                   <input
                     type="text"
                     value={clientFields.entityName}
-                    onChange={e => onClientFieldChange('entityName', e.target.value)}
-                    placeholder="Auto-filled from ABN lookup"
-                    className={inputClass()}
+                    readOnly
+                    placeholder="Company Name"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-default outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Incorporation Date</label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <input
+                      type="checkbox"
+                      id="tradingNameEnabled"
+                      checked={clientFields.tradingNameEnabled}
+                      onChange={e => onClientFieldChange('tradingNameEnabled', e.target.checked)}
+                      className="w-3.5 h-3.5 text-[#28AA48] rounded border-gray-300 focus:ring-[#28AA48] cursor-pointer"
+                    />
+                    <label htmlFor="tradingNameEnabled" className="text-xs font-medium text-gray-500 cursor-pointer select-none">Trading Name</label>
+                  </div>
                   <input
                     type="text"
-                    value={clientFields.incorporationDate}
-                    onChange={e => onClientFieldChange('incorporationDate', e.target.value)}
-                    placeholder="Auto-filled from ABN lookup"
-                    className={inputClass()}
+                    value={clientFields.tradingName}
+                    onChange={e => onClientFieldChange('tradingName', e.target.value)}
+                    placeholder="Trading name (if different)"
+                    disabled={!clientFields.tradingNameEnabled}
+                    className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48] transition-colors ${!clientFields.tradingNameEnabled ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed' : 'border-gray-300'}`}
                   />
                 </div>
 
@@ -314,7 +326,7 @@ export function QuoteSection({
                     type="text"
                     value={clientFields.natureOfBusiness}
                     onChange={e => onClientFieldChange('natureOfBusiness', e.target.value)}
-                    placeholder="e.g. Solar Installation"
+                    placeholder="e.g. Butcher, Baker, Candlestick Maker"
                     className={inputClass()}
                   />
                 </div>
@@ -408,30 +420,6 @@ export function QuoteSection({
               </div>
             </div>
 
-            {/* Optional: System Size */}
-            <div className="border-t border-gray-100 pt-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Optional Details</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">System Size</label>
-                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#28AA48]/30 focus-within:border-[#28AA48] transition-colors">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={clientFields.systemSize.replace(/\s*kW\s*$/i, '') || ''}
-                      onChange={e => {
-                        const val = e.target.value;
-                        onClientFieldChange('systemSize', val === '' ? '' : `${val} kW`);
-                      }}
-                      placeholder="e.g. 20"
-                      className="flex-1 px-3 py-2 text-sm outline-none bg-transparent"
-                    />
-                    <span className="px-3 py-2 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 select-none">kW</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Loan Terms */}
             <div className="border-t border-gray-100 pt-4">

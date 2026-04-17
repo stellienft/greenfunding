@@ -18,7 +18,8 @@ export function Step1() {
   const [isEditingInput, setIsEditingInput] = useState(false);
   const [annualSolarGeneration, setAnnualSolarGeneration] = useState<number | undefined>(state.annualSolarGenerationKwh);
   const [currentElectricityBill, setCurrentElectricityBill] = useState<number | undefined>(state.currentElectricityBill);
-  const [anticipatedElectricityBillWithSolar, setAnticipatedElectricityBillWithSolar] = useState<number | undefined>(state.anticipatedElectricityBillWithSolar);
+  const [anticipatedElectricityBillWithSolar, setAnticipatedElectricityBillWithSolar] = useState<number | undefined>(state.anticipatedElectricityBillWithSolar !== undefined ? state.anticipatedElectricityBillWithSolar / 12 : undefined);
+  const [systemSize, setSystemSize] = useState<string>(state.systemSize || '');
   const [showSpecialPricingModal, setShowSpecialPricingModal] = useState(false);
   const [specialPricingRequested, setSpecialPricingRequested] = useState(state.specialPricingRequested || false);
   const [hasShownModal, setHasShownModal] = useState(false);
@@ -120,10 +121,11 @@ export function Step1() {
       selectedAssetIds: selectedAssets,
       annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
       currentElectricityBill: hasEnergyGenerationAsset() ? currentElectricityBill : undefined,
-      anticipatedElectricityBillWithSolar: hasEnergyGenerationAsset() ? anticipatedElectricityBillWithSolar : undefined,
+      anticipatedElectricityBillWithSolar: hasEnergyGenerationAsset() ? (anticipatedElectricityBillWithSolar !== undefined ? anticipatedElectricityBillWithSolar * 12 : undefined) : undefined,
       specialPricingRequested,
       residualPercentage: isCarOnlyProject() ? residualPercentage : undefined,
       paymentTiming,
+      systemSize: systemSize.trim() || undefined,
     });
 
     const dest = isAdminMode ? '/admin/step-3' : '/step-3';
@@ -149,6 +151,7 @@ export function Step1() {
     setAnnualSolarGeneration(undefined);
     setCurrentElectricityBill(undefined);
     setAnticipatedElectricityBillWithSolar(undefined);
+    setSystemSize('');
     setSpecialPricingRequested(false);
     setResidualPercentage(undefined);
     setPaymentTiming('arrears');
@@ -391,15 +394,35 @@ export function Step1() {
               </div>
 
               {hasEnergyGenerationAsset() && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-sm font-semibold text-blue-800 mb-1">To enable the solar savings chart, fill out the below information.</p>
+                <div>
+                  <label className="block text-lg font-semibold text-[#3A475B] mb-2">
+                    System Size
+                  </label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Enter the total system size in kilowatts (kW).
+                  </p>
+                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#28AA48]/30 focus-within:border-[#28AA48] transition-colors">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={systemSize.replace(/\s*kW\s*$/i, '') || ''}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setSystemSize(val === '' ? '' : `${val} kW`);
+                      }}
+                      placeholder="e.g. 20"
+                      className="flex-1 px-4 py-3 text-right font-semibold text-lg outline-none bg-transparent"
+                    />
+                    <span className="px-4 py-3 text-sm text-gray-500 bg-gray-50 border-l border-gray-300 select-none font-medium">kW</span>
+                  </div>
                 </div>
               )}
 
               {hasEnergyGenerationAsset() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                    Annual Solar Generation <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                    Annual Solar Generation
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
                     Enter the expected annual solar generation in kWh to calculate an equivalent cost per kWh for comparison purposes.
@@ -426,9 +449,15 @@ export function Step1() {
               )}
 
               {hasEnergyGenerationAsset() && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-sm font-semibold text-blue-800 mb-1">To enable the solar savings chart, fill out the below information.</p>
+                </div>
+              )}
+
+              {hasEnergyGenerationAsset() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                    Current Electricity Bill <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                    Current Electricity Bill
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
                     Enter the client's current annual electricity bill. This will increase 3% each year over the 25-year savings projection.
@@ -458,10 +487,10 @@ export function Step1() {
               {hasEnergyGenerationAsset() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
-                    Your Proposal <span className="text-sm font-normal text-gray-500">(Optional)</span>
+                    Anticipated Electricity Bill
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
-                    Enter the anticipated annual electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
+                    Enter the anticipated monthly electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 font-medium">$</span>
@@ -480,7 +509,7 @@ export function Step1() {
                       placeholder="e.g., 1,200"
                       className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
                     />
-                    <span className="text-sm text-gray-600 font-medium">per year</span>
+                    <span className="text-sm text-gray-600 font-medium">per month</span>
                   </div>
                 </div>
               )}

@@ -39,7 +39,7 @@ export function Step3() {
   );
   const [annualMaintenanceFee, setAnnualMaintenanceFee] = useState<number>(state.annualMaintenanceFee || 0);
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
-  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: '', abn: '', entityName: '', incorporationDate: '', natureOfBusiness: '', clientPersonName: '', siteAddressSameAsCompany: false });
+  const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: state.systemSize || '', abn: '', entityName: '', incorporationDate: '', natureOfBusiness: '', clientPersonName: '', siteAddressSameAsCompany: false, tradingName: '', tradingNameEnabled: false });
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
