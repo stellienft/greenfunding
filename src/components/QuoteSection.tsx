@@ -86,12 +86,38 @@ function AddressAutocomplete({
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
+        const params = new URLSearchParams({
+          format: 'json',
+          countrycodes: 'au',
+          limit: '8',
+          addressdetails: '1',
+          dedupe: '1',
+          'accept-language': 'en',
+          q: v,
+        });
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&countrycodes=au&limit=5&q=${encodeURIComponent(v)}`,
-          { headers: { 'Accept-Language': 'en' } }
+          `https://nominatim.openstreetmap.org/search?${params}`,
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'GreenFundingPortal/1.0' } }
         );
         const data = await res.json();
-        const results: string[] = data.map((d: any) => d.display_name);
+        const seen = new Set<string>();
+        const results: string[] = data
+          .map((d: any) => {
+            const a = d.address || {};
+            const parts: string[] = [];
+            if (a.house_number && a.road) parts.push(`${a.house_number} ${a.road}`);
+            else if (a.road) parts.push(a.road);
+            if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+            if (a.city || a.town || a.village || a.municipality) parts.push(a.city || a.town || a.village || a.municipality);
+            if (a.state) parts.push(a.state);
+            if (a.postcode) parts.push(a.postcode);
+            return parts.length >= 2 ? parts.join(', ') : d.display_name.replace(/, Australia$/, '').replace(/, Australia,/, ',');
+          })
+          .filter((s: string) => {
+            if (seen.has(s)) return false;
+            seen.add(s);
+            return true;
+          });
         setSuggestions(results);
         setOpen(results.length > 0);
       } catch {
