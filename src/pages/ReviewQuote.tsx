@@ -31,14 +31,16 @@ function getLowDocRequirements(projectCost: number): { title: string; items: Low
   return { title: 'Low Doc Requirements (up to $150k)', items: base };
 }
 
-const fullDocRequirements = [
-  { document: 'FY24 & FY25 Accountant prepared financials' },
-  { document: 'Mgt YTD Dec 25 Financials' },
-  { document: 'Finance Commitment Schedule' },
-  { document: 'Current ATO Portal Statement' },
-  { document: 'Business Overview and Major Clients' },
-  { document: 'Asset and Liability', url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
-  { document: 'Privacy Consent', url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
+const fullDocRequirements: { document: string; under500k: boolean; between500kAnd1m: boolean; over1m: boolean; url?: string }[] = [
+  { document: 'FY24 & FY25 Accountant prepared financials', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Mgt YTD Dec 25 Financials', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Finance Commitment Schedule', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Current ATO Portal Statement', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Business Overview and Major Clients', under500k: true, between500kAnd1m: true, over1m: true },
+  { document: 'Asset and Liability', under500k: true, between500kAnd1m: true, over1m: true, url: 'https://drive.google.com/file/d/1RwQ-npssPkEN6bW_wDV3e5Gr0w3IpOgm/view' },
+  { document: 'Privacy Consent', under500k: true, between500kAnd1m: true, over1m: true, url: 'https://drive.google.com/file/d/1aIw8H6qgvCcVIULRiVsanfKR38jWTOHN/view' },
+  { document: 'Aged Debtors and Creditors', under500k: false, between500kAnd1m: true, over1m: true },
+  { document: 'Cashflow Projections', under500k: false, between500kAnd1m: false, over1m: true },
 ];
 
 function formatCurrency(n: number) {
@@ -420,39 +422,96 @@ export function ReviewQuote() {
 
             {/* Document requirements */}
             <div className="px-8 py-6 border-b border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                {isLowDoc ? "What You'll Need to Get Started" : 'Full Doc Requirements'}
-              </p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">What You'll Need to Apply</p>
               {isLowDoc && lowDocReqs ? (
-                <div>
-                  <p className="text-sm font-semibold text-[#3A475B] mb-3">{lowDocReqs.title}</p>
-                  <ul className="space-y-2">
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-[#3A475B]">{lowDocReqs.title}</p>
+                  <ul className="space-y-2.5">
                     {lowDocReqs.items.map((req, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
-                        <span className="mt-0.5 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48]" />
+                      <li key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+                        <CheckCircle2 className="w-4 h-4 text-[#28AA48] mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 flex-1">
+                          {req.label}
+                          {req.url && (
+                            <a href={req.url} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center gap-1 text-xs text-[#28AA48] font-medium hover:underline">
+                              {req.linkText ?? 'Download'} <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
                         </span>
-                        {req.url ? (
-                          <span>{req.label}{' '}<a href={req.url} target="_blank" rel="noopener noreferrer" className="text-[#28AA48] underline inline-flex items-center gap-1">{req.linkText || 'Download'} <ExternalLink className="w-3 h-3" /></a></span>
-                        ) : req.label}
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {fullDocRequirements.map((req, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
-                      <span className="mt-0.5 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#28AA48]" />
-                      </span>
-                      {req.url ? (
-                        <span>{req.document} <a href={req.url} target="_blank" rel="noopener noreferrer" className="text-[#28AA48] underline">Download <ExternalLink className="w-3 h-3 inline" /></a></span>
-                      ) : req.document}
-                    </li>
-                  ))}
-                </ul>
+                <div>
+                  <p className="text-sm font-bold text-[#3A475B] mb-4">Full Doc Requirements</p>
+                  <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ background: '#094325' }}>
+                          <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Document</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">&lt;$500k</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">$500k–$1m</th>
+                          <th className="px-4 py-3 text-center text-white/80 font-semibold text-xs uppercase tracking-wide">$1m+</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fullDocRequirements.map((req, i) => (
+                          <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-3.5 border-b border-gray-100 font-medium text-[#3A475B]">
+                              <div className="flex items-center justify-between gap-2">
+                                <span>{req.document}</span>
+                                {req.url && (
+                                  <a href={req.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#28AA48] hover:underline whitespace-nowrap shrink-0">[Download]</a>
+                                )}
+                              </div>
+                            </td>
+                            {[req.under500k, req.between500kAnd1m, req.over1m].map((val, ci) => (
+                              <td key={ci} className="px-4 py-3.5 text-center border-b border-gray-100">
+                                <div className="flex justify-center">
+                                  {val ? (
+                                    <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+                                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-7 h-7 bg-red-100 rounded-full flex items-center justify-center">
+                                      <X className="w-4 h-4 text-red-500" />
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="px-8 py-5 border-b border-gray-100">
+              <p className="text-[10px] leading-relaxed text-gray-400">
+                <span className="font-semibold text-gray-500">Disclaimer</span> The repayment amounts and any other financial information set out in this document are indicative only and provided for illustrative purposes. They do not constitute a commitment, approval, or offer of finance. Final terms, including pricing and repayments, are subject to the submission of a formal application and approval by Green Funding in accordance with its lending criteria, terms, and conditions. This document is provided for information purposes only and does not constitute financial product advice, investment advice, or taxation advice, nor a recommendation. It has been prepared without taking into account the objectives, financial situation, or needs of any recipient. Recipients should make their own assessment and obtain appropriate independent advice before acting. Any projections, forecasts, models, or illustrative materials (including graphs) are based on information obtained from third parties and a range of assumptions, which have not been independently verified. Those assumptions may change, and actual outcomes may differ due to factors including changes in market conditions, regulations, energy pricing, inflation, interest rates, and site-specific variables. All applications are subject to standard approval criteria. Terms and conditions apply.
+              </p>
+            </div>
+
+            {/* Get Started / Contact */}
+            <div className="px-8 py-6 border-b border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Get Started</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    Contact your Green Funding representative to begin the application process. Our team will guide you through each step.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 403 100</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> solutions@greenfunding.com.au</p>
+                  <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Web:</span> www.greenfunding.com.au</p>
+                </div>
+              </div>
             </div>
 
             {/* CTA */}
@@ -472,7 +531,7 @@ export function ReviewQuote() {
 
             <div className="px-8 py-5" style={{ background: '#094325' }}>
               <p className="text-white/40 text-xs text-center">
-                This proposal is indicative only and subject to credit approval. Valid for 30 days.
+                This quote is indicative only and subject to credit approval. Valid for 30 days.
               </p>
             </div>
           </div>
