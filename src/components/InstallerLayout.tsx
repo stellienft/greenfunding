@@ -174,7 +174,7 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
             <a href="https://greenfunding.com.au" target="_blank" rel="noopener noreferrer">
               <img src="/image copy copy.png" alt="Green Funding" className="h-5 opacity-70 hover:opacity-100 transition-opacity" />
             </a>
-            <span className="text-xs text-gray-400">Green Funding Installer Portal</span>
+            <span className="text-xs text-gray-400">Installer Portal</span>
           </div>
         </footer>
       </div>
