@@ -94,7 +94,7 @@ function statusBadge(status: string) {
     case 'application_started':
       return { label: 'Application Started', cls: 'bg-blue-100 text-blue-800 border-blue-200' };
     case 'accepted':
-      return { label: 'Proposal Accepted', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      return { label: 'Proposal Accepted', cls: 'bg-green-100 text-green-800 border-green-300' };
     default:
       return { label: 'Proposal Generated', cls: 'bg-gray-100 text-gray-700 border-gray-200' };
   }
@@ -112,7 +112,7 @@ function calcTypeColor(t: string) {
   switch (t) {
     case 'progress_payment_rental': return 'bg-orange-50 text-orange-700 border-orange-200';
     case 'serviced_rental': return 'bg-blue-50 text-blue-700 border-blue-200';
-    default: return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    default: return 'bg-sky-50 text-sky-700 border-sky-200';
   }
 }
 
@@ -898,7 +898,7 @@ export function AdminQuotesList() {
                             {calcTypeLabel(q.calculator_type)}
                           </span>
                           {q.pipedrive_synced_at && (
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                               <CheckCircle2 className="w-3 h-3" />
                               In Pipedrive
                             </span>
