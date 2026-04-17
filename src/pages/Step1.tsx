@@ -373,7 +373,7 @@ export function Step1() {
                 </div>
 
                 <div
-                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${gstConfirmed ? 'border-[#28AA48] bg-[#28AA48]/5' : 'border-orange-300 bg-orange-50'}`}
+                  className={`mt-3 flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${gstConfirmed ? 'border-[#28AA48] bg-[#28AA48]/5' : 'border-orange-300 bg-orange-50'}`}
                   onClick={() => setGstConfirmed(v => !v)}
                 >
                   <input
