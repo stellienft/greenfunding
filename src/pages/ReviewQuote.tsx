@@ -383,7 +383,6 @@ export function ReviewQuote() {
                       <tr className="border-b border-gray-100">
                         <th className="text-left text-xs font-bold text-gray-500 pb-3">Term</th>
                         <th className="text-right text-xs font-bold text-gray-500 pb-3">Monthly Payment (Ex. GST)</th>
-                        <th className="text-right text-xs font-bold text-gray-500 pb-3">Total Financed</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -391,13 +390,9 @@ export function ReviewQuote() {
                         <tr key={i} className={`border-b border-gray-50 ${i === 0 ? 'bg-green-50/50' : ''}`}>
                           <td className="py-3 text-sm font-semibold text-[#3A475B]">
                             {term.years} Year{term.years !== 1 ? 's' : ''}
-                            {i === 0 && <span className="ml-2 text-xs bg-[#28AA48] text-white px-2 py-0.5 rounded-full">Most Popular</span>}
                           </td>
                           <td className="py-3 text-right text-sm font-bold text-[#3A475B]">
                             {formatCurrencyDecimals(term.monthlyPayment / 1.1)}/mo
-                          </td>
-                          <td className="py-3 text-right text-sm text-gray-500">
-                            {formatCurrency(term.totalFinanced)}
                           </td>
                         </tr>
                       ))}
