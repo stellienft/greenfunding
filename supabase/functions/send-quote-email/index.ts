@@ -1219,7 +1219,7 @@ Deno.serve(async (req: Request) => {
     </td></tr></table>
     <p style="font-size:13px;color:#9CA3AF;margin:0 0 28px;font-family:Arial,sans-serif;">This link is valid for 30 days.</p>
     <table cellpadding="0" cellspacing="0"><tr><td style="background-color:#28AA48;border-radius:10px;">
-      <a href="${reviewUrl}" style="display:inline-block;background-color:#28AA48;color:#ffffff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;letter-spacing:0.3px;mso-padding-alt:0;">Review &amp; Approve Proposal</a>
+      <a href="${reviewUrl}" style="display:inline-block;background-color:#28AA48;color:#ffffff;font-weight:700;font-size:16px;padding:16px 40px;border-radius:10px;text-decoration:none;font-family:Arial,sans-serif;letter-spacing:0.3px;mso-padding-alt:0;">Review Proposal</a>
     </td></tr></table>
     <p style="font-size:12px;color:#9CA3AF;margin:24px 0 0;font-family:Arial,sans-serif;word-break:break-all;">Or copy this link: <a href="${reviewUrl}" style="color:#28AA48;">${reviewUrl}</a></p>
   </td></tr>
