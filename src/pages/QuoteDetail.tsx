@@ -190,6 +190,10 @@ export function QuoteDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [resending, setResending] = useState(false);
+  const [resentOk, setResentOk] = useState(false);
+  const [resendError, setResendError] = useState<string | null>(null);
+
   useEffect(() => {
     if (installerProfile && id) loadQuote();
   }, [installerProfile, id]);
@@ -271,6 +275,35 @@ export function QuoteDetail() {
     } catch {
       alert('Failed to delete quote. Please try again.');
       setDeleting(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!quote?.id) return;
+    setResending(true);
+    setResendError(null);
+    setResentOk(false);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-quote-email?mode=send-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
+          'Apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({ quoteId: quote.id }),
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Failed to resend');
+      setResentOk(true);
+      setTimeout(() => setResentOk(false), 4000);
+    } catch (err: any) {
+      setResendError(err.message || 'Failed to resend proposal');
+    } finally {
+      setResending(false);
     }
   }
 
@@ -461,7 +494,17 @@ export function QuoteDetail() {
               <ArrowLeft className="w-4 h-4" />
               Back to My Quotes
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {quote.recipient_email && (
+                <button
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#3A475B] bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60"
+                >
+                  {resending ? <Loader className="w-3.5 h-3.5 animate-spin" /> : resentOk ? <CheckCircle2 className="w-3.5 h-3.5 text-[#28AA48]" /> : <Send className="w-3.5 h-3.5" />}
+                  {resentOk ? 'Sent!' : 'Resend Proposal'}
+                </button>
+              )}
               <button
                 onClick={openEditModal}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#3A475B] bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -477,6 +520,9 @@ export function QuoteDetail() {
                 Delete
               </button>
             </div>
+            {resendError && (
+              <p className="text-xs text-red-500 mt-2 text-right">{resendError}</p>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">

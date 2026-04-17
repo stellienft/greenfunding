@@ -16,6 +16,7 @@ import { Contacts } from './pages/Contacts';
 import { MyQuotes } from './pages/MyQuotes';
 import { QuoteDetail } from './pages/QuoteDetail';
 import { OnlineQuote } from './pages/OnlineQuote';
+import { ReviewQuote } from './pages/ReviewQuote';
 import { ClientUploadDocuments } from './pages/ClientUploadDocuments';
 import { Setup2FA } from './pages/Setup2FA';
 import { Verify2FA } from './pages/Verify2FA';
@@ -160,6 +161,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/review-quote/:id" element={<ReviewQuote />} />
               <Route path="/upload-documents/:token" element={<ClientUploadDocuments />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/reset-password" element={<AdminResetPassword />} />
