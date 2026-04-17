@@ -52,6 +52,60 @@ function calcTypeLabel(t: string): string {
   }
 }
 
+function splitName(fullName: string): { first: string; last: string } {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return { first: parts[0], last: '' };
+  const last = parts.pop()!;
+  return { first: parts.join(' '), last };
+}
+
+async function findOrCreateOrg(apiToken: string, name: string): Promise<number | undefined> {
+  const searchRes = await fetch(
+    `https://api.pipedrive.com/v1/organizations/search?term=${encodeURIComponent(name)}&exact_match=true&api_token=${apiToken}`
+  );
+  if (searchRes.ok) {
+    const searchJson = await searchRes.json();
+    const existing = searchJson?.data?.items?.[0]?.item;
+    if (existing?.id) return existing.id;
+  }
+  const createRes = await fetch(`https://api.pipedrive.com/v1/organizations?api_token=${apiToken}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  const createJson = await createRes.json();
+  return createJson?.data?.id;
+}
+
+async function findOrCreatePerson(
+  apiToken: string,
+  firstName: string,
+  lastName: string,
+  email?: string,
+  phone?: string,
+  orgId?: number
+): Promise<number | undefined> {
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  if (!fullName) return undefined;
+
+  const personPayload: Record<string, unknown> = {
+    first_name: firstName,
+    last_name: lastName,
+    name: fullName,
+  };
+  if (email) personPayload.email = [{ value: email, primary: true, label: 'work' }];
+  if (phone) personPayload.phone = [{ value: phone, primary: true, label: 'work' }];
+  if (orgId) personPayload.org_id = orgId;
+
+  const createRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(personPayload),
+  });
+  const createJson = await createRes.json();
+  return createJson?.data?.id;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -92,7 +146,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: quote, error: quoteError } = await supabase
       .from('sent_quotes')
-      .select('id, quote_number, recipient_name, recipient_company, recipient_email, client_phone, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, accepted_at, installer_id')
+      .select('id, quote_number, recipient_name, recipient_company, recipient_email, client_phone, client_person_name, entity_name, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, accepted_at, installer_id')
       .eq('id', quoteId)
       .maybeSingle();
 
@@ -110,18 +164,18 @@ Deno.serve(async (req: Request) => {
 
     const uploadList = uploads || [];
 
-    let installerInfo = null;
+    let installerInfo: { full_name: string | null; company_name: string | null; email: string | null; phone: string | null } | null = null;
     if (quote.installer_id) {
       const { data: installer } = await supabase
         .from('installer_users')
-        .select('full_name, company_name, email')
+        .select('full_name, company_name, email, phone')
         .eq('id', quote.installer_id)
         .maybeSingle();
       installerInfo = installer;
     }
 
     const quoteNum = formatQuoteNumber(quote.quote_number);
-    const clientName = quote.recipient_company || quote.recipient_name || 'Unknown Client';
+    const clientDisplayName = quote.entity_name || quote.recipient_company || quote.recipient_name || 'Unknown Client';
 
     const lowestTerm = quote.term_options?.length
       ? quote.term_options.reduce((a: { years: number }, b: { years: number }) => a.years < b.years ? a : b)
@@ -146,45 +200,63 @@ Deno.serve(async (req: Request) => {
       dealId = verifyJson.data.id;
       dealUrl = `https://app.pipedrive.com/deal/${dealId}`;
     } else {
-      const dealTitle = `${quoteNum} — ${clientName}`;
+      const dealTitle = `${quoteNum} — ${clientDisplayName}`;
 
-      const personPayload: Record<string, unknown> = {
-        name: quote.recipient_name || clientName,
-      };
-      if (quote.recipient_email) {
-        personPayload.email = [{ value: quote.recipient_email, primary: true }];
-      }
-      if (quote.client_phone) {
-        personPayload.phone = [{ value: quote.client_phone, primary: true }];
-      }
+      // --- Client Person ---
+      // Use client_person_name if available (entity quote), otherwise recipient_name
+      const clientFullName = quote.client_person_name || quote.recipient_name || '';
+      const { first: clientFirst, last: clientLast } = clientFullName
+        ? splitName(clientFullName)
+        : { first: '', last: '' };
 
-      const personRes = await fetch(`https://api.pipedrive.com/v1/persons?api_token=${apiToken}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(personPayload),
-      });
-      const personJson = await personRes.json();
-      const personId = personJson?.data?.id;
-
-      let orgId: number | undefined;
-      if (quote.recipient_company) {
-        const orgRes = await fetch(`https://api.pipedrive.com/v1/organizations?api_token=${apiToken}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: quote.recipient_company }),
-        });
-        const orgJson = await orgRes.json();
-        orgId = orgJson?.data?.id;
+      // --- Client Organisation ---
+      let clientOrgId: number | undefined;
+      const clientOrgName = quote.entity_name || quote.recipient_company || '';
+      if (clientOrgName) {
+        clientOrgId = await findOrCreateOrg(apiToken, clientOrgName);
       }
 
+      // --- Client Person (linked to client org) ---
+      let clientPersonId: number | undefined;
+      if (clientFirst || clientLast) {
+        clientPersonId = await findOrCreatePerson(
+          apiToken,
+          clientFirst,
+          clientLast,
+          quote.recipient_email || undefined,
+          quote.client_phone || undefined,
+          clientOrgId
+        );
+      }
+
+      // --- Supplier Organisation (Installer Company) ---
+      let supplierOrgId: number | undefined;
+      if (installerInfo?.company_name) {
+        supplierOrgId = await findOrCreateOrg(apiToken, installerInfo.company_name);
+      }
+
+      // --- Supplier Contact (Installer Name, linked to supplier org) ---
+      if (installerInfo?.full_name) {
+        const { first: instFirst, last: instLast } = splitName(installerInfo.full_name);
+        await findOrCreatePerson(
+          apiToken,
+          instFirst,
+          instLast,
+          installerInfo.email || undefined,
+          installerInfo.phone || undefined,
+          supplierOrgId
+        );
+      }
+
+      // --- Deal ---
       const dealPayload: Record<string, unknown> = {
         title: dealTitle,
         value: quote.project_cost,
         currency: 'AUD',
         status: 'open',
       };
-      if (personId) dealPayload.person_id = personId;
-      if (orgId) dealPayload.org_id = orgId;
+      if (clientPersonId) dealPayload.person_id = clientPersonId;
+      if (clientOrgId) dealPayload.org_id = clientOrgId;
       if (configuredPipelineId) dealPayload.pipeline_id = Number(configuredPipelineId);
       if (configuredStageId) dealPayload.stage_id = Number(configuredStageId);
 
@@ -231,10 +303,11 @@ Deno.serve(async (req: Request) => {
     noteLines.push('');
 
     if (installerInfo) {
-      noteLines.push('Installer:');
-      if (installerInfo.full_name) noteLines.push(`  ${installerInfo.full_name}`);
-      if (installerInfo.company_name) noteLines.push(`  ${installerInfo.company_name}`);
-      if (installerInfo.email) noteLines.push(`  ${installerInfo.email}`);
+      noteLines.push('Supplier:');
+      if (installerInfo.company_name) noteLines.push(`  Company: ${installerInfo.company_name}`);
+      if (installerInfo.full_name) noteLines.push(`  Contact: ${installerInfo.full_name}`);
+      if (installerInfo.email) noteLines.push(`  Email: ${installerInfo.email}`);
+      if (installerInfo.phone) noteLines.push(`  Phone: ${installerInfo.phone}`);
       noteLines.push('');
     }
 
