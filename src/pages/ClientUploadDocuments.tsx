@@ -101,10 +101,6 @@ export function ClientUploadDocuments() {
 
   const [nameInput, setNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
-  const [phoneInput, setPhoneInput] = useState('');
-  const [abnInput, setAbnInput] = useState('');
-  const [businessNatureInput, setBusinessNatureInput] = useState('');
-  const [companyAddressInput, setCompanyAddressInput] = useState('');
   const [codeInput, setCodeInput] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -140,16 +136,14 @@ export function ClientUploadDocuments() {
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!quote) return;
-
-    if (!nameInput.trim()) { setLoginError('Client name is required.'); return; }
-    if (!emailInput.trim()) { setLoginError('Email address is required.'); return; }
-    if (!phoneInput.trim()) { setLoginError('Phone number is required.'); return; }
-    if (!abnInput.trim()) { setLoginError('ABN is required.'); return; }
-    if (!businessNatureInput.trim()) { setLoginError('Nature of business is required.'); return; }
-    if (!companyAddressInput.trim()) { setLoginError('Company address is required.'); return; }
-
+    const expectedName = (quote.recipient_name || quote.recipient_company || '').toLowerCase().trim();
     const expectedEmail = (quote.recipient_email || '').toLowerCase().trim();
-    const emailMatch = !expectedEmail || emailInput.trim().toLowerCase() === expectedEmail;
+    const nameMatch = nameInput.trim().toLowerCase() === expectedName;
+    const emailMatch = emailInput.trim().toLowerCase() === expectedEmail;
+    if (!nameMatch) {
+      setLoginError('Name does not match our records. Please enter your full name as it appears on the quote.');
+      return;
+    }
     if (!emailMatch) {
       setLoginError('Email address does not match our records. Please enter the email address used when the quote was generated.');
       return;
@@ -256,78 +250,34 @@ export function ClientUploadDocuments() {
               </div>
               <h1 className="text-2xl font-bold text-[#3A475B] text-center mb-2">Low Doc Requirements Client Portal</h1>
               <p className="text-gray-500 text-sm text-center mb-8">
-                Please complete your details below to securely access your document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
+                Enter your company name and email address to securely access your document upload portal for quote {formatQuoteNumber(quote.quote_number)}.
               </p>
               <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto">
                 <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Client Name <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Your Company Name</label>
                   <input
                     type="text"
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder="Enter your company name"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Email Address <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Email Address</label>
                   <input
                     type="email"
                     value={emailInput}
                     onChange={e => setEmailInput(e.target.value)}
-                    placeholder="Your email address"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Phone Number <span className="text-red-500">*</span></label>
-                  <input
-                    type="tel"
-                    value={phoneInput}
-                    onChange={e => setPhoneInput(e.target.value)}
-                    placeholder="Your phone number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">ABN <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={abnInput}
-                    onChange={e => setAbnInput(e.target.value)}
-                    placeholder="Australian Business Number"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Nature of Business <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={businessNatureInput}
-                    onChange={e => setBusinessNatureInput(e.target.value)}
-                    placeholder="e.g. Solar installation, HVAC, Electrical"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Company Address <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={companyAddressInput}
-                    onChange={e => setCompanyAddressInput(e.target.value)}
-                    placeholder="Your registered business address"
+                    placeholder="Enter your email address"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                     required
                   />
                 </div>
                 {quote?.has_access_code && (
                   <div>
-                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Access Code <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-semibold text-[#3A475B] mb-1.5">Access Code</label>
                     <input
                       type="text"
                       value={codeInput}

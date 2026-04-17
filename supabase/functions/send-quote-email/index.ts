@@ -135,7 +135,6 @@ async function generateQuotePdf(
   annualSolarGenerationKwh?: number,
   energySavings?: number,
   disclaimerText?: string,
-  quoteId?: string,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -764,38 +763,20 @@ async function generateQuotePdf(
     }
     y -= disclaimerH + 12;
 
-    const appUrl = 'portal.greenfunding.com.au';
-    const acceptUrl = quoteId ? `${appUrl}/accept/${quoteId}` : null;
-
-    const getStartedH = acceptUrl ? 88 : 64;
+    const getStartedH = 64;
     dr(page, PL, y - getStartedH, CW, getStartedH, C.GRAY_BG, 1, C.BORDER, 0.75, 6);
 
-    if (acceptUrl) {
-      drawSectionLabel(page, 'Accept This Proposal', PL + 14, y - 10);
-      dtWrapped(page, 'To accept this proposal online and begin your application, visit the link below:', PL + 14, y - 22, 8, false, C.GRAY_TEXT, CW - 28, 12);
+    drawSectionLabel(page, 'Get Started', PL + 14, y - 10);
+    const contactText = 'Contact your Green Funding representative to begin the application process.';
+    dtWrapped(page, contactText, PL + 14, y - 22, 8, false, C.GRAY_TEXT, CW / 2 - 20, 12);
 
-      const acceptBoxY = y - 42;
-      const acceptBoxH = 22;
-      dr(page, PL + 14, acceptBoxY - acceptBoxH, CW - 28, acceptBoxH, C.WHITE, 1, C.BORDER, 0.75, 4);
-      dt(page, acceptUrl, PL + 20, acceptBoxY - acceptBoxH / 2 - 3.5, 8.5, true, C.GREEN);
-
-      const contactRightX = PL + 14;
-      dt(page, 'Phone: 1300 403 100', contactRightX, y - 74, 7.5, false, C.GRAY_TEXT);
-      dt(page, '  |  ', contactRightX + tw('Phone: 1300 403 100', false, 7.5), y - 74, 7.5, false, C.GRAY_LIGHT);
-      dt(page, 'solutions@greenfunding.com.au', contactRightX + tw('Phone: 1300 403 100  |  ', false, 7.5), y - 74, 7.5, false, C.GRAY_TEXT);
-    } else {
-      drawSectionLabel(page, 'Get Started', PL + 14, y - 10);
-      const contactText = 'Contact your Green Funding representative to begin the application process.';
-      dtWrapped(page, contactText, PL + 14, y - 22, 8, false, C.GRAY_TEXT, CW / 2 - 20, 12);
-
-      const contactRightX = PL + CW / 2 + 14;
-      dt(page, 'Phone:', contactRightX, y - 22, 8, true, C.DARK_TEXT);
-      dt(page, '1300 403 100', contactRightX + tw('Phone: ', true, 8), y - 22, 8, false, C.GRAY_TEXT);
-      dt(page, 'Email:', contactRightX, y - 34, 8, true, C.DARK_TEXT);
-      dt(page, 'solutions@greenfunding.com.au', contactRightX + tw('Email: ', true, 8), y - 34, 8, false, C.GRAY_TEXT);
-      dt(page, 'Web:', contactRightX, y - 46, 8, true, C.DARK_TEXT);
-      dt(page, 'www.greenfunding.com.au', contactRightX + tw('Web: ', true, 8), y - 46, 8, false, C.GRAY_TEXT);
-    }
+    const contactRightX = PL + CW / 2 + 14;
+    dt(page, 'Phone:', contactRightX, y - 22, 8, true, C.DARK_TEXT);
+    dt(page, '1300 403 100', contactRightX + tw('Phone: ', true, 8), y - 22, 8, false, C.GRAY_TEXT);
+    dt(page, 'Email:', contactRightX, y - 34, 8, true, C.DARK_TEXT);
+    dt(page, 'solutions@greenfunding.com.au', contactRightX + tw('Email: ', true, 8), y - 34, 8, false, C.GRAY_TEXT);
+    dt(page, 'Web:', contactRightX, y - 46, 8, true, C.DARK_TEXT);
+    dt(page, 'www.greenfunding.com.au', contactRightX + tw('Web: ', true, 8), y - 46, 8, false, C.GRAY_TEXT);
 
     y -= getStartedH + 16;
 
@@ -1252,7 +1233,6 @@ Deno.serve(async (req: Request) => {
       annualSolarGenerationKwh,
       energySavings,
       disclaimerText,
-      quoteRecord.id,
     );
 
     const pdfBase64 = uint8ArrayToBase64(pdfBytes);

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check, ExternalLink, Loader, CheckCircle2, X, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Download, Check, ExternalLink, Loader } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
+import { CheckCircle2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface TermOption {
@@ -148,34 +149,6 @@ export function OnlineQuote() {
   } = quoteData;
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [accepting, setAccepting] = useState(false);
-  const [accepted, setAccepted] = useState(false);
-  const [acceptedToken, setAcceptedToken] = useState<string | null>(null);
-  const [acceptError, setAcceptError] = useState<string | null>(null);
-
-  const handleAcceptProposal = async () => {
-    if (!quoteData.quoteId) return;
-    setAccepting(true);
-    setAcceptError(null);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/accept-quote`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ quoteId: quoteData.quoteId }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.error || 'Failed to accept proposal');
-      setAcceptedToken(json.uploadToken);
-      setAccepted(true);
-    } catch (err: any) {
-      setAcceptError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setAccepting(false);
-    }
-  };
 
   const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
@@ -450,76 +423,12 @@ export function OnlineQuote() {
               </p>
             </div>
 
-            <div className="px-8 py-6 border-b border-gray-100 no-print">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Accept This Proposal</p>
-
-              {accepted && acceptedToken ? (
-                <div className="rounded-xl bg-green-50 border border-green-200 p-5 text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle2 className="w-7 h-7 text-[#28AA48]" />
-                  </div>
-                  <p className="font-bold text-[#3A475B] mb-1">Proposal Accepted!</p>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Check your email for your secure document upload link and 6-digit access code.
-                  </p>
-                  <button
-                    onClick={() => navigate(`/upload-documents/${acceptedToken}`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg text-sm hover:shadow-md transition-all"
-                  >
-                    Go to Document Upload Portal
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                    Ready to proceed? Click below to accept this proposal. We will immediately send you a secure link to upload your required documents and begin the application process.
-                  </p>
-
-                  {acceptError && (
-                    <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                      <X className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      {acceptError}
-                    </div>
-                  )}
-
-                  {quoteData.quoteId ? (
-                    <button
-                      onClick={handleAcceptProposal}
-                      disabled={accepting}
-                      className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-base disabled:opacity-70"
-                    >
-                      {accepting ? (
-                        <><Loader className="w-5 h-5 animate-spin" />Accepting Proposal...</>
-                      ) : (
-                        <><CheckCircle2 className="w-5 h-5" />Accept This Proposal</>
-                      )}
-                    </button>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <p className="text-sm text-gray-600">Contact your Green Funding representative to begin the application process.</p>
-                      <div className="space-y-1.5">
-                        <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Phone:</span> 1300 403 100</p>
-                        <p className="text-sm text-gray-500"><span className="font-medium text-[#3A475B]">Email:</span> solutions@greenfunding.com.au</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <p className="text-xs text-gray-400 mt-3 text-center">
-                    By accepting you agree to proceed with the finance application. Questions? Call <a href="tel:1300403100" className="text-[#28AA48]">1300 403 100</a>
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="px-8 py-6 border-b border-gray-100 print-only" style={{ display: 'none' }}>
+            <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Get Started</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">
-                    {quoteData.quoteId
-                      ? `To accept this proposal online, visit: portal.greenfunding.com.au/accept/${quoteData.quoteId}`
-                      : 'Contact your Green Funding representative to begin the application process.'}
+                    Contact your Green Funding representative to begin the application process. Our team will guide you through each step.
                   </p>
                 </div>
                 <div className="space-y-1.5">
