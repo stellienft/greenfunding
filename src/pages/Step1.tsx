@@ -17,7 +17,7 @@ export function Step1() {
   const [inputValue, setInputValue] = useState('');
   const [isEditingInput, setIsEditingInput] = useState(false);
   const [annualSolarGeneration, setAnnualSolarGeneration] = useState<number | undefined>(state.annualSolarGenerationKwh);
-  const [currentElectricityBill, setCurrentElectricityBill] = useState<number | undefined>(state.currentElectricityBill);
+  const [currentElectricityBill, setCurrentElectricityBill] = useState<number | undefined>(state.currentElectricityBill !== undefined ? state.currentElectricityBill / 12 : undefined);
   const [anticipatedElectricityBillWithSolar, setAnticipatedElectricityBillWithSolar] = useState<number | undefined>(state.anticipatedElectricityBillWithSolar !== undefined ? state.anticipatedElectricityBillWithSolar / 12 : undefined);
   const [systemSize, setSystemSize] = useState<string>(state.systemSize || '');
   const [showSpecialPricingModal, setShowSpecialPricingModal] = useState(false);
@@ -120,7 +120,7 @@ export function Step1() {
       projectCost: projectCostIncGst,
       selectedAssetIds: selectedAssets,
       annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
-      currentElectricityBill: hasEnergyGenerationAsset() ? currentElectricityBill : undefined,
+      currentElectricityBill: hasEnergyGenerationAsset() ? (currentElectricityBill !== undefined ? currentElectricityBill * 12 : undefined) : undefined,
       anticipatedElectricityBillWithSolar: hasEnergyGenerationAsset() ? (anticipatedElectricityBillWithSolar !== undefined ? anticipatedElectricityBillWithSolar * 12 : undefined) : undefined,
       specialPricingRequested,
       residualPercentage: isCarOnlyProject() ? residualPercentage : undefined,
@@ -440,7 +440,7 @@ export function Step1() {
                           setAnnualSolarGeneration(numValue);
                         }
                       }}
-                      placeholder="e.g., 204,000"
+                      placeholder="e.g., 200,000"
                       className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
                     />
                     <span className="text-sm text-gray-600 font-medium">kWh/year</span>
@@ -460,7 +460,7 @@ export function Step1() {
                     Current Electricity Bill
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
-                    Enter the client's current annual electricity bill. This will increase 3% each year over the 25-year savings projection.
+                    Enter the client's current average monthly electricity bill.
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 font-medium">$</span>
@@ -476,10 +476,10 @@ export function Step1() {
                           setCurrentElectricityBill(numValue);
                         }
                       }}
-                      placeholder="e.g., 20,000"
+                      placeholder="e.g., 1,500"
                       className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-right font-semibold text-lg"
                     />
-                    <span className="text-sm text-gray-600 font-medium">per year</span>
+                    <span className="text-sm text-gray-600 font-medium">per month</span>
                   </div>
                 </div>
               )}
@@ -490,7 +490,7 @@ export function Step1() {
                     Anticipated Electricity Bill
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
-                    Enter the anticipated monthly electricity bill after solar is installed. This will also increase 3% each year over the 25-year projection.
+                    Enter the anticipated monthly electricity bill after solar is installed.
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 font-medium">$</span>
