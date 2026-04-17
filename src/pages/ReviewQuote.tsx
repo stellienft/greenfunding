@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Loader, CheckCircle2, ThumbsUp, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -88,11 +88,8 @@ interface InstallerInfo {
 
 export function ReviewQuote() {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
-  const codeFromUrl = searchParams.get('code') || '';
-
   const [step, setStep] = useState<Step>('verify');
-  const [accessCode, setAccessCode] = useState(codeFromUrl);
+  const [accessCode, setAccessCode] = useState('');
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [installer, setInstaller] = useState<InstallerInfo | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
@@ -101,15 +98,8 @@ export function ReviewQuote() {
   const [approveError, setApproveError] = useState<string | null>(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
 
-  useEffect(() => {
-    if (codeFromUrl) {
-      handleVerify(codeFromUrl);
-    }
-  }, []);
-
-  async function handleVerify(code?: string) {
-    const codeToUse = code || accessCode;
-    if (!codeToUse.trim() || !id) {
+  async function handleVerify() {
+    if (!accessCode.trim() || !id) {
       setVerifyError('Please enter your access code.');
       return;
     }
@@ -129,7 +119,7 @@ export function ReviewQuote() {
         return;
       }
 
-      if (data.portal_access_code !== codeToUse.trim()) {
+      if (data.portal_access_code !== accessCode.trim()) {
         setVerifyError('Incorrect access code. Please try again.');
         setStep('verify');
         return;

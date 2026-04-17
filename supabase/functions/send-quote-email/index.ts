@@ -1190,7 +1190,7 @@ Deno.serve(async (req: Request) => {
         .select('upload_token')
         .maybeSingle();
       const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
-      const reviewUrl = `${appUrl}/review-quote/${payloadQuoteId}?code=${accessCode}`;
+      const reviewUrl = `${appUrl}/review-quote/${payloadQuoteId}`;
       const qNum = formatQuoteNumber(quote.quote_number);
       const clientName = quote.recipient_company || quote.recipient_name || 'Valued Customer';
       const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
