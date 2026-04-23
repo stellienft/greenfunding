@@ -32,6 +32,9 @@ Deno.serve(async (req: Request) => {
       pipedrive_deal_id,
       pipedrive_pipeline_id,
       pipedrive_stage_id,
+      site_title,
+      meta_description,
+      og_image_url,
     } = await req.json();
 
     const { data: settings, error: fetchError } = await supabase
@@ -57,6 +60,9 @@ Deno.serve(async (req: Request) => {
     if (pipedrive_deal_id !== undefined) updateData.pipedrive_deal_id = pipedrive_deal_id;
     if (pipedrive_pipeline_id !== undefined) updateData.pipedrive_pipeline_id = pipedrive_pipeline_id;
     if (pipedrive_stage_id !== undefined) updateData.pipedrive_stage_id = pipedrive_stage_id;
+    if (site_title !== undefined) updateData.site_title = site_title;
+    if (meta_description !== undefined) updateData.meta_description = meta_description;
+    if (og_image_url !== undefined) updateData.og_image_url = og_image_url;
 
     if (settings) {
       const { error: updateError } = await supabase

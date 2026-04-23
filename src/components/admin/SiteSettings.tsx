@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, AlertCircle, CheckCircle, Code, Link } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Code, Link, Globe } from 'lucide-react';
 import { DangerZone } from './DangerZone';
 
 export function SiteSettings() {
+  const [siteTitle, setSiteTitle] = useState('Green Funding Partner Portal');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [ogImageUrl, setOgImageUrl] = useState('');
   const [googleAnalyticsCode, setGoogleAnalyticsCode] = useState('');
   const [googleAnalyticsEnabled, setGoogleAnalyticsEnabled] = useState(false);
   const [servicedRentalEnabled, setServicedRentalEnabled] = useState(false);
@@ -27,11 +30,14 @@ export function SiteSettings() {
     try {
       const { data, error } = await supabase
         .from('site_settings')
-        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id')
+        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id, site_title, meta_description, og_image_url')
         .maybeSingle();
 
       if (error) throw error;
       if (data) {
+        setSiteTitle(data.site_title || 'Green Funding Partner Portal');
+        setMetaDescription(data.meta_description || '');
+        setOgImageUrl(data.og_image_url || '');
         setGoogleAnalyticsCode(data.google_analytics_code || '');
         setGoogleAnalyticsEnabled(data.google_analytics_enabled || false);
         setServicedRentalEnabled(data.serviced_rental_enabled || false);
@@ -65,6 +71,9 @@ export function SiteSettings() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          site_title: siteTitle.trim(),
+          meta_description: metaDescription.trim(),
+          og_image_url: ogImageUrl.trim(),
           google_analytics_code: googleAnalyticsCode.trim(),
           google_analytics_enabled: googleAnalyticsEnabled,
           serviced_rental_enabled: servicedRentalEnabled,
@@ -138,6 +147,66 @@ export function SiteSettings() {
           {message.text}
         </div>
       )}
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
+        <div className="flex items-start gap-3">
+          <Globe className="w-5 h-5 text-[#3A475B] mt-1 flex-shrink-0" />
+          <div className="flex-1 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-[#3A475B]">SEO & Site Identity</h3>
+              <p className="text-sm text-gray-600 mt-1">Control the site title, meta description, and social share image shown in browser tabs and link previews.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#3A475B] mb-2">Site Title</label>
+              <input
+                type="text"
+                value={siteTitle}
+                onChange={e => setSiteTitle(e.target.value)}
+                placeholder="Green Funding Partner Portal"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">Shown in the browser tab and as the OG/Twitter title.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#3A475B] mb-2">Meta Description</label>
+              <textarea
+                value={metaDescription}
+                onChange={e => setMetaDescription(e.target.value)}
+                placeholder="Calculate financing for your green energy project with Green Funding..."
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">Used by search engines and social platforms when previewing links. Aim for 120–160 characters.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#3A475B] mb-2">OG Share Image URL</label>
+              <input
+                type="url"
+                value={ogImageUrl}
+                onChange={e => setOgImageUrl(e.target.value)}
+                placeholder="https://example.com/share-image.png"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">The image shown when links are shared on social media (Facebook, LinkedIn, etc.). Recommended size: 1200×630px.</p>
+            </div>
+
+            {ogImageUrl.trim() && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <p className="text-xs text-gray-500 px-3 py-2 bg-gray-50 border-b border-gray-200 font-medium">Share image preview</p>
+                <img
+                  src={ogImageUrl.trim()}
+                  alt="OG share preview"
+                  className="w-full max-h-48 object-cover"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
         <div className="flex items-start gap-3">

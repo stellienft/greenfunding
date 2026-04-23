@@ -23,6 +23,7 @@ import { Verify2FA } from './pages/Verify2FA';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Analytics } from './components/Analytics';
 import { useEffect } from 'react';
+import { supabase } from './lib/supabase';
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   const { admin, loading, totpVerified } = useAdmin();
@@ -44,6 +45,47 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function setMeta(name: string, content: string, property = false) {
+  const attr = property ? 'property' : 'name';
+  let el = document.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute(attr, name);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content', content);
+}
+
+function SiteMetaInit() {
+  useEffect(() => {
+    supabase
+      .from('site_settings')
+      .select('site_title, meta_description, og_image_url')
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        const title = data.site_title || 'Green Funding Partner Portal';
+        const desc = data.meta_description || '';
+        const img = data.og_image_url || '';
+
+        document.title = title;
+        if (desc) {
+          setMeta('description', desc);
+          setMeta('og:description', desc, true);
+          setMeta('twitter:description', desc);
+        }
+        setMeta('og:title', title, true);
+        setMeta('twitter:title', title);
+        if (img) {
+          setMeta('og:image', img, true);
+          setMeta('twitter:image', img);
+        }
+      });
+  }, []);
+
+  return null;
 }
 
 function AdminInit() {
@@ -76,6 +118,7 @@ function App() {
       <AdminProvider>
         <AuthProvider>
           <AppProvider>
+            <SiteMetaInit />
             <AdminInit />
             <Analytics />
             <Routes>
