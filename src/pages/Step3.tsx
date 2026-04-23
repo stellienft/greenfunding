@@ -41,7 +41,6 @@ export function Step3() {
   const [selectedQuoteTerms, setSelectedQuoteTerms] = useState<number[]>([]);
   const [quoteClientFields, setQuoteClientFields] = useState<QuoteClientFields>({ clientName: '', clientEmail: '', clientAddress: '', clientPhone: '', companyAddress: '', companyPhone: '', systemSize: state.systemSize || '', abn: '', entityName: '', incorporationDate: '', natureOfBusiness: '', clientPersonName: '', siteAddressSameAsCompany: false, tradingName: '', tradingNameEnabled: false });
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [pdfGenerated, setPdfGenerated] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [generatedQuoteNumber, setGeneratedQuoteNumber] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -369,7 +368,6 @@ export function Step3() {
       if (!response.ok || result.error) throw new Error(result.error || 'Failed to generate quote');
 
       setGeneratedQuoteNumber(result.quoteNumber);
-      setPdfGenerated(true);
 
       const quoteDate = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -378,7 +376,6 @@ export function Step3() {
         state: {
           quoteNumber: result.quoteNumber,
           quoteId: result.quoteId || null,
-          pdfUrl: result.pdfUrl || null,
           quoteDate,
           clientName: quoteClientFields.entityName.trim() || quoteClientFields.clientName.trim(),
           clientAddress: siteAddr,
@@ -822,13 +819,13 @@ export function Step3() {
               installerName={installerProfile?.full_name || user?.user_metadata?.full_name || ''}
               installerCompany={installerProfile?.company_name || user?.user_metadata?.company_name || ''}
               generatingPdf={generatingPdf}
-              pdfGenerated={pdfGenerated}
+              pdfGenerated={false}
               quoteError={quoteError}
               generatedQuoteNumber={generatedQuoteNumber}
               clientFields={quoteClientFields}
               onClientFieldChange={(field, value) => setQuoteClientFields(prev => ({ ...prev, [field]: value as any }))}
               onGenerate={handleGenerateQuote}
-              onReset={() => { setPdfGenerated(false); setQuoteError(null); setGeneratedQuoteNumber(null); }}
+              onReset={() => { setQuoteError(null); setGeneratedQuoteNumber(null); }}
               formatCurrency={formatCurrency}
               selectedTerm={selectedTerm}
             />

@@ -331,7 +331,7 @@ export function QuoteSection({
                       onChange={e => onClientFieldChange('tradingNameEnabled', e.target.checked)}
                       className="w-3.5 h-3.5 text-[#28AA48] rounded border-gray-300 focus:ring-[#28AA48] cursor-pointer"
                     />
-                    <label htmlFor="tradingNameEnabled" className="text-xs font-medium text-gray-500 cursor-pointer select-none">Trading Name</label>
+                    <label htmlFor="tradingNameEnabled" className="text-xs font-medium text-gray-500 cursor-pointer select-none">Trading Name/Trust Name</label>
                   </div>
                   <input
                     type="text"

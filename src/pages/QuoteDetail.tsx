@@ -8,7 +8,7 @@ import { calculateAll, calculateProgressPayment } from '../calculator';
 import {
   ArrowLeft, FileText, MapPin, Calendar, DollarSign, Tag, CheckCircle2,
   Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock,
-  Mail, Copy, ClipboardCheck, Download, Pencil, Trash2, AlertTriangle
+  Mail, Copy, ClipboardCheck, Pencil, Trash2, AlertTriangle
 } from 'lucide-react';
 
 interface SentQuote {
@@ -644,19 +644,6 @@ export function QuoteDetail() {
                 </div>
               </div>
 
-              {quote.pdf_url && (
-                <div className="mt-4">
-                  <a
-                    href={quote.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 w-full px-4 py-3 bg-[#28AA48]/10 hover:bg-[#28AA48]/20 border border-[#28AA48]/30 rounded-xl text-sm font-semibold text-[#28AA48] transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Quote PDF
-                  </a>
-                </div>
-              )}
 
               <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden">
                 <button
@@ -691,7 +678,7 @@ export function QuoteDetail() {
                   return (
                     <div className="px-4 pb-4 pt-3 space-y-3">
                       <p className="text-xs text-gray-500">
-                        Copy and paste this into your email client, then attach the PDF quote.
+                        Copy and paste this into your email client.
                       </p>
                       <pre className="whitespace-pre-wrap font-sans text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-56 overflow-y-auto leading-relaxed">
                         {emailTemplate}

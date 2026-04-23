@@ -525,17 +525,6 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
       )}
 
       <div className="mt-4 flex items-center flex-wrap gap-2">
-        {quote.pdf_url && (
-          <a
-            href={quote.pdf_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#28AA48]/10 hover:bg-[#28AA48]/20 border border-[#28AA48]/30 rounded-lg text-sm font-semibold text-[#28AA48] transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Download Proposal PDF
-          </a>
-        )}
         {quote.recipient_email && (
           <button
             onClick={handleResend}

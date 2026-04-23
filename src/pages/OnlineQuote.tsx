@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Check, ExternalLink, Loader, Send, ThumbsUp, X as XIcon } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, Loader, Send, ThumbsUp, X as XIcon } from 'lucide-react';
 import { SavingsChart } from '../components/SavingsChart';
 import { CheckCircle2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -17,7 +17,6 @@ export interface OnlineQuoteData {
   quoteNumber: string;
   quoteDate: string;
   quoteId?: string;
-  pdfUrl?: string | null;
   clientName: string;
   clientAddress: string;
   clientEmail?: string;
@@ -151,14 +150,12 @@ export function OnlineQuote() {
     currentElectricityBill,
     anticipatedElectricityBillWithSolar,
     disclaimerText,
-    pdfUrl,
     entityName,
     companyAddress,
     clientPersonName,
     siteAddress,
   } = quoteData;
 
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [quoteSent, setQuoteSent] = useState(false);
@@ -178,27 +175,6 @@ export function OnlineQuote() {
   const hasSavings = !!(currentElectricityBill && currentElectricityBill > 0 && anticipatedElectricityBillWithSolar !== undefined);
   const isLowDoc = projectCost < 250000;
   const lowDocReqs = getLowDocRequirements(projectCost);
-
-  const handleDownloadPdf = async () => {
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
-      return;
-    }
-    if (!quoteData.quoteId) return;
-    setDownloadingPdf(true);
-    try {
-      const { data } = await supabase
-        .from('sent_quotes')
-        .select('pdf_url')
-        .eq('id', quoteData.quoteId)
-        .maybeSingle();
-      if (data?.pdf_url) {
-        window.open(data.pdf_url, '_blank');
-      }
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
 
   const handleSendQuoteToClient = async () => {
     if (!quoteData.quoteId || !clientEmail) return;
@@ -298,14 +274,6 @@ export function OnlineQuote() {
                 <span className="hidden sm:inline">{quoteApproved ? 'Approved' : 'Approve Quote'}</span>
               </button>
             )}
-            <button
-              onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-lg hover:shadow-lg transition-all text-sm disabled:opacity-60"
-            >
-              {downloadingPdf ? <Loader className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              <span className="hidden sm:inline">Download PDF</span>
-            </button>
           </div>
         </div>
 
@@ -577,14 +545,6 @@ export function OnlineQuote() {
               {quoteApproved ? 'Quote Approved' : 'Approve Quote'}
             </button>
           )}
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloadingPdf}
-            className="flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-xl transition-all shadow-lg text-base disabled:opacity-60"
-          >
-            {downloadingPdf ? <Loader className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-            Download PDF
-          </button>
         </div>
       </div>
 
