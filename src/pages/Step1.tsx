@@ -42,11 +42,28 @@ export function Step1() {
     return solarAsset && selectedAssets.includes(solarAsset.id);
   };
 
+  const SAVINGS_ASSET_NAMES = ['Solar System', 'Microgrid', 'Decarbonising Technologies', 'Building Upgrade'];
+
   const hasEnergyGenerationAsset = () => {
-    const solarAsset = assets.find(asset => asset.name === 'Solar System');
-    const microgridAsset = assets.find(asset => asset.name === 'Microgrid');
-    return (solarAsset && selectedAssets.includes(solarAsset.id)) ||
-           (microgridAsset && selectedAssets.includes(microgridAsset.id));
+    return SAVINGS_ASSET_NAMES.some(name => {
+      const a = assets.find(asset => asset.name === name);
+      return a && selectedAssets.includes(a.id);
+    });
+  };
+
+  const isSolarOrMicrogridSelected = () => {
+    return ['Solar System', 'Microgrid'].some(name => {
+      const a = assets.find(asset => asset.name === name);
+      return a && selectedAssets.includes(a.id);
+    });
+  };
+
+  const isDecarbOrBuildingOnly = () => {
+    if (isSolarOrMicrogridSelected()) return false;
+    return ['Decarbonising Technologies', 'Building Upgrade'].some(name => {
+      const a = assets.find(asset => asset.name === name);
+      return a && selectedAssets.includes(a.id);
+    });
   };
 
   const isCarOnlyProject = () => {
@@ -86,12 +103,12 @@ export function Step1() {
         ? prev.filter(id => id !== assetId)
         : [...prev, assetId];
 
-      const solarAsset = assets.find(asset => asset.name === 'Solar System');
-      const wasteToEnergyAsset = assets.find(asset => asset.name === 'Waste to Energy');
-      const hasEnergyAsset = (solarAsset && newSelection.includes(solarAsset.id)) ||
-                             (wasteToEnergyAsset && newSelection.includes(wasteToEnergyAsset.id));
+      const hasSavingsAsset = SAVINGS_ASSET_NAMES.some(name => {
+        const a = assets.find(asset => asset.name === name);
+        return a && newSelection.includes(a.id);
+      });
 
-      if (!hasEnergyAsset) {
+      if (!hasSavingsAsset) {
         setAnnualSolarGeneration(undefined);
         setCurrentElectricityBill(undefined);
         setAnticipatedElectricityBillWithSolar(undefined);
@@ -119,7 +136,7 @@ export function Step1() {
     updateState({
       projectCost: projectCostIncGst,
       selectedAssetIds: selectedAssets,
-      annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
+      annualSolarGenerationKwh: (hasEnergyGenerationAsset() && !isDecarbOrBuildingOnly()) ? annualSolarGeneration : undefined,
       currentElectricityBill: hasEnergyGenerationAsset() ? (currentElectricityBill !== undefined ? currentElectricityBill * 12 : undefined) : undefined,
       anticipatedElectricityBillWithSolar: hasEnergyGenerationAsset() ? (anticipatedElectricityBillWithSolar !== undefined ? anticipatedElectricityBillWithSolar * 12 : undefined) : undefined,
       specialPricingRequested,
@@ -177,7 +194,7 @@ export function Step1() {
       updateState({
         projectCost: projectCostIncGstModal,
         selectedAssetIds: selectedAssets,
-        annualSolarGenerationKwh: hasEnergyGenerationAsset() ? annualSolarGeneration : undefined,
+        annualSolarGenerationKwh: (hasEnergyGenerationAsset() && !isDecarbOrBuildingOnly()) ? annualSolarGeneration : undefined,
         specialPricingRequested: true,
         loanTermYears: 7
       });
@@ -393,7 +410,7 @@ export function Step1() {
                 </div>
               </div>
 
-              {hasEnergyGenerationAsset() && (
+              {hasEnergyGenerationAsset() && !isDecarbOrBuildingOnly() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
                     System Size
@@ -419,7 +436,7 @@ export function Step1() {
                 </div>
               )}
 
-              {hasEnergyGenerationAsset() && (
+              {hasEnergyGenerationAsset() && !isDecarbOrBuildingOnly() && (
                 <div>
                   <label className="block text-lg font-semibold text-[#3A475B] mb-2">
                     Annual Solar Generation
@@ -450,7 +467,11 @@ export function Step1() {
 
               {hasEnergyGenerationAsset() && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-sm font-semibold text-blue-800 mb-1">To enable the solar savings chart, fill out the below information.</p>
+                  <p className="text-sm font-semibold text-blue-800 mb-1">
+                    {isDecarbOrBuildingOnly()
+                      ? 'To enable the electricity savings chart, fill out the below information.'
+                      : 'To enable the solar savings chart, fill out the below information.'}
+                  </p>
                 </div>
               )}
 
@@ -490,7 +511,9 @@ export function Step1() {
                     Anticipated Electricity Bill
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
-                    Enter the anticipated monthly electricity bill after solar is installed.
+                    {isDecarbOrBuildingOnly()
+                      ? 'Enter the anticipated monthly electricity bill after installation.'
+                      : 'Enter the anticipated monthly electricity bill after solar is installed.'}
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600 font-medium">$</span>
