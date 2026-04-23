@@ -1,4 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+async function getResendApiKey(): Promise<string | null> {
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
+  return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,8 +42,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const elasticEmailApiKey = Deno.env.get("ELASTIC_EMAIL_API_KEY");
-    if (!elasticEmailApiKey) {
+    const resendApiKey = await getResendApiKey();
+    if (!resendApiKey) {
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -125,29 +132,25 @@ Deno.serve(async (req: Request) => {
 
     const plainText = `Hi ${fullName},\n\nA moderator account has been created for you on the Green Funding Admin Portal.\n\nROLE: Moderator\n\nLOGIN CREDENTIALS\n=================\nEmail: ${email}\nTemporary Password: ${temporaryPassword}\n\nYOUR ACCESS PERMISSIONS\n=======================\n${permissionLabels.join('\n')}\n\nIMPORTANT: You will be required to create a new password when you first log in.\n\nGreen Funding`;
 
-    const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
+    const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-ElasticEmail-ApiKey": elasticEmailApiKey,
+        "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        Recipients: [{ Email: email }],
-        Content: {
-          From: "noreply@portal.greenfunding.com.au",
-          ReplyTo: "support@greenfundingcalculator.com",
-          Subject: "Green Funding Admin Portal - Your Moderator Account",
-          Body: [
-            { ContentType: "HTML", Charset: "utf-8", Content: emailHtml },
-            { ContentType: "PlainText", Charset: "utf-8", Content: plainText },
-          ],
-        },
+        from: "noreply@portal.greenfunding.com.au",
+        reply_to: "support@greenfundingcalculator.com",
+        to: [email],
+        subject: "Green Funding Admin Portal - Your Moderator Account",
+        html: emailHtml,
+        text: plainText,
       }),
     });
 
     const emailResult = await emailResponse.json();
 
-    if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== "")) {
+    if (!emailResponse.ok) {
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: emailResult }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

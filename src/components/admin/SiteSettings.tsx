@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, AlertCircle, CheckCircle, Code, Link, Globe } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Code, Link, Globe, Mail } from 'lucide-react';
 import { DangerZone } from './DangerZone';
 
 export function SiteSettings() {
+  const [resendApiKey, setResendApiKey] = useState('');
   const [siteTitle, setSiteTitle] = useState('Green Funding Partner Portal');
   const [metaDescription, setMetaDescription] = useState('');
   const [ogImageUrl, setOgImageUrl] = useState('');
@@ -30,11 +31,12 @@ export function SiteSettings() {
     try {
       const { data, error } = await supabase
         .from('site_settings')
-        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id, site_title, meta_description, og_image_url')
+        .select('google_analytics_code, google_analytics_enabled, serviced_rental_enabled, serviced_rental_management_fee_percent, serviced_rental_name, serviced_rental_description, pipedrive_api_key, pipedrive_deal_id, pipedrive_pipeline_id, pipedrive_stage_id, site_title, meta_description, og_image_url, resend_api_key')
         .maybeSingle();
 
       if (error) throw error;
       if (data) {
+        setResendApiKey(data.resend_api_key || '');
         setSiteTitle(data.site_title || 'Green Funding Partner Portal');
         setMetaDescription(data.meta_description || '');
         setOgImageUrl(data.og_image_url || '');
@@ -71,6 +73,7 @@ export function SiteSettings() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          resend_api_key: resendApiKey.trim(),
           site_title: siteTitle.trim(),
           meta_description: metaDescription.trim(),
           og_image_url: ogImageUrl.trim(),
@@ -385,6 +388,43 @@ export function SiteSettings() {
                   <p>Management Fee ({servicedRentalManagementFee}%): ${(30000 * parseFloat(servicedRentalManagementFee) / 100).toFixed(2)}</p>
                   <p className="font-semibold pt-2 border-t border-green-300">Total Finance Amount: ${(100000 + 30000 + (30000 * parseFloat(servicedRentalManagementFee) / 100)).toFixed(2)}</p>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
+        <div className="flex items-start gap-3">
+          <Mail className="w-5 h-5 text-[#3A475B] mt-1 flex-shrink-0" />
+          <div className="flex-1 space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-[#3A475B]">Email Service (Resend)</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                API key used to send all outbound emails — welcome emails, quote proposals, and application notifications.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#3A475B] mb-2">
+                Resend API Key
+              </label>
+              <input
+                type="password"
+                value={resendApiKey}
+                onChange={(e) => setResendApiKey(e.target.value)}
+                placeholder="re_xxxxxxxxxxxxxxxxxxxx"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Found in your Resend dashboard under API Keys. Starts with <code className="bg-gray-100 px-1 rounded">re_</code>.
+              </p>
+            </div>
+
+            {resendApiKey && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-sm text-green-800 font-medium">Resend API key is configured.</p>
               </div>
             )}
           </div>

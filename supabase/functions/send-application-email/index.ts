@@ -1,5 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+async function getResendApiKey(supabase: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
+  return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -68,10 +73,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
+    const resendApiKey = await getResendApiKey(supabase);
 
-    if (!elasticEmailApiKey) {
-      console.error('ELASTIC_EMAIL_API_KEY not configured');
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'Email service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -542,19 +547,17 @@ Deno.serve(async (req: Request) => {
       ? `New ${equipmentType} Application - ${application.full_name} - ${formatCurrency(application.project_cost)} (via ${installerInfo.full_name}${installerInfo.company_name ? ' - ' + installerInfo.company_name : ''})`
       : `New ${equipmentType} Financing Application - ${application.full_name} - ${formatCurrency(application.project_cost)}`;
 
-    const emailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
+    const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-ElasticEmail-ApiKey': elasticEmailApiKey,
+        'Authorization': `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        Recipients: [{ Email: 'solutions@greenfunding.com.au' }],
-        Content: {
-          From: 'noreply@portal.greenfunding.com.au',
-          Subject: subjectLine,
-          Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: emailHtml }]
-        }
+        from: 'noreply@portal.greenfunding.com.au',
+        to: ['solutions@greenfunding.com.au'],
+        subject: subjectLine,
+        html: emailHtml,
       }),
     });
 
@@ -924,19 +927,17 @@ Deno.serve(async (req: Request) => {
       const installerEmailSubject = `Application Submitted for ${application.full_name}`;
 
       try {
-        const installerEmailResponse = await fetch('https://api.elasticemail.com/v4/emails', {
+        const installerEmailResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-ElasticEmail-ApiKey': elasticEmailApiKey,
+            'Authorization': `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            Recipients: [{ Email: installerInfo.email }],
-            Content: {
-              From: 'noreply@portal.greenfunding.com.au',
-              Subject: installerEmailSubject,
-              Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: installerEmailHtml }]
-            }
+            from: 'noreply@portal.greenfunding.com.au',
+            to: [installerInfo.email],
+            subject: installerEmailSubject,
+            html: installerEmailHtml,
           }),
         });
 

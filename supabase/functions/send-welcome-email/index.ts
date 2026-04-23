@@ -1,4 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'npm:@supabase/supabase-js@2';
+
+async function getResendApiKey(): Promise<string | null> {
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
+  return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,10 +31,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const elasticEmailApiKey = Deno.env.get("ELASTIC_EMAIL_API_KEY");
+    const resendApiKey = await getResendApiKey();
 
-    if (!elasticEmailApiKey) {
-      console.error("ELASTIC_EMAIL_API_KEY not configured");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -266,30 +273,26 @@ Green Funding
 If you have any questions, please contact your administrator.
     `.trim();
 
-    const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
+    const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-ElasticEmail-ApiKey": elasticEmailApiKey,
+        "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        Recipients: [{ Email: email }],
-        Content: {
-          From: "noreply@portal.greenfunding.com.au",
-          ReplyTo: "support@greenfundingcalculator.com",
-          Subject: "Welcome to Green Funding Installer Portal - Your Login Credentials",
-          Body: [
-            { ContentType: "HTML", Charset: "utf-8", Content: emailHtml },
-            { ContentType: "PlainText", Charset: "utf-8", Content: plainTextEmail }
-          ]
-        }
+        from: "noreply@portal.greenfunding.com.au",
+        reply_to: "support@greenfundingcalculator.com",
+        to: [email],
+        subject: "Welcome to Green Funding Installer Portal - Your Login Credentials",
+        html: emailHtml,
+        text: plainTextEmail,
       }),
     });
 
     const emailResult = await emailResponse.json();
 
-    if (!emailResponse.ok || (emailResult.Error && emailResult.Error !== "")) {
-      console.error("Elastic Email API error:", emailResult);
+    if (!emailResponse.ok) {
+      console.error("Resend API error:", emailResult);
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: emailResult }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -297,7 +300,7 @@ If you have any questions, please contact your administrator.
     }
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResult.TransactionID || 'sent' }),
+      JSON.stringify({ success: true, emailId: emailResult.id || 'sent' }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

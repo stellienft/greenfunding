@@ -1,4 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+
+async function getResendApiKey(supabase: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
+  return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
+}
 import { PDFDocument, StandardFonts, rgb, PageSizes } from 'npm:pdf-lib@1.17.1';
 
 const corsHeaders = {
@@ -1096,30 +1101,28 @@ async function sendEmail(
   attachment?: { content: string; name: string }
 ): Promise<Response> {
   const body: Record<string, unknown> = {
-    Recipients: [{ Email: to }],
-    Content: {
-      From: 'Green Funding Portal <noreply@portal.greenfunding.com.au>',
-      ReplyTo: 'solutions@greenfunding.com.au',
-      Subject: subject,
-      Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: htmlBody }],
-    },
+    from: 'Green Funding Portal <noreply@portal.greenfunding.com.au>',
+    reply_to: 'solutions@greenfunding.com.au',
+    to: [to],
+    subject,
+    html: htmlBody,
   };
 
   if (attachment) {
-    (body.Content as Record<string, unknown>).Attachments = [
+    body.attachments = [
       {
-        BinaryContent: attachment.content,
-        Name: attachment.name,
-        ContentType: 'application/pdf',
+        content: attachment.content,
+        filename: attachment.name,
+        type: 'application/pdf',
       },
     ];
   }
 
-  return fetch('https://api.elasticemail.com/v4/emails', {
+  return fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-ElasticEmail-ApiKey': apiKey,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   });
@@ -1195,8 +1198,8 @@ Deno.serve(async (req: Request) => {
       const reviewUrl = `${appUrl}/review-quote/${payloadQuoteId}`;
       const qNum = formatQuoteNumber(quote.quote_number);
       const clientName = quote.recipient_company || quote.recipient_name || 'Valued Customer';
-      const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
-      if (!elasticEmailApiKey) {
+      const resendApiKey = await getResendApiKey(supabase);
+      if (!resendApiKey) {
         return new Response(JSON.stringify({ error: 'Email service not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       const linkEmailHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="margin:0;padding:0;background:#f0f2f0;font-family:Arial,sans-serif;">
@@ -1232,7 +1235,7 @@ Deno.serve(async (req: Request) => {
     </tr></table>
   </td></tr>
 </table></td></tr></table></body></html>`;
-      const emailRes = await sendEmail(elasticEmailApiKey, quote.recipient_email, `Your Green Funding Proposal ${qNum} is Ready`, linkEmailHtml);
+      const emailRes = await sendEmail(resendApiKey, quote.recipient_email, `Your Green Funding Proposal ${qNum} is Ready`, linkEmailHtml);
       if (!emailRes.ok) {
         return new Response(JSON.stringify({ error: 'Failed to send email' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
@@ -1390,9 +1393,9 @@ Deno.serve(async (req: Request) => {
       logoBase64
     );
 
-    const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
+    const resendApiKey = await getResendApiKey(supabase);
 
-    if (!elasticEmailApiKey) {
+    if (!resendApiKey) {
       return new Response(
         JSON.stringify({ error: 'Email service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -1407,7 +1410,7 @@ Deno.serve(async (req: Request) => {
     if (hasIntroEmail) {
       const introSubject = introEmailSubject?.trim() || 'Introduction to Green Funding – Solar Finance Options';
       const introHtml = generateIntroEmailHtml(introEmailBody!, logoBase64, projectCost);
-      const introResponse = await sendEmail(elasticEmailApiKey, recipientEmail, introSubject, introHtml);
+      const introResponse = await sendEmail(resendApiKey, recipientEmail, introSubject, introHtml);
       if (!introResponse.ok) {
         const introResult = await introResponse.json();
         console.error('Intro email API error:', introResult);
@@ -1419,7 +1422,7 @@ Deno.serve(async (req: Request) => {
 
       EdgeRuntime.waitUntil((async () => {
         await new Promise(resolve => setTimeout(resolve, 2 * 60 * 1000));
-        await sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
+        await sendEmail(resendApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
           content: pdfBase64,
           name: `GreenFunding-Quote-${quoteNumber}.pdf`,
         });
@@ -1435,7 +1438,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const quoteResponse = await sendEmail(elasticEmailApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
+    const quoteResponse = await sendEmail(resendApiKey, recipientEmail, quoteSubjectLine, quoteEmailHtml, {
       content: pdfBase64,
       name: `GreenFunding-Quote-${quoteNumber}.pdf`,
     });

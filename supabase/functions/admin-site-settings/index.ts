@@ -35,6 +35,7 @@ Deno.serve(async (req: Request) => {
       site_title,
       meta_description,
       og_image_url,
+      resend_api_key,
     } = await req.json();
 
     const { data: settings, error: fetchError } = await supabase
@@ -63,6 +64,7 @@ Deno.serve(async (req: Request) => {
     if (site_title !== undefined) updateData.site_title = site_title;
     if (meta_description !== undefined) updateData.meta_description = meta_description;
     if (og_image_url !== undefined) updateData.og_image_url = og_image_url;
+    if (resend_api_key !== undefined) updateData.resend_api_key = resend_api_key;
 
     if (settings) {
       const { error: updateError } = await supabase

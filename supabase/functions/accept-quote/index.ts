@@ -1,5 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
+async function getResendApiKey(supabase: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
+  return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -12,20 +17,18 @@ async function sendEmail(
   subject: string,
   htmlBody: string
 ): Promise<Response> {
-  return fetch('https://api.elasticemail.com/v4/emails', {
+  return fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-ElasticEmail-ApiKey': apiKey,
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      Recipients: [{ Email: to }],
-      Content: {
-        From: 'noreply@portal.greenfunding.com.au',
-        ReplyTo: 'solutions@greenfunding.com.au',
-        Subject: subject,
-        Body: [{ ContentType: 'HTML', Charset: 'utf-8', Content: htmlBody }],
-      },
+      from: 'noreply@portal.greenfunding.com.au',
+      reply_to: 'solutions@greenfunding.com.au',
+      to: [to],
+      subject,
+      html: htmlBody,
     }),
   });
 }
@@ -262,9 +265,9 @@ Deno.serve(async (req: Request) => {
     const quoteNumber = '#' + String(quote.quote_number).padStart(6, '0');
     const clientName = quote.recipient_name || quote.recipient_company || 'Valued Client';
 
-    const elasticEmailApiKey = Deno.env.get('ELASTIC_EMAIL_API_KEY');
+    const resendApiKey = await getResendApiKey(supabase);
 
-    if (elasticEmailApiKey && quote.recipient_email) {
+    if (resendApiKey && quote.recipient_email) {
       const clientHtml = generateClientUploadEmailHtml(
         clientName,
         quoteNumber,
@@ -276,7 +279,7 @@ Deno.serve(async (req: Request) => {
       EdgeRuntime.waitUntil((async () => {
         try {
           await sendEmail(
-            elasticEmailApiKey,
+            resendApiKey,
             quote.recipient_email,
             `Action Required: Upload Documents for ${quoteNumber}`,
             clientHtml
@@ -294,7 +297,7 @@ Deno.serve(async (req: Request) => {
             uploadUrl
           );
           await sendEmail(
-            elasticEmailApiKey,
+            resendApiKey,
             'solutions@greenfunding.com.au',
             `Quote Accepted: ${quoteNumber} — ${clientName}`,
             adminHtml
