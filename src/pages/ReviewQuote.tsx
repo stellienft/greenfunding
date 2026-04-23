@@ -277,8 +277,10 @@ export function ReviewQuote() {
   const billWithSolar = quote.anticipated_electricity_bill_with_solar ?? (effectiveEnergySavings * 0.05);
   const showSavingsChart = hasSolar && effectiveEnergySavings > 0;
 
+  const isEVOnly = quote.asset_names?.length === 1 && quote.asset_names[0] === 'Electric Vehicles';
+
   const infoCards: { label: string; value: string; highlight?: boolean }[] = [
-    { label: 'Project Cost (Inc. GST)', value: formatCurrency(projectCost), highlight: true },
+    { label: isEVOnly ? 'EV Invoice (Inc. GST)' : 'Project Cost (Inc. GST)', value: formatCurrency(projectCost), highlight: true },
     ...(quote.asset_names && quote.asset_names.length > 0 ? [{ label: 'Equipment', value: quote.asset_names.join(', ') }] : []),
     ...(quote.system_size ? [{ label: 'System Size', value: quote.system_size }] : []),
     ...(hasSolar && quote.annual_solar_generation_kwh ? [{ label: 'Annual Generation', value: `${quote.annual_solar_generation_kwh.toLocaleString()} kWh` }] : []),
@@ -352,7 +354,7 @@ export function ReviewQuote() {
             {/* Project summary cards */}
             <div className="px-8 py-6 border-b border-gray-100">
               <div className="flex items-baseline gap-3 mb-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Project Summary</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{isEVOnly ? 'Electric Vehicle' : 'Project Summary'}</p>
                 {displaySiteAddress && (
                   <p className="text-xs text-gray-500"><span className="font-semibold text-gray-600">Site:</span> {displaySiteAddress}</p>
                 )}
