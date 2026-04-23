@@ -173,6 +173,11 @@ export function OnlineQuote() {
 
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
   const hasSavings = !!(currentElectricityBill && currentElectricityBill > 0 && anticipatedElectricityBillWithSolar !== undefined);
+  const isDecarbOrBuilding = (() => {
+    const hasSolarOrMicrogrid = assetNames.some(n => n === 'Solar System' || n === 'Microgrid');
+    if (hasSolarOrMicrogrid) return false;
+    return assetNames.some(n => n === 'Decarbonising Technologies' || n === 'Building Upgrade');
+  })();
   const isLowDoc = projectCost < 250000;
   const lowDocReqs = getLowDocRequirements(projectCost);
 
@@ -399,6 +404,7 @@ export function OnlineQuote() {
                   anticipatedElectricityBillWithSolar={anticipatedElectricityBillWithSolar}
                   selectedTermYears={firstTerm?.years}
                   monthlyPayment={firstTerm?.monthlyPayment}
+                  isDecarbOrBuilding={isDecarbOrBuilding}
                 />
               </div>
             )}

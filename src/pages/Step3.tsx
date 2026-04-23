@@ -62,6 +62,18 @@ export function Step3() {
     return solarAsset && state.selectedAssetIds.includes(solarAsset.id);
   };
 
+  const isDecarbOrBuilding = (() => {
+    const hasSolarOrMicrogrid = ['Solar System', 'Microgrid'].some(name => {
+      const a = assets.find(asset => asset.name === name);
+      return a && state.selectedAssetIds.includes(a.id);
+    });
+    if (hasSolarOrMicrogrid) return false;
+    return ['Decarbonising Technologies', 'Building Upgrade'].some(name => {
+      const a = assets.find(asset => asset.name === name);
+      return a && state.selectedAssetIds.includes(a.id);
+    });
+  })();
+
   const showCostPerKwh = !!state.annualSolarGenerationKwh;
 
   useEffect(() => {
@@ -807,6 +819,7 @@ export function Step3() {
                   anticipatedElectricityBillWithSolar={state.anticipatedElectricityBillWithSolar}
                   selectedTermYears={selectedTerm}
                   monthlyPayment={selectedTerm ? termOptions.find(t => t.years === selectedTerm)?.monthlyPayment || additionalTermOptions.find(t => t.years === selectedTerm)?.monthlyPayment : undefined}
+                  isDecarbOrBuilding={isDecarbOrBuilding}
                 />
               </div>
             )}

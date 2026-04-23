@@ -275,7 +275,16 @@ export function ReviewQuote() {
 
   const currentBill = quote.current_electricity_bill ?? effectiveEnergySavings;
   const billWithSolar = quote.anticipated_electricity_bill_with_solar ?? (effectiveEnergySavings * 0.05);
-  const showSavingsChart = hasSolar && effectiveEnergySavings > 0;
+
+  const isDecarbOrBuilding = (() => {
+    const names: string[] = quote.asset_names ?? [];
+    const hasSolarOrMicrogrid = names.some(n => n === 'Solar System' || n === 'Microgrid');
+    if (hasSolarOrMicrogrid) return false;
+    return names.some(n => n === 'Decarbonising Technologies' || n === 'Building Upgrade');
+  })();
+
+  const hasElectricityBillData = !!(quote.current_electricity_bill && quote.current_electricity_bill > 0 && quote.anticipated_electricity_bill_with_solar !== undefined && quote.anticipated_electricity_bill_with_solar !== null);
+  const showSavingsChart = (hasSolar && effectiveEnergySavings > 0) || (isDecarbOrBuilding && hasElectricityBillData);
 
   const isEVOnly = quote.asset_names?.length === 1 && quote.asset_names[0] === 'Electric Vehicles';
 
@@ -413,6 +422,7 @@ export function ReviewQuote() {
                   anticipatedElectricityBillWithSolar={billWithSolar}
                   selectedTermYears={firstTerm?.years ?? null}
                   monthlyPayment={firstTerm?.monthlyPayment}
+                  isDecarbOrBuilding={isDecarbOrBuilding}
                 />
               </div>
             )}

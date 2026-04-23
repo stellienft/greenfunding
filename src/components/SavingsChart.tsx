@@ -5,6 +5,7 @@ interface SavingsChartProps {
   anticipatedElectricityBillWithSolar: number;
   selectedTermYears?: number | null;
   monthlyPayment?: number;
+  isDecarbOrBuilding?: boolean;
 }
 
 function formatCurrencyShort(n: number): string {
@@ -17,7 +18,7 @@ function formatCurrencyFull(n: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n);
 }
 
-export function SavingsChart({ currentElectricityBill, anticipatedElectricityBillWithSolar, selectedTermYears, monthlyPayment }: SavingsChartProps) {
+export function SavingsChart({ currentElectricityBill, anticipatedElectricityBillWithSolar, selectedTermYears, monthlyPayment, isDecarbOrBuilding = false }: SavingsChartProps) {
   const YEARS = 25;
   const GROWTH_RATE = 0.03;
 
@@ -95,17 +96,17 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="mb-5">
-        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Savings Thanks to Solar</h3>
+        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Energy Savings</h3>
         <p className="text-sm text-gray-500">See how your electricity savings compare to your annual payments year by year</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="border border-gray-200 rounded-xl p-3 text-center bg-gray-50">
-          <p className="text-xs text-gray-500 mb-1">Electricity bill without solar</p>
+          <p className="text-xs text-gray-500 mb-1">{isDecarbOrBuilding ? 'Current Electricity Bill' : 'Electricity bill without solar'}</p>
           <p className="text-base font-bold text-[#3A475B]">{formatCurrencyFull(currentElectricityBill)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
         </div>
         <div className="border rounded-xl p-3 text-center" style={{ borderColor: 'rgba(94,196,193,0.4)', backgroundColor: 'rgba(94,196,193,0.07)' }}>
-          <p className="text-xs text-gray-500 mb-1">Electricity bill with solar</p>
+          <p className="text-xs text-gray-500 mb-1">{isDecarbOrBuilding ? 'Future Electricity Bill' : 'Electricity bill with solar'}</p>
           <p className="text-base font-bold" style={{ color: '#3ABFBB' }}>{formatCurrencyFull(anticipatedElectricityBillWithSolar)}<span className="text-xs font-normal text-gray-400">/yr</span></p>
         </div>
         {hasLoanData ? (
@@ -124,11 +125,11 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
       <div className="flex flex-wrap items-center gap-4 mb-3">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#094325' }} />
-          <span className="text-xs text-gray-600">Electricity bill without solar</span>
+          <span className="text-xs text-gray-600">{isDecarbOrBuilding ? 'Current Electricity Bill' : 'Electricity bill without solar'}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#5EC4C1' }} />
-          <span className="text-xs text-gray-600">Electricity bill with solar</span>
+          <span className="text-xs text-gray-600">{isDecarbOrBuilding ? 'Future Electricity Bill' : 'Electricity bill with solar'}</span>
         </div>
         {hasLoanData && (
           <div className="flex items-center gap-1.5">
