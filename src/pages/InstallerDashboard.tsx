@@ -96,6 +96,33 @@ export function InstallerDashboard() {
     if (installerProfile) loadData();
   }, [installerProfile]);
 
+  useEffect(() => {
+    if (!installerProfile) return;
+
+    const refreshPipedriveStatus = async () => {
+      const { data } = await supabase
+        .from('sent_quotes')
+        .select('id, pipedrive_stage_name, pipedrive_synced_at')
+        .eq('installer_id', installerProfile.id);
+
+      if (!data) return;
+
+      const statusMap = new Map(data.map(r => [r.id, { pipedrive_stage_name: r.pipedrive_stage_name, pipedrive_synced_at: r.pipedrive_synced_at }]));
+
+      setRecentQuotes(prev => prev.map(q => {
+        const s = statusMap.get(q.id);
+        return s ? { ...q, ...s } : q;
+      }));
+      setAcceptedQuotes(prev => prev.map(q => {
+        const s = statusMap.get(q.id);
+        return s ? { ...q, ...s } : q;
+      }));
+    };
+
+    const interval = setInterval(refreshPipedriveStatus, 5000);
+    return () => clearInterval(interval);
+  }, [installerProfile]);
+
   async function loadData() {
     if (!installerProfile) return;
     setLoading(true);
