@@ -68,18 +68,18 @@ export function Step1() {
 
   const isCarOnlyProject = () => {
     if (selectedAssets.length !== 1) return false;
-    const carAsset = assets.find(asset => asset.name === 'EV');
+    const carAsset = assets.find(asset => asset.name === 'Electric Vehicles');
     return carAsset && selectedAssets.includes(carAsset.id);
   };
 
   const hasCarSelected = () => {
-    const carAsset = assets.find(asset => asset.name === 'EV');
+    const carAsset = assets.find(asset => asset.name === 'Electric Vehicles');
     return carAsset && selectedAssets.includes(carAsset.id);
   };
 
   const toggleAsset = (assetId: string) => {
     setSelectedAssets(prev => {
-      const carAsset = assets.find(asset => asset.name === 'EV');
+      const carAsset = assets.find(asset => asset.name === 'Electric Vehicles');
       const clickedAsset = assets.find(asset => asset.id === assetId);
 
       const isCarAsset = carAsset && assetId === carAsset.id;
