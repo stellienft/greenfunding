@@ -539,6 +539,11 @@ export function ReviewQuote() {
                 <ThumbsUp className="w-5 h-5" />
                 Approve Proposal
               </button>
+              <p className="text-xs text-gray-400 mt-4">
+                Have any questions? Email our support team at{' '}
+                <a href="mailto:solutions@greenfunding.com.au" className="text-[#28AA48]">solutions@greenfunding.com.au</a>
+                {' '}and quote your proposal number <strong className="text-gray-500">{quoteNumber}</strong> for help.
+              </p>
             </div>
 
             <div className="px-8 py-5" style={{ background: '#094325' }}>
