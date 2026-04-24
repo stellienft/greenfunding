@@ -64,7 +64,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error("Error in admin-applications function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }

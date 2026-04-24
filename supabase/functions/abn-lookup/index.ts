@@ -98,7 +98,8 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message || "Lookup failed" }), {
+    console.error('abn-lookup error:', err);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
