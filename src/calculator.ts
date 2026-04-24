@@ -466,7 +466,7 @@ export function calculateCostPerKwh(
 }
 
 export function formatCostPerKwh(costInCents: number): string {
-  return `${costInCents.toFixed(3)}¢`;
+  return `~${costInCents.toFixed(3)}¢`;
 }
 
 export function calculateProgressPayment(

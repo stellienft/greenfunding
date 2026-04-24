@@ -378,7 +378,7 @@ export function OnlineQuote() {
                           </div>
                           {hasSolar && t.costPerKwhCents != null && (
                             <div className="text-xs text-gray-400 font-normal mt-0.5">
-                              Estimate per kWh: <span className="font-semibold text-[#3A475B]">{(t.costPerKwhCents).toFixed(2)}¢</span>
+                              ~<span className="font-semibold text-[#3A475B]">{(t.costPerKwhCents).toFixed(2)}¢</span> per kWh
                             </div>
                           )}
                         </td>
