@@ -1,10 +1,40 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://portal.greenfunding.com.au',
+  'https://greenfunding.com.au',
+  'https://www.greenfunding.com.au',
+]);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.greenfunding.com.au';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  };
+}
+
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+function validateFile(file: File): { ok: true } | { ok: false; error: string } {
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    return { ok: false, error: `File type "${file.type}" is not allowed. Accepted types: PDF, JPEG, PNG, DOC, DOCX.` };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return { ok: false, error: `File size ${(file.size / 1024 / 1024).toFixed(1)}MB exceeds the 10MB limit.` };
+  }
+  return { ok: true };
+}
 
 function getRequiredDocKeys(projectCost: number): string[] {
   if (projectCost >= 250000) {
@@ -58,8 +88,10 @@ async function postPipedriveNote(
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers: getCorsHeaders(req) });
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -118,6 +150,13 @@ Deno.serve(async (req: Request) => {
 
       if (!token || !documentType || !file) {
         return new Response(JSON.stringify({ error: 'token, documentType and file are required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const fileValidation = validateFile(file);
+      if (!fileValidation.ok) {
+        return new Response(JSON.stringify({ error: fileValidation.error }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -336,7 +375,7 @@ Deno.serve(async (req: Request) => {
   } catch (err: any) {
     console.error('quote-upload error:', err);
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

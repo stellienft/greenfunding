@@ -1,10 +1,44 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://portal.greenfunding.com.au',
+  'https://greenfunding.com.au',
+  'https://www.greenfunding.com.au',
+]);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.greenfunding.com.au';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  };
+}
+
+async function verifyAdminAuth(req: Request, supabase: ReturnType<typeof createClient>): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return { ok: false, status: 401, error: 'Missing authorization token' };
+
+  const { data: { user }, error } = await createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  ).auth.getUser();
+
+  if (error || !user) return { ok: false, status: 401, error: 'Invalid token' };
+
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('is_super_admin')
+    .eq('auth_id', user.id)
+    .maybeSingle();
+
+  if (!adminUser?.is_super_admin) return { ok: false, status: 403, error: 'Super admin access required' };
+
+  return { ok: true };
+}
 
 function base32Encode(buffer: Uint8Array): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -103,8 +137,10 @@ function buildQrCodeUrl(otpauthUrl: string): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers: getCorsHeaders(req) });
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -261,6 +297,14 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === 'admin-reset') {
+      const authResult = await verifyAdminAuth(req, supabase);
+      if (!authResult.ok) {
+        return new Response(JSON.stringify({ error: authResult.error }), {
+          status: authResult.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const { userId, userType } = body;
       if (!userId || !userType) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -306,7 +350,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });
