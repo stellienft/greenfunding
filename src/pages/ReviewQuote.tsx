@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Loader, CheckCircle2, ThumbsUp, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -110,6 +110,8 @@ export function ReviewQuote() {
   const [approveError, setApproveError] = useState<string | null>(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [selectedTermYears, setSelectedTermYears] = useState<number | null>(null);
+  const [termHighlight, setTermHighlight] = useState(false);
+  const termSectionRef = useRef<HTMLDivElement>(null);
 
   async function handleVerify() {
     if (!accessCode.trim() || !id) {
@@ -162,9 +164,9 @@ export function ReviewQuote() {
       setQuote(data);
       setStep('quote');
       // Pre-select shortest term by default
-      const terms: Array<{ years: number }> = data.custom_term_options || data.term_options || [];
-      if (terms.length > 0) {
-        setSelectedTermYears(terms.reduce((a, b) => a.years < b.years ? a : b).years);
+      const activeT = (data.custom_term_options?.length ? data.custom_term_options : data.term_options) ?? [];
+      if (activeT.length > 0) {
+        setSelectedTermYears((activeT as Array<{ years: number }>).reduce((a, b) => a.years < b.years ? a : b).years);
       }
 
       await supabase.from('sent_quotes').update({ status: 'viewed' }).eq('id', id).eq('status', 'generated');
@@ -174,6 +176,16 @@ export function ReviewQuote() {
     } finally {
       setVerifying(false);
     }
+  }
+
+  function handleApproveClick() {
+    if (selectedTermYears == null) {
+      termSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTermHighlight(true);
+      setTimeout(() => setTermHighlight(false), 2000);
+      return;
+    }
+    setShowApproveConfirm(true);
   }
 
   async function handleApprove() {
@@ -334,7 +346,7 @@ export function ReviewQuote() {
         <div className="no-print sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
           <img src="/green-funding-logo1.svg" alt="Green Funding" className="h-8" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <button
-            onClick={() => setShowApproveConfirm(true)}
+            onClick={handleApproveClick}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-md transition-all text-sm"
           >
             <ThumbsUp className="w-4 h-4" />
@@ -436,9 +448,17 @@ export function ReviewQuote() {
 
             {/* Payment options — interactive term selector */}
             {sortedTerms.length > 0 && (
-              <div className="px-8 py-6 border-b border-gray-100">
+              <div
+                ref={termSectionRef}
+                className={`px-8 py-6 border-b border-gray-100 transition-all duration-300 ${termHighlight ? 'ring-2 ring-inset ring-[#28AA48] bg-[#28AA48]/5 rounded-xl' : ''}`}
+              >
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Options</p>
                 <p className="text-sm text-gray-500 mb-4">Select the loan term you'd like to proceed with.</p>
+                {termHighlight && (
+                  <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium">
+                    <span>Please select a loan term below before approving.</span>
+                  </div>
+                )}
                 <div className="space-y-3">
                   {sortedTerms.map((term) => {
                     const isSelected = selectedTermYears === term.years;
@@ -446,7 +466,7 @@ export function ReviewQuote() {
                       <button
                         key={term.years}
                         type="button"
-                        onClick={() => setSelectedTermYears(term.years)}
+                        onClick={() => { setSelectedTermYears(term.years); setTermHighlight(false); }}
                         className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
                           isSelected
                             ? 'border-[#28AA48] bg-[#28AA48]/5 shadow-sm'
@@ -591,11 +611,11 @@ export function ReviewQuote() {
                 Click "Approve Proposal" below to accept this proposal. You'll receive an email with a secure link to submit your documents.
               </p>
               <button
-                onClick={() => setShowApproveConfirm(true)}
+                onClick={handleApproveClick}
                 className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#34AC48] to-[#AFD235] text-white font-bold rounded-xl hover:shadow-lg transition-all text-base"
               >
                 <ThumbsUp className="w-5 h-5" />
-                Approve Proposal
+                {selectedTermYears == null ? 'Select a Term to Approve' : 'Approve Proposal'}
               </button>
               <p className="text-xs text-gray-400 mt-4">
                 Have any questions? Email our support team at{' '}
