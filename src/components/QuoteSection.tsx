@@ -194,6 +194,7 @@ export function QuoteSection({
   selectedQuoteTerms,
   setSelectedQuoteTerms,
   allTerms,
+  projectCost,
   generatingPdf,
   pdfGenerated,
   quoteError,
