@@ -601,3 +601,81 @@ function calculateMonthlyRepaymentForDrawdown(
 
   return Math.round(payment * 100) / 100;
 }
+
+export interface SolarROIMetrics {
+  paybackYears: number;
+  roiMultiple: number;
+  irrPercent: number;
+}
+
+/**
+ * Calculates payback period, ROI multiple, and IRR for a solar/energy project.
+ *
+ * Models:
+ *  - Electricity price inflation: 3% p.a.
+ *  - System degradation: 0.5% p.a. (net savings growth ≈ 2.5% p.a.)
+ *  - System life: 25 years
+ *
+ * @param projectCost          Total system cost (inc. GST)
+ * @param currentAnnualBill    Current annual electricity bill
+ * @param newAnnualBill        Anticipated annual bill after system install
+ * @param loanTermYears        Loan term in years
+ * @param annualLoanPayment    Annual loan repayment (monthlyPayment * 12)
+ */
+export function calcSolarROI(
+  projectCost: number,
+  currentAnnualBill: number,
+  newAnnualBill: number,
+  loanTermYears: number,
+  annualLoanPayment: number
+): SolarROIMetrics {
+  const SYSTEM_LIFE = 25;
+  const SAVINGS_GROWTH = 0.025; // 3% inflation − 0.5% degradation
+
+  const baseAnnualSavings = currentAnnualBill - newAnnualBill;
+
+  // Build annual cashflow array (Year 0 = -projectCost)
+  const cashflows: number[] = [-projectCost];
+  for (let y = 1; y <= SYSTEM_LIFE; y++) {
+    const grossSavings = baseAnnualSavings * Math.pow(1 + SAVINGS_GROWTH, y - 1);
+    const loanPayment = y <= loanTermYears ? annualLoanPayment : 0;
+    cashflows.push(grossSavings - loanPayment);
+  }
+
+  // Payback period — cumulative cashflow turns positive
+  let cumulative = -projectCost;
+  let paybackYears = SYSTEM_LIFE;
+  for (let y = 1; y <= SYSTEM_LIFE; y++) {
+    const prev = cumulative;
+    cumulative += cashflows[y];
+    if (cumulative >= 0) {
+      paybackYears = (y - 1) + (-prev / cashflows[y]);
+      break;
+    }
+  }
+
+  // Total lifetime savings (sum of positive cashflows only, excluding year 0)
+  const totalSavings = cashflows.slice(1).reduce((s, v) => s + v, 0);
+  const roiMultiple = totalSavings / projectCost;
+
+  // IRR via Newton-Raphson
+  let rate = 0.3;
+  for (let iter = 0; iter < 100; iter++) {
+    let npv = 0;
+    let dnpv = 0;
+    for (let t = 0; t < cashflows.length; t++) {
+      const disc = Math.pow(1 + rate, t);
+      npv += cashflows[t] / disc;
+      dnpv -= t * cashflows[t] / (disc * (1 + rate));
+    }
+    const delta = npv / dnpv;
+    rate -= delta;
+    if (Math.abs(delta) < 1e-7) break;
+  }
+
+  return {
+    paybackYears: Math.round(paybackYears * 10) / 10,
+    roiMultiple: Math.round(roiMultiple * 10) / 10,
+    irrPercent: Math.round(rate * 1000) / 10,
+  };
+}

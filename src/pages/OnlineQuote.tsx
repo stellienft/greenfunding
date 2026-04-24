@@ -4,6 +4,7 @@ import { ArrowLeft, Check, ExternalLink, Loader, Send, ThumbsUp, X as XIcon } fr
 import { SavingsChart } from '../components/SavingsChart';
 import { CheckCircle2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { calcSolarROI } from '../calculator';
 
 interface TermOption {
   years: number;
@@ -173,6 +174,15 @@ export function OnlineQuote() {
 
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
   const hasSavings = !!(currentElectricityBill && currentElectricityBill > 0 && anticipatedElectricityBillWithSolar !== undefined);
+  const roiMetrics = hasSavings && firstTerm
+    ? calcSolarROI(
+        projectCost,
+        currentElectricityBill!,
+        anticipatedElectricityBillWithSolar!,
+        firstTerm.years,
+        firstTerm.monthlyPayment * 12
+      )
+    : null;
   const isDecarbOrBuilding = (() => {
     const hasSolarOrMicrogrid = assetNames.some(n => n === 'Solar System' || n === 'Microgrid');
     if (hasSolarOrMicrogrid) return false;
@@ -363,6 +373,24 @@ export function OnlineQuote() {
               })()}
             </div>
 
+            {roiMetrics && (
+              <div className="px-8 py-6 border-b border-gray-100">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                    <p className="text-gray-500 text-xs mb-1">Payback Period</p>
+                    <p className="text-[#3A475B] font-bold text-sm">{roiMetrics.paybackYears} yrs</p>
+                  </div>
+                  <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                    <p className="text-gray-500 text-xs mb-1">Return on Investment</p>
+                    <p className="text-[#3A475B] font-bold text-sm">{roiMetrics.roiMultiple}x</p>
+                  </div>
+                  <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                    <p className="text-gray-500 text-xs mb-1">IRR</p>
+                    <p className="text-[#3A475B] font-bold text-sm">{roiMetrics.irrPercent}%</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="px-8 py-6 border-b border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
