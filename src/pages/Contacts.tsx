@@ -1,5 +1,5 @@
 import { InstallerLayout } from '../components/InstallerLayout';
-import { Mail, Phone, MapPin, Globe, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MessageCircle } from 'lucide-react';
 
 export function Contacts() {
   return (
@@ -46,36 +46,6 @@ export function Contacts() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-              <div className="bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] w-14 h-14 rounded-full flex items-center justify-center mb-6">
-                <MapPin className="w-7 h-7 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-[#3A475B] mb-3">Office Address</h3>
-              <p className="text-gray-600">
-                Green Funding<br />
-                Level 18, 324 Queen Street<br />
-                Brisbane QLD 4000<br />
-                Australia
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-              <div className="bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] w-14 h-14 rounded-full flex items-center justify-center mb-6">
-                <Globe className="w-7 h-7 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-[#3A475B] mb-3">Website</h3>
-              <p className="text-gray-600 mb-4">
-                Visit our website for more information about our services
-              </p>
-              <a
-                href="https://greenfunding.com.au"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#6EAE3C] hover:underline font-semibold"
-              >
-                greenfunding.com.au
-              </a>
-            </div>
           </div>
 
           <div className="bg-gradient-to-br from-[#6EAE3C] to-[#8BC83F] rounded-2xl shadow-lg p-8 text-white">
