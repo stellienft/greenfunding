@@ -89,7 +89,7 @@ function AddressAutocomplete({
         const params = new URLSearchParams({
           format: 'json',
           countrycodes: 'au',
-          limit: '8',
+          limit: '10',
           addressdetails: '1',
           dedupe: '1',
           'accept-language': 'en',
@@ -105,13 +105,42 @@ function AddressAutocomplete({
           .map((d: any) => {
             const a = d.address || {};
             const parts: string[] = [];
-            if (a.house_number && a.road) parts.push(`${a.house_number} ${a.road}`);
-            else if (a.road) parts.push(a.road);
-            if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
-            if (a.city || a.town || a.village || a.municipality) parts.push(a.city || a.town || a.village || a.municipality);
-            if (a.state) parts.push(a.state);
+
+            // Street-level address
+            if (a.house_number && a.road) {
+              parts.push(`${a.house_number} ${a.road}`);
+            } else if (a.road) {
+              parts.push(a.road);
+            } else if (a.amenity || a.building || a.shop || a.tourism || a.leisure) {
+              // Named place (business, landmark, etc.)
+              parts.push(a.amenity || a.building || a.shop || a.tourism || a.leisure);
+            }
+
+            // Suburb / locality
+            const suburb = a.suburb || a.neighbourhood || a.quarter || a.hamlet || a.locality;
+            if (suburb) parts.push(suburb);
+
+            // City / town / village
+            const city = a.city || a.town || a.village || a.municipality || a.county;
+            if (city && city !== suburb) parts.push(city);
+
+            // State abbreviation map
+            const stateAbbr: Record<string, string> = {
+              'New South Wales': 'NSW', 'Victoria': 'VIC', 'Queensland': 'QLD',
+              'South Australia': 'SA', 'Western Australia': 'WA', 'Tasmania': 'TAS',
+              'Australian Capital Territory': 'ACT', 'Northern Territory': 'NT',
+            };
+            if (a.state) parts.push(stateAbbr[a.state] || a.state);
             if (a.postcode) parts.push(a.postcode);
-            return parts.length >= 2 ? parts.join(', ') : d.display_name.replace(/, Australia$/, '').replace(/, Australia,/, ',');
+
+            // Fall back to Nominatim display_name stripped of country
+            if (parts.length < 2) {
+              return d.display_name
+                .replace(/,\s*Australia$/, '')
+                .replace(/,\s*Australia,/, ',')
+                .trim();
+            }
+            return parts.join(', ');
           })
           .filter((s: string) => {
             if (seen.has(s)) return false;
