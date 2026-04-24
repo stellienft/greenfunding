@@ -89,6 +89,7 @@ export function InstallerDashboard() {
   const [acceptedQuotes, setAcceptedQuotes] = useState<QuoteSummary[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyCount[]>([]);
   const [totalProjectValue, setTotalProjectValue] = useState(0);
+  const [totalQuoteCount, setTotalQuoteCount] = useState(0);
   const [calcStates, setCalcStates] = useState<CalcConfig>({ rental: true, serviced_rental: false, progress_payment_rental: false });
   const [loading, setLoading] = useState(true);
 
@@ -154,6 +155,7 @@ export function InstallerDashboard() {
 
       if (quotesResult.data) {
         setRecentQuotes(quotesResult.data.slice(0, 5));
+        setTotalQuoteCount(quotesResult.data.length);
         const total = quotesResult.data.reduce((sum, q) => sum + (q.project_cost || 0), 0);
         setTotalProjectValue(total);
 
@@ -198,8 +200,7 @@ export function InstallerDashboard() {
     .map(c => ({ ...c, available: (calcStates as Record<string, boolean>)[c.id] ?? false }));
 
   const profile = installerProfile;
-  const firstName = profile?.full_name?.split(' ')[0] || 'Installer';
-  const quoteCount = profile?.quote_count || 0;
+  const firstName = profile?.full_name?.split(' ')[0] || 'Partner';
   const thisMonthQuotes = monthlyData[monthlyData.length - 1]?.count || 0;
   const lastMonthQuotes = monthlyData[monthlyData.length - 2]?.count || 0;
   const quoteTrend = lastMonthQuotes > 0
@@ -255,7 +256,7 @@ export function InstallerDashboard() {
                 <FileText className="w-4 h-4 text-[#6EAE3C]" />
               </div>
             </div>
-            <div className="text-3xl font-bold text-[#1e2d3d] tabular-nums">{quoteCount}</div>
+            <div className="text-3xl font-bold text-[#1e2d3d] tabular-nums">{totalQuoteCount}</div>
             <div className="text-xs text-gray-400 mt-1.5 font-medium">Finance calculations</div>
           </div>
 
