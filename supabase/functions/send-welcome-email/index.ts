@@ -201,14 +201,14 @@ Deno.serve(async (req: Request) => {
           <div class="email-wrapper">
             <div class="header">
               <img src="https://portal.greenfunding.com.au/green-funding-invertedlogo.svg" alt="Green Funding" />
-              <h1>Green Funding Installer Portal</h1>
+              <h1>Green Funding Partner Portal</h1>
               <p>Welcome to Your Account</p>
             </div>
 
             <div class="content">
               <div class="welcome-message">
                 <p>Hi ${fullName},</p>
-                <p style="margin-top: 16px;">Welcome to the Green Funding Installer Portal! Your account has been created for ${companyName}.</p>
+                <p style="margin-top: 16px;">Welcome to the Green Funding Partner Portal! Your account has been created for ${companyName}.</p>
               </div>
 
               <div class="credentials-box">
@@ -251,7 +251,7 @@ Deno.serve(async (req: Request) => {
     const plainTextEmail = `
 Hi ${fullName},
 
-Welcome to the Green Funding Installer Portal! Your account has been created for ${companyName}.
+Welcome to the Green Funding Partner Portal! Your account has been created for ${companyName}.
 
 YOUR LOGIN CREDENTIALS
 =======================
@@ -284,7 +284,7 @@ If you have any questions, please contact your administrator.
         from: "noreply@portal.greenfunding.com.au",
         reply_to: "support@greenfundingcalculator.com",
         to: [email],
-        subject: "Welcome to Green Funding Installer Portal - Your Login Credentials",
+        subject: "Welcome to Green Funding Partner Portal - Your Login Credentials",
         html: emailHtml,
         text: plainTextEmail,
       }),

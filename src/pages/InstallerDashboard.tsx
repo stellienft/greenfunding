@@ -238,7 +238,7 @@ export function InstallerDashboard() {
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span>New {calc.title}</span>
+                  <span>New Proposal</span>
                   {!calc.available && <span className="text-[10px] font-normal ml-0.5 opacity-70">(Soon)</span>}
                 </button>
               );
