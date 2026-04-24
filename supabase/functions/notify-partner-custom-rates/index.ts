@@ -1,10 +1,20 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-};
+const ALLOWED_ORIGINS = new Set([
+  'https://portal.greenfunding.com.au',
+  'https://greenfunding.com.au',
+  'https://www.greenfunding.com.au',
+]);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.greenfunding.com.au';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  };
+}
 
 async function getResendApiKey(supabase: ReturnType<typeof createClient>): Promise<string | null> {
   const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
@@ -21,8 +31,10 @@ function formatQuoteNumber(n: number): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { status: 200, headers: getCorsHeaders(req) });
   }
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const { quoteId } = await req.json();
@@ -173,8 +185,10 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Email send failed');
+      console.error('notify-partner-custom-rates: email send failed', await res.text());
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Mark partner as notified
@@ -187,8 +201,8 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: message }), {
+    console.error('notify-partner-custom-rates error:', err);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

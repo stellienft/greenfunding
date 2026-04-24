@@ -374,7 +374,7 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err: any) {
     console.error('quote-upload error:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
