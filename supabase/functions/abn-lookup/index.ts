@@ -1,27 +1,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const ALLOWED_ORIGINS = new Set([
-  "https://portal.greenfunding.com.au",
-  "https://greenfunding.com.au",
-  "https://www.greenfunding.com.au",
-]);
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "https://portal.greenfunding.com.au";
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
-  };
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: getCorsHeaders(req) });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  const corsHeaders = getCorsHeaders(req);
 
   try {
     const url = new URL(req.url);
@@ -101,7 +90,7 @@ Deno.serve(async (req: Request) => {
     console.error('abn-lookup error:', err);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

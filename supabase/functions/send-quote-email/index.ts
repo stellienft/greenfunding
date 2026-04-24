@@ -1,10 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { PDFDocument, StandardFonts, rgb, PageSizes } from 'npm:pdf-lib@1.17.1';
 
 async function getResendApiKey(supabase: ReturnType<typeof createClient>): Promise<string | null> {
   const { data } = await supabase.from('site_settings').select('resend_api_key').maybeSingle();
   return (data?.resend_api_key as string | undefined)?.trim() || Deno.env.get('RESEND_API_KEY') || null;
 }
-import { PDFDocument, StandardFonts, rgb, PageSizes } from 'npm:pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -1,20 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const ALLOWED_ORIGINS = new Set([
-  'https://portal.greenfunding.com.au',
-  'https://greenfunding.com.au',
-  'https://www.greenfunding.com.au',
-]);
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('Origin') ?? '';
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://portal.greenfunding.com.au';
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
-  };
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
 
 async function verifyAdminAuth(req: Request, supabase: ReturnType<typeof createClient>): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   const authHeader = req.headers.get('Authorization') ?? '';
@@ -137,10 +127,9 @@ function buildQrCodeUrl(otpauthUrl: string): string {
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: getCorsHeaders(req) });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  const corsHeaders = getCorsHeaders(req);
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -351,7 +340,7 @@ Deno.serve(async (req: Request) => {
     console.error('totp error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
