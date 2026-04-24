@@ -135,6 +135,9 @@ export function AdminDashboard() {
     return null;
   }
 
+  const LARGE_PROPOSAL_EMAILS = ['hello@stellio.com.au', 'andrew@greenfunding.com.au'];
+  const canAccessLargeProposals = admin && LARGE_PROPOSAL_EMAILS.includes(admin.email);
+
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="px-6 py-5 border-b border-gray-100">
@@ -150,7 +153,7 @@ export function AdminDashboard() {
           <div key={group.label}>
             <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400">{group.label}</p>
             <div className="space-y-0.5">
-              {group.items.map(item => {
+              {group.items.filter(item => item.id !== 'large-proposals' || canAccessLargeProposals).map(item => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
                 return (

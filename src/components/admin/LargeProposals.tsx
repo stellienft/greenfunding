@@ -395,7 +395,8 @@ export function LargeProposals() {
     }
   }
 
-  if (!admin?.is_super_admin) {
+  const LARGE_PROPOSAL_EMAILS = ['hello@stellio.com.au', 'andrew@greenfunding.com.au'];
+  if (!admin || !LARGE_PROPOSAL_EMAILS.includes(admin.email)) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
         <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
