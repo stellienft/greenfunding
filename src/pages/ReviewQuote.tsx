@@ -71,6 +71,8 @@ interface QuoteData {
   project_cost: number;
   asset_names: string[];
   term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced: number }>;
+  custom_term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced?: number }> | null;
+  admin_review_status: string | null;
   payment_timing: string;
   calculator_type: string;
   portal_access_code: string | null;
@@ -257,7 +259,10 @@ export function ReviewQuote() {
 
   if (!quote) return null;
 
-  const sortedTerms = [...(quote.term_options || [])].sort((a, b) => a.years - b.years);
+  const activeTerms = (quote.custom_term_options && quote.admin_review_status === 'rates_applied')
+    ? quote.custom_term_options
+    : quote.term_options;
+  const sortedTerms = [...(activeTerms || [])].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
   const projectCost = quote.project_cost;
   const isLowDoc = projectCost < 250000;

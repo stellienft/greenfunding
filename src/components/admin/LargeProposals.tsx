@@ -58,6 +58,14 @@ interface RateEditorProps {
   onSaved: () => void;
 }
 
+function calcMonthlyPayment(principal: number, annualRate: number, years: number): number {
+  const n = years * 12;
+  const r = annualRate / 12;
+  if (principal <= 0 || r <= 0 || n <= 0) return 0;
+  const disc = Math.pow(1 + r, -n);
+  return Math.round(((principal * r) / (1 - disc)) * 100) / 100;
+}
+
 function RateEditor({ proposal, onSaved }: RateEditorProps) {
   const { admin } = useAdmin();
   const effectiveTerms = proposal.custom_term_options || proposal.term_options || [];
@@ -74,11 +82,27 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
   function updateTerm(idx: number, field: keyof TermOption, raw: string) {
     const value = parseFloat(raw);
     if (isNaN(value)) return;
-    setTerms(prev => prev.map((t, i) => i === idx ? { ...t, [field]: value } : t));
+    setTerms(prev => prev.map((t, i) => {
+      if (i !== idx) return t;
+      const updated = { ...t, [field]: value };
+      // Auto-recalculate monthly payment when rate or years change
+      if (field === 'interestRate' || field === 'years') {
+        const principal = updated.totalFinanced ?? proposal.term_options.find(ot => ot.years === updated.years)?.totalFinanced ?? 0;
+        updated.monthlyPayment = calcMonthlyPayment(principal, updated.interestRate, updated.years);
+      }
+      return updated;
+    }));
   }
 
   function addTerm() {
-    setTerms(prev => [...prev, { years: 5, monthlyPayment: 0, interestRate: 0.07 }]);
+    const firstOriginal = proposal.term_options[0];
+    const defaultPrincipal = firstOriginal?.totalFinanced ?? 0;
+    setTerms(prev => [...prev, {
+      years: 5,
+      interestRate: 0.07,
+      monthlyPayment: calcMonthlyPayment(defaultPrincipal, 0.07, 5),
+      totalFinanced: defaultPrincipal,
+    }]);
   }
 
   function removeTerm(idx: number) {
@@ -177,14 +201,9 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
               </div>
               <div className="flex items-center gap-1.5 flex-1 min-w-0">
                 <label className="text-xs text-gray-500 whitespace-nowrap">Monthly $</label>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  value={t.monthlyPayment}
-                  onChange={e => updateTerm(idx, 'monthlyPayment', e.target.value)}
-                  className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
-                />
+                <div className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-[#28AA48]/40 bg-green-50 rounded-md text-center font-semibold text-[#28AA48]">
+                  {new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(t.monthlyPayment)}
+                </div>
               </div>
               <button
                 onClick={() => removeTerm(idx)}
