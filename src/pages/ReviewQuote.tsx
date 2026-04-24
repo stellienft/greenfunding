@@ -163,10 +163,13 @@ export function ReviewQuote() {
 
       setQuote(data);
       setStep('quote');
-      // Pre-select shortest term by default
-      const activeT = (data.custom_term_options?.length ? data.custom_term_options : data.term_options) ?? [];
+      // Pre-select shortest term — use same condition as the display logic
+      const activeT = (data.custom_term_options && data.admin_review_status === 'rates_applied')
+        ? data.custom_term_options
+        : (data.term_options ?? []);
       if (activeT.length > 0) {
-        setSelectedTermYears((activeT as Array<{ years: number }>).reduce((a, b) => a.years < b.years ? a : b).years);
+        const shortest = (activeT as Array<{ years: number }>).reduce((a, b) => a.years < b.years ? a : b);
+        setSelectedTermYears(shortest.years);
       }
 
       await supabase.from('sent_quotes').update({ status: 'viewed' }).eq('id', id).eq('status', 'generated');

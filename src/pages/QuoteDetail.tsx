@@ -19,6 +19,8 @@ interface SentQuote {
   recipient_company: string | null;
   recipient_email: string | null;
   client_phone: string | null;
+  client_person_name: string | null;
+  entity_name: string | null;
   site_address: string | null;
   system_size: string | null;
   project_cost: number;
@@ -97,6 +99,27 @@ Please don't hesitate to reach out if you have any questions about the quote or 
 Kind regards,
 
 ${installerName || '[Your Name]'}${installerCompany ? `\n${installerCompany}` : ''}`;
+}
+
+function CopyLinkButton({ quoteId }: { quoteId: string }) {
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/review-quote/${quoteId}`;
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch { /* no-op */ }
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#3A475B] bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+    >
+      {copied ? <ClipboardCheck className="w-3.5 h-3.5 text-[#28AA48]" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? 'Copied!' : 'Copy Link'}
+    </button>
+  );
 }
 
 async function uploadFile(file: File, prefix: string): Promise<UploadedFile> {
@@ -501,7 +524,7 @@ export function QuoteDetail() {
               Back to My Quotes
             </button>
             <div className="flex items-center gap-2 flex-wrap">
-              {quote.requires_admin_review && quote.portal_access_code && (
+              {quote.portal_access_code && (
                 <a
                   href={`/review-quote/${quote.id}`}
                   target="_blank"
@@ -509,8 +532,11 @@ export function QuoteDetail() {
                   className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#28AA48] bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  View Online Proposal
+                  View Proposal
                 </a>
+              )}
+              {quote.portal_access_code && (
+                <CopyLinkButton quoteId={quote.id} />
               )}
               {quote.recipient_email && (
                 <button
@@ -550,10 +576,10 @@ export function QuoteDetail() {
                     {calcTypeLabel(quote.calculator_type)}
                   </p>
                   <h1 className="text-white text-xl font-bold">
-                    {quote.recipient_company || quote.recipient_name || 'Unnamed Client'}
+                    {quote.entity_name || quote.recipient_company || quote.recipient_name || 'Unnamed Client'}
                   </h1>
-                  {quote.recipient_name && quote.recipient_company && (
-                    <p className="text-green-100 text-sm">{quote.recipient_name}</p>
+                  {(quote.client_person_name || quote.recipient_name) && (quote.entity_name || quote.recipient_company) && (
+                    <p className="text-green-100 text-sm mt-0.5">{quote.client_person_name || quote.recipient_name}</p>
                   )}
                 </div>
                 <div className="text-right">
