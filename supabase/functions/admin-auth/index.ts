@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
-          admin: { id: admin.id, email: admin.email, needs_password_reset: admin.needs_password_reset },
+          admin: { id: admin.id, email: admin.email, needs_password_reset: admin.needs_password_reset, is_super_admin: admin.is_super_admin === true },
           requires2fa: admin.totp_enabled === true,
           totp_setup_prompted: admin.totp_setup_prompted === true,
         }),
