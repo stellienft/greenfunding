@@ -155,7 +155,7 @@ export function Step3() {
     setTermOptions(options);
     setSelectedQuoteTerms(prev => prev);
 
-    const additionalTerms = [2, 3, 4, 6, 8, 9].filter(year => year <= maxAllowedTerm);
+    const additionalTerms = [2, 3, 4, 6, 8, 9].filter(year => year <= maxAllowedTerm && !terms.includes(year));
 
     const additionalOptions = additionalTerms.map(years => {
       let adjustedProjectCost = state.projectCost;
