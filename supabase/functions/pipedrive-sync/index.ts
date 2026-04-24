@@ -324,7 +324,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (uploadList.length > 0) {
-      noteLines.push(`${allDocsComplete ? '✅' : '⏳'} Documents (${uploadList.length}/${requiredKeys.length} uploaded):`);
+      noteLines.push(`${allDocsComplete ? '\u2705' : '\u23F3'} Documents (${uploadList.length}/${requiredKeys.length} uploaded):`);
       uploadList.forEach((u: { document_type: string; file_name: string }) => {
         noteLines.push(`  • ${formatDocType(u.document_type)} (${u.file_name})`);
       });
@@ -374,9 +374,8 @@ Deno.serve(async (req: Request) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('pipedrive-sync error:', err);
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

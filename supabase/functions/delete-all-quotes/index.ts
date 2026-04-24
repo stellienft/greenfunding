@@ -221,7 +221,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('delete-all-quotes error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
