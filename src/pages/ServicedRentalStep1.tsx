@@ -303,39 +303,26 @@ export function ServicedRentalStep1() {
               {isCarOnlyProject() && (
                 <div>
                   <label className="block text-base font-semibold text-[#3A475B] mb-3">
-                    Residual Value
+                    Balloon/Residual Percentage
                   </label>
                   <p className="text-sm text-gray-600 mb-4">
-                    Specify the percentage of the car's value that will remain at the end of the lease term (0-100%).
+                    Select the residual value of the vehicle at the end of the loan term.
                   </p>
-                  <div className="mb-4">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={residualPercentage ?? 0}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (value >= 0 && value <= 100) {
-                          setResidualPercentage(value);
-                        }
-                      }}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl text-lg focus:outline-none focus:ring-2 focus:ring-[#28AA48]"
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={residualPercentage ?? 0}
-                    onChange={(e) => setResidualPercentage(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#28AA48]"
-                  />
-                  <div className="flex justify-between text-xs text-gray-600 mt-2">
-                    <span>0%</span>
-                    <span>100%</span>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[0, 10, 20, 30].map(pct => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setResidualPercentage(pct)}
+                        className={`py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
+                          (residualPercentage ?? 30) === pct
+                            ? 'border-[#28AA48] bg-[#28AA48]/5 text-[#28AA48]'
+                            : 'border-gray-200 text-[#3A475B] hover:border-[#28AA48]/50'
+                        }`}
+                      >
+                        {pct === 0 ? 'None' : `${pct}%`}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
