@@ -78,7 +78,7 @@ export function ServicedRentalStep1() {
       }
 
       if (isCarAsset) {
-        setResidualPercentage(0);
+        setResidualPercentage(30);
         return [assetId];
       }
 
