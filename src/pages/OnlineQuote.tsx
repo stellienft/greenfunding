@@ -333,22 +333,34 @@ export function OnlineQuote() {
                   <p className="text-xs text-gray-500"><span className="font-semibold text-gray-600">Site:</span> {displaySiteAddress}</p>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #28AA48, #7DC241)' }}>
-                  <p className="text-white/80 text-xs mb-1">Project Cost (Inc. GST)</p>
-                  <p className="text-white font-extrabold text-lg">{formatCurrency(projectCost)}</p>
-                </div>
-                <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
-                  <p className="text-gray-500 text-xs mb-1">Equipment</p>
-                  <p className="text-[#3A475B] font-bold text-sm leading-tight">{assetNames.join(', ') || '—'}</p>
-                </div>
-                {systemSize && (
-                  <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
-                    <p className="text-gray-500 text-xs mb-1">System Size</p>
-                    <p className="text-[#3A475B] font-bold text-sm">{systemSize}</p>
+              {(() => {
+                const summaryCardCount = 2 + (systemSize ? 1 : 0) + (hasSolar && annualSolarGenerationKwh ? 1 : 0);
+                const colClass = summaryCardCount === 2 ? 'grid-cols-2' : summaryCardCount === 3 ? 'grid-cols-3' : 'grid-cols-4';
+                return (
+                  <div className={`grid ${colClass} gap-4`}>
+                    <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #28AA48, #7DC241)' }}>
+                      <p className="text-white/80 text-xs mb-1">Project Cost (Inc. GST)</p>
+                      <p className="text-white font-extrabold text-lg">{formatCurrency(projectCost)}</p>
+                    </div>
+                    <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                      <p className="text-gray-500 text-xs mb-1">Equipment</p>
+                      <p className="text-[#3A475B] font-bold text-sm leading-tight">{assetNames.join(', ') || '—'}</p>
+                    </div>
+                    {systemSize && (
+                      <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                        <p className="text-gray-500 text-xs mb-1">System Size</p>
+                        <p className="text-[#3A475B] font-bold text-sm">{systemSize}</p>
+                      </div>
+                    )}
+                    {hasSolar && annualSolarGenerationKwh && (
+                      <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
+                        <p className="text-gray-500 text-xs mb-1">Annual Generation</p>
+                        <p className="text-[#3A475B] font-bold text-sm">{annualSolarGenerationKwh.toLocaleString()} kWh</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
 

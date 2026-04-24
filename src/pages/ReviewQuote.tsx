@@ -373,7 +373,7 @@ export function ReviewQuote() {
                   <p className="text-xs text-gray-500"><span className="font-semibold text-gray-600">Site:</span> {displaySiteAddress}</p>
                 )}
               </div>
-              <div className={`grid gap-4 ${infoCards.length === 1 ? 'grid-cols-1' : infoCards.length === 2 ? 'grid-cols-2' : infoCards.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+              <div className={`grid gap-4 ${infoCards.length === 1 ? 'grid-cols-1' : infoCards.length === 2 ? 'grid-cols-2' : infoCards.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
                 {infoCards.map((card, i) => (
                   <div
                     key={i}
