@@ -433,7 +433,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
 
   const appUrl = window.location.origin;
   const uploadPageUrl = quote.upload_token ? `${appUrl}/upload-documents/${quote.upload_token}` : null;
-  const proposalUrl = `${appUrl}/review/${quote.id}`;
+  const proposalUrl = `${appUrl}/review-quote/${quote.id}`;
 
   function handleCopyLink() {
     navigator.clipboard.writeText(proposalUrl).then(() => {
