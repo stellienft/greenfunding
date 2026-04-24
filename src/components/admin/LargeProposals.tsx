@@ -72,6 +72,10 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
   const [terms, setTerms] = useState<TermOption[]>(
     effectiveTerms.map(t => ({ ...t }))
   );
+  // Track raw string values for rate inputs so users can type freely
+  const [rateInputs, setRateInputs] = useState<string[]>(
+    effectiveTerms.map(t => (t.interestRate * 100).toFixed(2))
+  );
   const [notes, setNotes] = useState(proposal.admin_review_notes || '');
   const [saving, setSaving] = useState(false);
   const [notifying, setNotifying] = useState(false);
@@ -79,14 +83,25 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
   const [savedOk, setSavedOk] = useState(false);
   const [notifiedOk, setNotifiedOk] = useState(false);
 
+  function updateRate(idx: number, raw: string) {
+    setRateInputs(prev => prev.map((v, i) => i === idx ? raw : v));
+    const pct = parseFloat(raw);
+    if (isNaN(pct)) return;
+    const annualRate = pct / 100;
+    setTerms(prev => prev.map((t, i) => {
+      if (i !== idx) return t;
+      const principal = t.totalFinanced ?? proposal.term_options.find(ot => ot.years === t.years)?.totalFinanced ?? 0;
+      return { ...t, interestRate: annualRate, monthlyPayment: calcMonthlyPayment(principal, annualRate, t.years) };
+    }));
+  }
+
   function updateTerm(idx: number, field: keyof TermOption, raw: string) {
     const value = parseFloat(raw);
     if (isNaN(value)) return;
     setTerms(prev => prev.map((t, i) => {
       if (i !== idx) return t;
       const updated = { ...t, [field]: value };
-      // Auto-recalculate monthly payment when rate or years change
-      if (field === 'interestRate' || field === 'years') {
+      if (field === 'years') {
         const principal = updated.totalFinanced ?? proposal.term_options.find(ot => ot.years === updated.years)?.totalFinanced ?? 0;
         updated.monthlyPayment = calcMonthlyPayment(principal, updated.interestRate, updated.years);
       }
@@ -103,10 +118,12 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
       monthlyPayment: calcMonthlyPayment(defaultPrincipal, 0.07, 5),
       totalFinanced: defaultPrincipal,
     }]);
+    setRateInputs(prev => [...prev, '7.00']);
   }
 
   function removeTerm(idx: number) {
     setTerms(prev => prev.filter((_, i) => i !== idx));
+    setRateInputs(prev => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSave() {
@@ -190,12 +207,14 @@ function RateEditor({ proposal, onSaved }: RateEditorProps) {
               <div className="flex items-center gap-1.5 min-w-0">
                 <label className="text-xs text-gray-500 whitespace-nowrap">Rate %</label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={(t.interestRate * 100).toFixed(2)}
-                  onChange={e => updateTerm(idx, 'interestRate', String(parseFloat(e.target.value) / 100))}
+                  type="text"
+                  inputMode="decimal"
+                  value={rateInputs[idx] ?? (t.interestRate * 100).toFixed(2)}
+                  onChange={e => updateRate(idx, e.target.value)}
+                  onBlur={e => {
+                    const pct = parseFloat(e.target.value);
+                    if (!isNaN(pct)) setRateInputs(prev => prev.map((v, i) => i === idx ? pct.toFixed(2) : v));
+                  }}
                   className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"
                 />
               </div>
