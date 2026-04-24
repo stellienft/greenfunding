@@ -109,6 +109,7 @@ export function ReviewQuote() {
   const [approvingQuote, setApprovingQuote] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [selectedTermYears, setSelectedTermYears] = useState<number | null>(null);
 
   async function handleVerify() {
     if (!accessCode.trim() || !id) {
@@ -160,6 +161,11 @@ export function ReviewQuote() {
 
       setQuote(data);
       setStep('quote');
+      // Pre-select shortest term by default
+      const terms: Array<{ years: number }> = data.custom_term_options || data.term_options || [];
+      if (terms.length > 0) {
+        setSelectedTermYears(terms.reduce((a, b) => a.years < b.years ? a : b).years);
+      }
 
       await supabase.from('sent_quotes').update({ status: 'viewed' }).eq('id', id).eq('status', 'generated');
     } catch {
@@ -184,7 +190,16 @@ export function ReviewQuote() {
           'Authorization': `Bearer ${supabaseAnonKey}`,
           'Apikey': supabaseAnonKey,
         },
-        body: JSON.stringify({ quoteId: id }),
+        body: JSON.stringify({
+          quoteId: id,
+          selectedTermYears,
+          ...(selectedTermYears != null && (() => {
+            const terms: Array<{ years: number; monthlyPayment: number; interestRate: number }> =
+              (quote?.custom_term_options || quote?.term_options || []) as Array<{ years: number; monthlyPayment: number; interestRate: number }>;
+            const t = terms.find(x => x.years === selectedTermYears);
+            return t ? { selectedTermMonthlyPayment: t.monthlyPayment, selectedTermInterestRate: t.interestRate } : {};
+          })()),
+        }),
       });
       const result = await res.json();
       if (!res.ok || result.error) throw new Error(result.error || 'Failed to approve');
@@ -419,33 +434,46 @@ export function ReviewQuote() {
               </div>
             )}
 
-            {/* Payment options table */}
+            {/* Payment options — interactive term selector */}
             {sortedTerms.length > 0 && (
               <div className="px-8 py-6 border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-100">
-                        <th className="text-left text-xs font-bold text-gray-500 pb-3">Term</th>
-                        <th className="text-right text-xs font-bold text-gray-500 pb-3">Monthly Payment (Ex. GST)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedTerms.map((term, i) => (
-                        <tr key={i} className={`border-b border-gray-50 ${i === 0 ? 'bg-green-50/50' : ''}`}>
-                          <td className="py-3 text-sm font-semibold text-[#3A475B]">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Options</p>
+                <p className="text-sm text-gray-500 mb-4">Select the loan term you'd like to proceed with.</p>
+                <div className="space-y-3">
+                  {sortedTerms.map((term) => {
+                    const isSelected = selectedTermYears === term.years;
+                    return (
+                      <button
+                        key={term.years}
+                        type="button"
+                        onClick={() => setSelectedTermYears(term.years)}
+                        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
+                          isSelected
+                            ? 'border-[#28AA48] bg-[#28AA48]/5 shadow-sm'
+                            : 'border-gray-200 hover:border-[#28AA48]/40 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isSelected ? 'border-[#28AA48] bg-[#28AA48]' : 'border-gray-300'
+                          }`}>
+                            {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                          </div>
+                          <span className={`font-semibold text-sm ${isSelected ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                             {term.years} Year{term.years !== 1 ? 's' : ''}
-                          </td>
-                          <td className="py-3 text-right text-sm font-bold text-[#3A475B]">
-                            {formatCurrencyDecimals(term.monthlyPayment)}/mo
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold text-base ${isSelected ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
+                            {formatCurrencyDecimals(term.monthlyPayment)}<span className="text-xs font-normal text-gray-400">/mo</span>
+                          </div>
+                          <div className="text-xs text-gray-400">Ex. GST</div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-gray-400 mt-3">Payments are Ex. GST. GST applies to each payment.</p>
+                <p className="text-xs text-gray-400 mt-3">GST applies to each payment. Your selected term will be recorded when you approve this proposal.</p>
               </div>
             )}
 
@@ -607,6 +635,20 @@ export function ReviewQuote() {
             <p className="text-sm text-gray-600 mb-4">
               By approving, you confirm you'd like to proceed with this Green Funding proposal. An email will be sent to <strong>{quote.recipient_email}</strong> with a secure link to submit your required documents.
             </p>
+            {selectedTermYears != null && (
+              <div className="bg-[#28AA48]/8 border border-[#28AA48]/20 rounded-xl px-4 py-3 mb-4">
+                <p className="text-xs font-semibold text-[#28AA48] uppercase tracking-wide mb-0.5">Selected Term</p>
+                <p className="text-sm font-bold text-[#3A475B]">
+                  {selectedTermYears} Year{selectedTermYears !== 1 ? 's' : ''} —{' '}
+                  {(() => {
+                    const terms: Array<{ years: number; monthlyPayment: number }> =
+                      (quote.custom_term_options || quote.term_options) as Array<{ years: number; monthlyPayment: number }>;
+                    const t = terms.find(x => x.years === selectedTermYears);
+                    return t ? `${formatCurrencyDecimals(t.monthlyPayment)}/mo` : '';
+                  })()}
+                </p>
+              </div>
+            )}
             {approveError && <p className="text-xs text-red-500 mb-3">{approveError}</p>}
             <div className="flex gap-2">
               <button onClick={() => setShowApproveConfirm(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">
@@ -614,7 +656,7 @@ export function ReviewQuote() {
               </button>
               <button
                 onClick={handleApprove}
-                disabled={approvingQuote}
+                disabled={approvingQuote || selectedTermYears == null}
                 className="flex-1 px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] disabled:opacity-60 text-sm flex items-center justify-center gap-2"
               >
                 {approvingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}

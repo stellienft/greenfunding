@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
     const [quotesRes, installersRes] = await Promise.all([
       supabase
         .from("sent_quotes")
-        .select("id, quote_number, created_at, installer_id, recipient_name, recipient_company, recipient_email, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, status, client_phone, pdf_url, accepted_at, upload_token, pipedrive_synced_at, pipedrive_deal_id, pipedrive_deal_url, pipedrive_stage_name, pipedrive_stage_updated_at")
+        .select("id, quote_number, created_at, installer_id, recipient_name, recipient_company, recipient_email, site_address, system_size, project_cost, term_options, asset_names, calculator_type, payment_timing, status, client_phone, pdf_url, accepted_at, selected_term_years, selected_term_monthly_payment, selected_term_interest_rate, upload_token, pipedrive_synced_at, pipedrive_deal_id, pipedrive_deal_url, pipedrive_stage_name, pipedrive_stage_updated_at")
         .order("created_at", { ascending: false }),
       supabase
         .from("installer_users")

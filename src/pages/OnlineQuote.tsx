@@ -165,6 +165,7 @@ export function OnlineQuote() {
   const [quoteApproved, setQuoteApproved] = useState(false);
   const [approveError, setApproveError] = useState<string | null>(null);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [selectedTermYears, setSelectedTermYears] = useState<number | null>(sortedTerms.length > 0 ? sortedTerms[0].years : null);
 
   const displaySiteAddress = siteAddress || clientAddress;
   const displayPreparedFor = entityName || clientName;
@@ -233,7 +234,14 @@ export function OnlineQuote() {
           'Authorization': `Bearer ${session?.access_token || supabaseAnonKey}`,
           'Apikey': supabaseAnonKey,
         },
-        body: JSON.stringify({ quoteId: quoteData.quoteId }),
+        body: JSON.stringify({
+          quoteId: quoteData.quoteId,
+          selectedTermYears,
+          ...(selectedTermYears != null && (() => {
+            const t = sortedTerms.find(x => x.years === selectedTermYears);
+            return t ? { selectedTermMonthlyPayment: t.monthlyPayment, selectedTermInterestRate: t.interestRate } : {};
+          })()),
+        }),
       });
       const result = await res.json();
       if (!res.ok || result.error) throw new Error(result.error || 'Failed to approve');
@@ -393,43 +401,47 @@ export function OnlineQuote() {
             )}
 
             <div className="px-8 py-6 border-b border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Payment Options</p>
-              <div className="overflow-hidden rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ background: '#094325' }}>
-                      <th className="px-4 py-3 text-left text-white/80 font-semibold text-xs uppercase tracking-wide">Loan Term</th>
-                      <th className="px-4 py-3 text-right text-white/80 font-semibold text-xs uppercase tracking-wide">Monthly Payment (Ex. GST)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedTerms.map((t, i) => (
-                      <tr key={t.years} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-4 py-3.5 font-semibold text-[#3A475B]">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-[#28AA48]" />
-                            {t.years} Year{t.years !== 1 ? 's' : ''}
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Options</p>
+              <p className="text-sm text-gray-500 mb-4">Select the loan term to proceed with.</p>
+              <div className="space-y-3">
+                {sortedTerms.map((t) => {
+                  const isSelected = selectedTermYears === t.years;
+                  return (
+                    <button
+                      key={t.years}
+                      type="button"
+                      onClick={() => setSelectedTermYears(t.years)}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
+                        isSelected
+                          ? 'border-[#28AA48] bg-[#28AA48]/5 shadow-sm'
+                          : 'border-gray-200 hover:border-[#28AA48]/40 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isSelected ? 'border-[#28AA48] bg-[#28AA48]' : 'border-gray-300'
+                        }`}>
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                        </div>
+                        <span className={`font-semibold text-sm ${isSelected ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
+                          {t.years} Year{t.years !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-bold text-base ${isSelected ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
+                          {formatCurrencyDecimals(t.monthlyPayment)}<span className="text-xs font-normal text-gray-400">/mo</span>
+                        </div>
+                        {hasSolar && t.costPerKwhCents != null && (
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            ~<span className="font-semibold text-[#3A475B]">{t.costPerKwhCents.toFixed(2)}¢</span> per kWh
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
-                          <div className="font-bold text-[#28AA48] text-base">
-                            {formatCurrencyDecimals(t.monthlyPayment)}
-                            <span className="text-xs text-gray-400 font-normal">/mo</span>
-                          </div>
-                          {hasSolar && t.costPerKwhCents != null && (
-                            <div className="text-xs text-gray-400 font-normal mt-0.5">
-                              ~<span className="font-semibold text-[#3A475B]">{(t.costPerKwhCents).toFixed(2)}¢</span> per kWh
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                * Quote valid for 30 days from {quoteDate}.
-              </p>
+              <p className="text-xs text-gray-400 mt-3">* Quote valid for 30 days from {quoteDate}.</p>
               {hasSolar && (
                 <p className="text-xs text-gray-400 mt-1">
                   * This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.
@@ -660,10 +672,22 @@ export function OnlineQuote() {
             <p className="text-sm text-gray-600 mb-4">
               Approving will mark this proposal as accepted and automatically send <span className="font-semibold text-[#3A475B]">{clientEmail || displayPreparedFor}</span> a unique link to begin the document requirements.
             </p>
+            {selectedTermYears != null && (
+              <div className="bg-[#28AA48]/8 border border-[#28AA48]/20 rounded-xl px-4 py-3 mb-4">
+                <p className="text-xs font-semibold text-[#28AA48] uppercase tracking-wide mb-0.5">Selected Term</p>
+                <p className="text-sm font-bold text-[#3A475B]">
+                  {selectedTermYears} Year{selectedTermYears !== 1 ? 's' : ''} —{' '}
+                  {(() => {
+                    const t = sortedTerms.find(x => x.years === selectedTermYears);
+                    return t ? `${formatCurrencyDecimals(t.monthlyPayment)}/mo` : '';
+                  })()}
+                </p>
+              </div>
+            )}
             {approveError && <p className="text-xs text-red-500 mb-3">{approveError}</p>}
             <div className="flex gap-2">
               <button onClick={() => setShowApproveConfirm(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
-              <button onClick={handleApproveQuote} disabled={approvingQuote} className="flex-1 px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] disabled:opacity-60 text-sm flex items-center justify-center gap-2">
+              <button onClick={handleApproveQuote} disabled={approvingQuote || selectedTermYears == null} className="flex-1 px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] disabled:opacity-60 text-sm flex items-center justify-center gap-2">
                 {approvingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
                 Approve
               </button>

@@ -66,6 +66,9 @@ interface AdminQuote {
   client_phone: string | null;
   pdf_url: string | null;
   accepted_at: string | null;
+  selected_term_years: number | null;
+  selected_term_monthly_payment: number | null;
+  selected_term_interest_rate: number | null;
   upload_token: string | null;
   pipedrive_synced_at: string | null;
   pipedrive_deal_id: string | null;
@@ -674,6 +677,14 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
               {quote.accepted_at && (
                 <p className="text-xs text-gray-400 mt-0.5">
                   Link sent {new Date(quote.accepted_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+              {quote.selected_term_years != null && (
+                <p className="text-xs font-semibold text-[#28AA48] mt-1">
+                  Agreed term: {quote.selected_term_years} Year{quote.selected_term_years !== 1 ? 's' : ''}
+                  {quote.selected_term_monthly_payment != null && (
+                    <> — {new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 2 }).format(quote.selected_term_monthly_payment)}/mo</>
+                  )}
                 </p>
               )}
             </div>

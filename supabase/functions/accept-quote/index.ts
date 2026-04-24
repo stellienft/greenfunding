@@ -218,7 +218,7 @@ Deno.serve(async (req: Request) => {
 
 
   try {
-    const { quoteId } = await req.json();
+    const { quoteId, selectedTermYears, selectedTermMonthlyPayment, selectedTermInterestRate } = await req.json();
 
     if (!quoteId) {
       return new Response(JSON.stringify({ error: 'quoteId is required' }), {
@@ -251,6 +251,9 @@ Deno.serve(async (req: Request) => {
         status: 'accepted',
         upload_token_expires_at: expiresAt.toISOString(),
         portal_access_code: accessCode,
+        ...(selectedTermYears != null ? { selected_term_years: selectedTermYears } : {}),
+        ...(selectedTermMonthlyPayment != null ? { selected_term_monthly_payment: selectedTermMonthlyPayment } : {}),
+        ...(selectedTermInterestRate != null ? { selected_term_interest_rate: selectedTermInterestRate } : {}),
       })
       .eq('id', quoteId);
 
