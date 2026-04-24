@@ -381,6 +381,11 @@ export function Step3() {
 
       setGeneratedQuoteNumber(result.quoteNumber);
 
+      if (state.projectCost >= 1000000) {
+        navigate('/dashboard');
+        return;
+      }
+
       const quoteDate = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
       const siteAddr = (quoteClientFields.siteAddressSameAsCompany ? quoteClientFields.companyAddress : quoteClientFields.clientAddress).trim();
