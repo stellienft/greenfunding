@@ -824,10 +824,11 @@ function generateQuoteEmailHtml(
   assetNames: string[],
   termOptions: TermOption[],
   installerName?: string,
-  logoBase64?: string | null
+  logoBase64?: string | null,
+  clientPersonName?: string
 ): string {
   const netCapex = projectCost / 1.1;
-  const displayName = recipientName || recipientCompany || 'there';
+  const displayName = clientPersonName || recipientName || recipientCompany || 'there';
   const preparedFor = recipientCompany || recipientName || 'Valued Customer';
 
   const termRows = [...termOptions]
@@ -1180,7 +1181,7 @@ Deno.serve(async (req: Request) => {
       }
       const { data: quote } = await supabase
         .from('sent_quotes')
-        .select('id, quote_number, recipient_email, recipient_name, recipient_company, project_cost, pdf_url')
+        .select('id, quote_number, recipient_email, recipient_name, recipient_company, client_person_name, project_cost, pdf_url')
         .eq('id', payloadQuoteId)
         .maybeSingle();
       if (!quote || !quote.recipient_email) {
@@ -1197,7 +1198,7 @@ Deno.serve(async (req: Request) => {
       const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
       const reviewUrl = `${appUrl}/review-quote/${payloadQuoteId}`;
       const qNum = formatQuoteNumber(quote.quote_number);
-      const clientName = quote.recipient_company || quote.recipient_name || 'Valued Customer';
+      const clientName = quote.client_person_name || quote.recipient_name || 'Valued Customer';
       const resendApiKey = await getResendApiKey(supabase);
       if (!resendApiKey) {
         return new Response(JSON.stringify({ error: 'Email service not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -1410,7 +1411,8 @@ Deno.serve(async (req: Request) => {
       assetNames,
       termOptions,
       installerName,
-      logoBase64
+      logoBase64,
+      clientPersonName
     );
 
     const resendApiKey = await getResendApiKey(supabase);

@@ -231,7 +231,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: quote, error: fetchError } = await supabase
       .from('sent_quotes')
-      .select('id, quote_number, recipient_name, recipient_company, recipient_email, project_cost, upload_token, accepted_at')
+      .select('id, quote_number, recipient_name, recipient_company, client_person_name, recipient_email, project_cost, upload_token, accepted_at')
       .eq('id', quoteId)
       .maybeSingle();
 
@@ -263,7 +263,7 @@ Deno.serve(async (req: Request) => {
     const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
     const uploadUrl = `${appUrl}/upload-documents/${uploadToken}`;
     const quoteNumber = '#' + String(quote.quote_number).padStart(6, '0');
-    const clientName = quote.recipient_name || quote.recipient_company || 'Valued Client';
+    const clientName = quote.client_person_name || quote.recipient_name || 'Valued Client';
 
     const resendApiKey = await getResendApiKey(supabase);
 

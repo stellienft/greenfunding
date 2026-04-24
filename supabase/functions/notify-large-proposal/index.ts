@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
     // Fetch quote with installer info
     const { data: quote, error: qErr } = await supabase
       .from('sent_quotes')
-      .select('id, quote_number, project_cost, recipient_name, recipient_company, site_address, calculator_type, installer_id, term_options, created_at')
+      .select('id, quote_number, project_cost, recipient_name, recipient_company, client_person_name, site_address, calculator_type, installer_id, term_options, created_at')
       .eq('id', quoteId)
       .maybeSingle();
 
@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
     const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
     const reviewUrl = `${appUrl}/admin/login`;
     const qNum = formatQuoteNumber(quote.quote_number);
-    const clientName = quote.recipient_company || quote.recipient_name || 'Unnamed Client';
+    const clientName = quote.client_person_name || quote.recipient_name || quote.recipient_company || 'Unnamed Client';
     const projectCostFormatted = formatCurrency(quote.project_cost);
     const createdDate = new Date(quote.created_at).toLocaleDateString('en-AU', {
       day: '2-digit', month: 'short', year: 'numeric',

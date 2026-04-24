@@ -39,7 +39,7 @@ Deno.serve(async (req: Request) => {
     // Fetch quote with custom term options
     const { data: quote, error: qErr } = await supabase
       .from('sent_quotes')
-      .select('id, quote_number, project_cost, recipient_name, recipient_company, site_address, installer_id, custom_term_options, term_options, admin_review_notes')
+      .select('id, quote_number, project_cost, recipient_name, recipient_company, client_person_name, site_address, installer_id, custom_term_options, term_options, admin_review_notes')
       .eq('id', quoteId)
       .maybeSingle();
 
@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
     const appUrl = Deno.env.get('APP_URL') || 'https://portal.greenfunding.com.au';
     const quoteUrl = `${appUrl}/quotes/${quoteId}`;
     const qNum = formatQuoteNumber(quote.quote_number);
-    const clientName = quote.recipient_company || quote.recipient_name || 'your client';
+    const clientName = quote.client_person_name || quote.recipient_name || quote.recipient_company || 'your client';
     const partnerName = installer.full_name || 'Partner';
     const projectCostFormatted = formatCurrency(quote.project_cost);
 

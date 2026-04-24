@@ -206,7 +206,7 @@ export function ReviewQuote() {
   }
 
   if (step === 'approved') {
-    const clientName = quote?.entity_name || quote?.recipient_company || quote?.recipient_name || 'Valued Customer';
+    const clientName = quote?.client_person_name || quote?.recipient_name || quote?.entity_name || quote?.recipient_company || 'Valued Customer';
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 max-w-md w-full p-10 text-center">
@@ -267,8 +267,8 @@ export function ReviewQuote() {
   const projectCost = quote.project_cost;
   const isLowDoc = projectCost < 250000;
   const lowDocReqs = getLowDocRequirements(projectCost);
-  const displayName = quote.entity_name || quote.recipient_company || quote.recipient_name || 'Valued Customer';
-  const displayPreparedFor = quote.entity_name || quote.recipient_company || quote.recipient_name || '';
+  const displayName = quote.client_person_name || quote.recipient_name || quote.entity_name || quote.recipient_company || 'Valued Customer';
+  const displayPreparedFor = quote.entity_name || quote.recipient_company || quote.client_person_name || quote.recipient_name || '';
   const displaySiteAddress = quote.site_address || '';
   const quoteNumber = formatQuoteNumber(quote.quote_number);
   const quoteDate = new Date(quote.created_at).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -356,7 +356,7 @@ export function ReviewQuote() {
               <div className="px-8 py-6">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Prepared For</p>
                 <p className="font-bold text-[#3A475B] text-base">{displayPreparedFor}</p>
-                {quote.client_person_name && quote.entity_name && (
+                {quote.client_person_name && (quote.entity_name || quote.recipient_company) && (
                   <p className="text-gray-600 text-sm mt-0.5">{quote.client_person_name}</p>
                 )}
                 {quote.company_address && <p className="text-gray-500 text-sm mt-0.5">{quote.company_address}</p>}
