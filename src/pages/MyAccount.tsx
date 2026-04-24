@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { TwoFactorManager } from '../components/TwoFactorManager';
@@ -326,7 +326,17 @@ function PasswordSection() {
   );
 }
 
-function ActivityStats({ profile }: { profile: { quote_count: number; application_count: number } }) {
+function ActivityStats({ installerId }: { installerId: string }) {
+  const [quoteCount, setQuoteCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('sent_quotes')
+      .select('id', { count: 'exact', head: true })
+      .eq('installer_id', installerId)
+      .then(({ count }) => setQuoteCount(count ?? 0));
+  }, [installerId]);
+
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="bg-gradient-to-br from-blue-50 to-blue-100/60 rounded-xl p-5 border border-blue-100">
@@ -336,10 +346,9 @@ function ActivityStats({ profile }: { profile: { quote_count: number; applicatio
           </div>
           <span className="text-xs font-medium text-blue-700">Proposals Generated</span>
         </div>
-        <div className="text-3xl font-bold text-blue-700">{profile.quote_count || 0}</div>
+        <div className="text-3xl font-bold text-blue-700">{quoteCount ?? '—'}</div>
         <div className="text-xs text-blue-500 mt-1">Finance calculations</div>
       </div>
-
     </div>
   );
 }
@@ -416,7 +425,7 @@ export function MyAccount() {
 
               <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Activity</h3>
-                <ActivityStats profile={installerProfile} />
+                <ActivityStats installerId={installerProfile.id} />
               </div>
             </div>
 
