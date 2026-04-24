@@ -14,12 +14,10 @@ export function InstallerLogin() {
 
   useEffect(() => {
     if (!loading && user && installerProfile) {
-      if (installerProfile.needs_password_reset) {
-        navigate('/reset-password', { replace: true });
+      if (!installerProfile.onboarding_completed) {
+        navigate('/onboarding', { replace: true });
       } else if (installerProfile.totp_enabled && !totpVerified) {
         navigate('/verify-2fa', { replace: true });
-      } else if (!installerProfile.totp_setup_prompted) {
-        navigate('/setup-2fa', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }

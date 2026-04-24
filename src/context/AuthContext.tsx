@@ -10,6 +10,7 @@ interface InstallerUser {
   phone_number: string | null;
   logo_url: string | null;
   needs_password_reset: boolean;
+  onboarding_completed: boolean;
   quote_count: number;
   application_count: number;
   allowed_calculators?: string[];
@@ -26,11 +27,12 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
-  updateProfile: (fields: { full_name?: string; company_name?: string; phone_number?: string }) => Promise<void>;
+  updateProfile: (fields: { full_name?: string; company_name?: string; phone_number?: string | null }) => Promise<void>;
   uploadLogo: (file: File) => Promise<void>;
   refreshProfile: () => Promise<void>;
   completeTotpVerification: () => void;
   markTotpSetupPrompted: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function updateProfile(fields: { full_name?: string; company_name?: string; phone_number?: string }) {
+  async function updateProfile(fields: { full_name?: string; company_name?: string; phone_number?: string | null }) {
     if (!user) throw new Error('Not authenticated');
     const { error } = await supabase
       .from('installer_users')
@@ -179,6 +181,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function completeOnboarding() {
+    if (!user) return;
+    const { error } = await supabase
+      .from('installer_users')
+      .update({ onboarding_completed: true })
+      .eq('id', user.id);
+    if (error) throw error;
+    await loadInstallerProfile(user.id);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -194,6 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         completeTotpVerification,
         markTotpSetupPrompted,
+        completeOnboarding,
       }}
     >
       {children}

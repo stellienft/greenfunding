@@ -20,6 +20,7 @@ import { ReviewQuote } from './pages/ReviewQuote';
 import { ClientUploadDocuments } from './pages/ClientUploadDocuments';
 import { Setup2FA } from './pages/Setup2FA';
 import { Verify2FA } from './pages/Verify2FA';
+import { PartnerOnboarding } from './pages/PartnerOnboarding';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Analytics } from './components/Analytics';
 import { useEffect } from 'react';
@@ -128,6 +129,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/setup-2fa" element={<Setup2FA />} />
               <Route path="/verify-2fa" element={<Verify2FA />} />
+              <Route path="/onboarding" element={<PartnerOnboarding />} />
               <Route
                 path="/dashboard"
                 element={

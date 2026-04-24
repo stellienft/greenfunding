@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { TwoFactorManager } from '../components/TwoFactorManager';
-import { User, Building2, Mail, Phone, Calendar, Lock, Eye, EyeOff, CheckCircle, AlertCircle, CreditCard as Edit3, Save, X, FileText, ShieldCheck, ChevronRight, Upload, Image as ImageIcon } from 'lucide-react';
+import { User, Building2, Mail, Phone, Calendar, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Save, X, FileText, ShieldCheck, ChevronRight, Upload, Image as ImageIcon, Pencil as Edit3 } from 'lucide-react';
 
 type Section = 'profile' | 'password' | 'security';
 
@@ -42,19 +42,10 @@ function ProfileSection() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    full_name: installerProfile?.full_name ?? '',
-    company_name: installerProfile?.company_name ?? '',
-    phone_number: installerProfile?.phone_number ?? '',
-  });
+  const [phone, setPhone] = useState(installerProfile?.phone_number ?? '');
 
   function startEdit() {
-    setForm({
-      full_name: installerProfile?.full_name ?? '',
-      company_name: installerProfile?.company_name ?? '',
-      phone_number: installerProfile?.phone_number ?? '',
-    });
+    setPhone(installerProfile?.phone_number ?? '');
     setEditing(true);
     setSuccess(false);
     setError(null);
@@ -70,11 +61,7 @@ function ProfileSection() {
     setSaving(true);
     setError(null);
     try {
-      await updateProfile({
-        full_name: form.full_name.trim(),
-        company_name: form.company_name.trim(),
-        phone_number: form.phone_number.trim() || null,
-      });
+      await updateProfile({ phone_number: phone.trim() || null });
       setEditing(false);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 4000);
@@ -92,7 +79,7 @@ function ProfileSection() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-[#3A475B]">Profile Information</h2>
-          <p className="text-sm text-gray-500 mt-1">Update your name, company, and contact details</p>
+          <p className="text-sm text-gray-500 mt-1">Update your contact details</p>
         </div>
         {!editing && (
           <button
@@ -119,51 +106,49 @@ function ProfileSection() {
         </div>
       )}
 
+      {/* Always read-only fields */}
+      <div className="space-y-3 mb-5">
+        {[
+          { icon: <User className="w-4 h-4 text-[#6EAE3C]" />, label: 'Full Name', value: installerProfile.full_name },
+          { icon: <Building2 className="w-4 h-4 text-[#6EAE3C]" />, label: 'Company Name', value: installerProfile.company_name },
+          { icon: <Mail className="w-4 h-4 text-[#6EAE3C]" />, label: 'Email Address', value: installerProfile.email },
+          {
+            icon: <Calendar className="w-4 h-4 text-[#6EAE3C]" />,
+            label: 'Member Since',
+            value: new Date(installerProfile.created_at).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' }),
+          },
+        ].map(({ icon, label, value }, i) => (
+          <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+              {icon}
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">{label}</div>
+              <div className="text-sm font-semibold text-[#3A475B]">{value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Editable phone number */}
       {editing ? (
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={form.full_name}
-                onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                required
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6EAE3C]/30 focus:border-[#6EAE3C]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Company Name</label>
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={form.company_name}
-                onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))}
-                required
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6EAE3C]/30 focus:border-[#6EAE3C]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number <span className="text-gray-400 font-normal">(optional)</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Phone Number <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="tel"
-                value={form.phone_number}
-                onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))}
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6EAE3C]/30 focus:border-[#6EAE3C]"
                 placeholder="e.g. 0412 345 678"
               />
             </div>
           </div>
-
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-1">
             <button
               type="submit"
               disabled={saving}
@@ -184,28 +169,16 @@ function ProfileSection() {
           </div>
         </form>
       ) : (
-        <div className="space-y-3">
-          {[
-            { icon: <User className="w-4 h-4 text-[#6EAE3C]" />, label: 'Full Name', value: installerProfile.full_name },
-            { icon: <Building2 className="w-4 h-4 text-[#6EAE3C]" />, label: 'Company Name', value: installerProfile.company_name },
-            { icon: <Mail className="w-4 h-4 text-[#6EAE3C]" />, label: 'Email Address', value: installerProfile.email },
-            { icon: <Phone className="w-4 h-4 text-[#6EAE3C]" />, label: 'Phone Number', value: installerProfile.phone_number || <span className="text-gray-400 italic">Not set</span> },
-            {
-              icon: <Calendar className="w-4 h-4 text-[#6EAE3C]" />,
-              label: 'Member Since',
-              value: new Date(installerProfile.created_at).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' }),
-            },
-          ].map(({ icon, label, value }, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
-                {icon}
-              </div>
-              <div>
-                <div className="text-xs text-gray-500 mb-0.5">{label}</div>
-                <div className="text-sm font-semibold text-[#3A475B]">{value}</div>
-              </div>
+        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+            <Phone className="w-4 h-4 text-[#6EAE3C]" />
+          </div>
+          <div className="flex-1">
+            <div className="text-xs text-gray-500 mb-0.5">Phone Number</div>
+            <div className="text-sm font-semibold text-[#3A475B]">
+              {installerProfile.phone_number || <span className="text-gray-400 italic font-normal">Not set</span>}
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>
