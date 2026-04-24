@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   FileText, Calendar, User, Building2, MapPin, Download,
   ChevronDown, ChevronUp, Search, X, Loader, CheckCircle2, FolderOpen,
-  Send, AlertCircle, ExternalLink
+  Send, AlertCircle, ExternalLink, Copy, Check
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -320,6 +320,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
   const [resending, setResending] = useState(false);
   const [resentOk, setResentOk] = useState(false);
   const [resendError, setResendError] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     if (quote.status === 'accepted' || quote.accepted_at) {
@@ -432,6 +433,14 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
 
   const appUrl = window.location.origin;
   const uploadPageUrl = quote.upload_token ? `${appUrl}/upload-documents/${quote.upload_token}` : null;
+  const proposalUrl = `${appUrl}/review/${quote.id}`;
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(proposalUrl).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    });
+  }
 
   return (
     <div className="px-5 pb-5 pt-1 border-t border-gray-100 bg-gray-50/60">
@@ -538,6 +547,22 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
             {resentOk ? 'Proposal Sent!' : 'Resend Proposal'}
           </button>
         )}
+        <a
+          href={proposalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-[#3A475B] transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+          View Proposal
+        </a>
+        <button
+          onClick={handleCopyLink}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-[#3A475B] transition-colors"
+        >
+          {linkCopied ? <Check className="w-4 h-4 text-[#28AA48]" /> : <Copy className="w-4 h-4" />}
+          {linkCopied ? 'Copied!' : 'Copy Link'}
+        </button>
         {resendError && <p className="text-xs text-red-500">{resendError}</p>}
       </div>
 
