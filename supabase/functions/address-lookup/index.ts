@@ -4,6 +4,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const stateAbbr: Record<string, string> = {
+  "New South Wales": "NSW",
+  "Victoria": "VIC",
+  "Queensland": "QLD",
+  "South Australia": "SA",
+  "Western Australia": "WA",
+  "Tasmania": "TAS",
+  "Australian Capital Territory": "ACT",
+  "Northern Territory": "NT",
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -19,79 +30,69 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Use Photon (Komoot) — returns proper suburb/city names for Australian addresses
     const params = new URLSearchParams({
-      format: "json",
-      countrycodes: "au",
-      limit: "10",
-      addressdetails: "1",
-      dedupe: "1",
-      "accept-language": "en",
       q: q.trim(),
+      limit: "10",
+      lang: "en",
+      bbox: "113.338953078,-43.6345972634,153.569469029,-10.6681857235", // Australia bounding box
     });
 
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?${params}`,
+      `https://photon.komoot.io/api/?${params}`,
       {
         headers: {
           "User-Agent": "GreenFundingPortal/1.0 (solutions@greenfunding.com.au)",
-          "Accept-Language": "en",
-          "Referer": "https://portal.greenfunding.com.au",
         },
       }
     );
 
     if (!res.ok) {
-      console.error("Nominatim error:", res.status, await res.text());
+      console.error("Photon error:", res.status);
       return new Response(JSON.stringify({ results: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await res.json();
-
-    const stateAbbr: Record<string, string> = {
-      "New South Wales": "NSW",
-      "Victoria": "VIC",
-      "Queensland": "QLD",
-      "South Australia": "SA",
-      "Western Australia": "WA",
-      "Tasmania": "TAS",
-      "Australian Capital Territory": "ACT",
-      "Northern Territory": "NT",
-    };
+    const features = data.features || [];
 
     const seen = new Set<string>();
-    const results: string[] = data
-      .map((d: any) => {
-        const a = d.address || {};
+    const results: string[] = features
+      .filter((f: any) => {
+        const props = f.properties || {};
+        // Only Australian results
+        return props.country === "Australia";
+      })
+      .map((f: any) => {
+        const p = f.properties || {};
         const parts: string[] = [];
 
-        if (a.house_number && a.road) {
-          parts.push(`${a.house_number} ${a.road}`);
-        } else if (a.road) {
-          parts.push(a.road);
-        } else if (a.amenity || a.building || a.shop || a.tourism || a.leisure) {
-          parts.push(a.amenity || a.building || a.shop || a.tourism || a.leisure);
+        // Street address
+        if (p.housenumber && p.street) {
+          parts.push(`${p.housenumber} ${p.street}`);
+        } else if (p.street) {
+          parts.push(p.street);
+        } else if (p.name && p.name !== p.city && p.name !== p.state) {
+          parts.push(p.name);
         }
 
-        const suburb = a.suburb || a.neighbourhood || a.quarter || a.hamlet || a.locality;
-        if (suburb) parts.push(suburb);
+        // Suburb / locality — Photon uses 'city' for the actual suburb in AU
+        if (p.city) parts.push(p.city);
+        // Sometimes district is the suburb when city is a broader area
+        if (p.district && p.district !== p.city) parts.push(p.district);
 
-        const city = a.city || a.town || a.village || a.municipality || a.county;
-        if (city && city !== suburb) parts.push(city);
+        // State
+        if (p.state) parts.push(stateAbbr[p.state] || p.state);
 
-        if (a.state) parts.push(stateAbbr[a.state] || a.state);
-        if (a.postcode) parts.push(a.postcode);
+        // Postcode
+        if (p.postcode) parts.push(p.postcode);
 
-        if (parts.length < 2) {
-          return d.display_name
-            .replace(/,\s*Australia$/, "")
-            .replace(/,\s*Australia,/, ",")
-            .trim();
-        }
+        if (parts.length < 2) return null;
         return parts.join(", ");
       })
-      .filter((s: string) => {
+      .filter((s: string | null) => {
+        if (!s) return false;
         if (seen.has(s)) return false;
         seen.add(s);
         return true;
