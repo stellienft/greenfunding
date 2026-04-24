@@ -173,6 +173,8 @@ export function OnlineQuote() {
   const displayPreparedFor = entityName || clientName;
   const firstTerm = sortedTerms[0];
 
+  const isEVOnly = assetNames?.length === 1 && assetNames[0] === 'Electric Vehicles';
+
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
   const hasSavings = !!(currentElectricityBill && currentElectricityBill > 0 && anticipatedElectricityBillWithSolar !== undefined);
   const roiMetrics = hasSavings && firstTerm
@@ -346,7 +348,7 @@ export function OnlineQuote() {
 
             <div className="px-8 py-6 border-b border-gray-100">
               <div className="flex items-baseline gap-3 mb-4">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Project Summary</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{isEVOnly ? 'Electric Vehicles' : 'Project Summary'}</p>
                 {displaySiteAddress && (
                   <p className="text-xs text-gray-500"><span className="font-semibold text-gray-600">Site:</span> {displaySiteAddress}</p>
                 )}
@@ -357,7 +359,7 @@ export function OnlineQuote() {
                 return (
                   <div className={`grid ${colClass} gap-4`}>
                     <div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #28AA48, #7DC241)' }}>
-                      <p className="text-white/80 text-xs mb-1">Project Cost (Inc. GST)</p>
+                      <p className="text-white/80 text-xs mb-1">{isEVOnly ? 'Vehicle Cost (Inc. GST)' : 'Project Cost (Inc. GST)'}</p>
                       <p className="text-white font-extrabold text-lg">{formatCurrency(projectCost)}</p>
                     </div>
                     <div className="rounded-xl p-4 text-center bg-gray-50 border border-gray-100">
