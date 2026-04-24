@@ -91,7 +91,7 @@ export function Step1() {
       }
 
       if (isCarAsset) {
-        setResidualPercentage(30);
+        setResidualPercentage(0);
         return [assetId];
       }
 
@@ -552,7 +552,7 @@ export function Step1() {
                         type="button"
                         onClick={() => setResidualPercentage(pct)}
                         className={`py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
-                          (residualPercentage ?? 30) === pct
+                          (residualPercentage ?? 0) === pct
                             ? 'border-[#28AA48] bg-[#28AA48]/5 text-[#28AA48]'
                             : 'border-gray-200 text-[#3A475B] hover:border-[#28AA48]/50'
                         }`}
