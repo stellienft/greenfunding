@@ -8,7 +8,7 @@ import { calculateAll, calculateProgressPayment } from '../calculator';
 import {
   ArrowLeft, FileText, MapPin, Calendar, DollarSign, Tag, CheckCircle2,
   Upload, X, Send, Loader, Building2, ChevronDown, ChevronUp, Clock,
-  Mail, Copy, ClipboardCheck, Pencil, Trash2, AlertTriangle
+  Mail, Copy, ClipboardCheck, Pencil, Trash2, AlertTriangle, ExternalLink
 } from 'lucide-react';
 
 interface SentQuote {
@@ -36,6 +36,8 @@ interface SentQuote {
   pipedrive_synced_at: string | null;
   pipedrive_deal_url: string | null;
   pipedrive_stage_name: string | null;
+  portal_access_code: string | null;
+  requires_admin_review: boolean | null;
 }
 
 interface UploadedFile {
@@ -499,6 +501,17 @@ export function QuoteDetail() {
               Back to My Quotes
             </button>
             <div className="flex items-center gap-2 flex-wrap">
+              {quote.requires_admin_review && quote.portal_access_code && (
+                <a
+                  href={`/review-quote/${quote.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#28AA48] bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Online Proposal
+                </a>
+              )}
               {quote.recipient_email && (
                 <button
                   onClick={handleResend}

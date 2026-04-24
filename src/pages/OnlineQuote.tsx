@@ -108,7 +108,7 @@ function PageFooter({ text }: { text?: string }) {
   return (
     <div className="px-8 py-4" style={{ background: '#094325' }}>
       <p className="text-white/40 text-xs text-center">
-        {text ?? 'This quote is indicative only and subject to credit approval. Valid for 30 days.'}
+        {text ?? 'This proposal is indicative only and subject to credit approval. Valid for 30 days.'}
       </p>
     </div>
   );
@@ -276,7 +276,7 @@ export function OnlineQuote() {
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#28AA48] text-white font-semibold rounded-lg hover:bg-[#229940] transition-all text-sm disabled:opacity-60"
               >
                 {approvingQuote ? <Loader className="w-4 h-4 animate-spin" /> : <ThumbsUp className="w-4 h-4" />}
-                <span className="hidden sm:inline">{quoteApproved ? 'Approved' : 'Approve Quote'}</span>
+                <span className="hidden sm:inline">{quoteApproved ? 'Approved' : 'Approve Proposal'}</span>
               </button>
             )}
           </div>
@@ -548,7 +548,7 @@ export function OnlineQuote() {
               className="flex items-center gap-2 px-7 py-3.5 bg-[#28AA48] text-white font-bold rounded-xl hover:bg-[#229940] transition-all shadow-md text-base disabled:opacity-60"
             >
               {approvingQuote ? <Loader className="w-5 h-5 animate-spin" /> : <ThumbsUp className="w-5 h-5" />}
-              {quoteApproved ? 'Quote Approved' : 'Approve Quote'}
+              {quoteApproved ? 'Proposal Approved' : 'Approve Proposal'}
             </button>
           )}
         </div>
@@ -566,8 +566,8 @@ export function OnlineQuote() {
                 <div className="flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-[#28AA48]" />
                 </div>
-                <h3 className="text-lg font-bold text-[#3A475B] mb-2">Quote Sent!</h3>
-                <p className="text-gray-500 text-sm">A unique link has been sent to <span className="font-semibold text-[#3A475B]">{clientEmail}</span> for them to review and approve the quote.</p>
+                <h3 className="text-lg font-bold text-[#3A475B] mb-2">Proposal Sent!</h3>
+                <p className="text-gray-500 text-sm">A unique link has been sent to <span className="font-semibold text-[#3A475B]">{clientEmail}</span> for them to review and approve the proposal.</p>
                 <button onClick={() => { setShowSendModal(false); setQuoteSent(false); }} className="mt-5 w-full px-4 py-2.5 bg-[#28AA48] text-white font-bold rounded-xl">Done</button>
               </div>
             ) : (
@@ -577,7 +577,7 @@ export function OnlineQuote() {
                     <Send className="w-5 h-5 text-[#3A475B]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#3A475B]">Send Quote to Client</h3>
+                    <h3 className="text-base font-bold text-[#3A475B]">Send Proposal to Client</h3>
                     <p className="text-xs text-gray-500">A unique review link will be emailed</p>
                   </div>
                 </div>
@@ -586,7 +586,7 @@ export function OnlineQuote() {
                   <p className="font-semibold text-[#3A475B] text-sm">{displayPreparedFor}</p>
                   <p className="text-sm text-gray-600">{clientEmail}</p>
                 </div>
-                <p className="text-xs text-gray-500 mb-4">The client will receive a unique link with a secure access code to review and approve the quote online.</p>
+                <p className="text-xs text-gray-500 mb-4">The client will receive a unique link with a secure access code to review and approve the proposal online.</p>
                 {sendError && <p className="text-xs text-red-500 mb-3">{sendError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowSendModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
@@ -601,7 +601,7 @@ export function OnlineQuote() {
         </div>
       )}
 
-      {/* Approve Quote Confirm Modal */}
+      {/* Approve Proposal Confirm Modal */}
       {showApproveConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
@@ -613,12 +613,12 @@ export function OnlineQuote() {
                 <ThumbsUp className="w-5 h-5 text-[#28AA48]" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#3A475B]">Approve This Quote</h3>
-                <p className="text-xs text-gray-500">This will trigger the low doc process</p>
+                <h3 className="text-base font-bold text-[#3A475B]">Approve This Proposal</h3>
+                <p className="text-xs text-gray-500">This will trigger the document process</p>
               </div>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Approving will mark this quote as accepted and automatically send <span className="font-semibold text-[#3A475B]">{clientEmail || displayPreparedFor}</span> a unique link to begin the low doc document requirements.
+              Approving will mark this proposal as accepted and automatically send <span className="font-semibold text-[#3A475B]">{clientEmail || displayPreparedFor}</span> a unique link to begin the document requirements.
             </p>
             {approveError && <p className="text-xs text-red-500 mb-3">{approveError}</p>}
             <div className="flex gap-2">
@@ -632,11 +632,11 @@ export function OnlineQuote() {
         </div>
       )}
 
-      {/* Quote Approved Success */}
+      {/* Proposal Approved Success */}
       {quoteApproved && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#28AA48] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-semibold">
           <CheckCircle2 className="w-5 h-5" />
-          Quote approved — client emailed with document upload link
+          Proposal approved — client emailed with document upload link
         </div>
       )}
     </>

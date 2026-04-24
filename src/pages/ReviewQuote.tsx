@@ -538,7 +538,7 @@ export function ReviewQuote() {
 
             <div className="px-8 py-5" style={{ background: '#094325' }}>
               <p className="text-white/40 text-xs text-center">
-                This quote is indicative only and subject to credit approval. Valid for 30 days.
+                This proposal is indicative only and subject to credit approval. Valid for 30 days.
               </p>
             </div>
           </div>
