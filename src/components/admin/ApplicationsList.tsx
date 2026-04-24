@@ -59,9 +59,9 @@ export function ApplicationsList() {
       'Years in Business',
       'Annual Revenue',
       'Industry',
-      'Installer Name',
-      'Installer Company',
-      'Installer Email'
+      'Partner Name',
+      'Partner Company',
+      'Partner Email'
     ];
 
     const rows = applications.map(app => [
@@ -205,11 +205,11 @@ export function ApplicationsList() {
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                     </svg>
-                    Submitted by Installer
+                    Submitted by Partner
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-white/80">Installer Name:</span>
+                      <span className="text-white/80">Partner Name:</span>
                       <div className="font-semibold">{(selectedApp as any).installer.full_name}</div>
                     </div>
                     {(selectedApp as any).installer.company_name && (
@@ -219,7 +219,7 @@ export function ApplicationsList() {
                       </div>
                     )}
                     <div className="sm:col-span-2">
-                      <span className="text-white/80">Installer Email:</span>
+                      <span className="text-white/80">Partner Email:</span>
                       <div className="font-semibold break-all">{(selectedApp as any).installer.email}</div>
                     </div>
                   </div>

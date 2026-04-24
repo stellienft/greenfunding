@@ -60,7 +60,7 @@ export function InstallerLogin() {
                 alt="Green Funding"
                 className="h-12 mx-auto mb-6"
               />
-              <h1 className="text-2xl font-bold text-[#3A475B] mb-2">Green Funding Installer Portal</h1>
+              <h1 className="text-2xl font-bold text-[#3A475B] mb-2">Green Funding Partner Portal</h1>
               <p className="text-gray-600 text-sm">Sign in to access the financing portal</p>
             </div>
 

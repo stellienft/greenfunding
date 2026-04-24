@@ -51,7 +51,7 @@ export function KPICards({ quotes, applications, installerStats }: Props) {
       color: 'bg-cyan-50 text-cyan-600',
     },
     {
-      label: 'Most Active Installer',
+      label: 'Most Active Partner',
       value: mostActiveInstaller?.name ?? '—',
       sub: mostActiveInstaller ? `${mostActiveInstaller.quoteCount} quotes` : 'No data',
       icon: Users,
@@ -59,7 +59,7 @@ export function KPICards({ quotes, applications, installerStats }: Props) {
       small: true,
     },
     {
-      label: 'Highest Value Installer',
+      label: 'Highest Value Partner',
       value: highestValueInstaller?.name ?? '—',
       sub: highestValueInstaller ? formatCurrency(highestValueInstaller.totalValue) : 'No data',
       icon: DollarSign,

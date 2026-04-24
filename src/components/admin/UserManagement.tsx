@@ -21,7 +21,7 @@ const ALL_PERMISSIONS = [
   { key: 'quotes', label: 'Proposals', description: 'View sent proposals' },
   { key: 'accepted-quotes', label: 'Accepted Proposals', description: 'View accepted proposals' },
   { key: 'documents', label: 'Documents', description: 'Manage uploaded documents' },
-  { key: 'users', label: 'User Management', description: 'Manage installers' },
+  { key: 'users', label: 'User Management', description: 'Manage partners' },
   { key: 'config', label: 'Calculator Config', description: 'Edit calculator settings' },
   { key: 'assets', label: 'Assets', description: 'Manage asset types' },
   { key: 'site', label: 'Site Settings', description: 'Configure site options' },
@@ -189,15 +189,15 @@ export function UserManagement() {
       });
       const emailData = await emailRes.json();
       if (!emailRes.ok) {
-        showToast(`Installer created but email failed: ${emailData.error || 'Unknown error'}`, 'error');
+        showToast(`Partner created but email failed: ${emailData.error || 'Unknown error'}`, 'error');
       }
 
       await supabase.from('installer_users').update({ allowed_calculators: allowedCalcs }).eq('id', authData.user.id);
-      showToast(`Installer account created and welcome email sent to ${formData.email}`, 'success');
+      showToast(`Partner account created and welcome email sent to ${formData.email}`, 'success');
       closeDrawer();
       loadUsers();
     } catch (e: any) {
-      setError(e.message || 'Failed to create installer');
+      setError(e.message || 'Failed to create partner');
     } finally {
       setSubmitting(false);
     }
@@ -324,7 +324,7 @@ export function UserManagement() {
       if (isAdmin && data.newPassword) {
         setNewPasswordModal({ password: data.newPassword, label: `${user.full_name}'s account` });
       } else {
-        showToast('Password reset email sent to the installer.', 'success');
+        showToast('Password reset email sent to the partner.', 'success');
       }
       loadUsers();
     } catch (e: any) {
@@ -435,7 +435,7 @@ export function UserManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-[#1e293b]">User Management</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Manage installers, admins and moderators</p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage partners, admins and moderators</p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'installers' && (
@@ -444,7 +444,7 @@ export function UserManagement() {
               className="flex items-center gap-2 px-4 py-2.5 bg-[#28AA48] text-white rounded-xl hover:bg-[#239940] transition-colors text-sm font-semibold shadow-sm"
             >
               <UserPlus className="w-4 h-4" />
-              Add Installer
+              Add Partner
             </button>
           )}
           {activeTab === 'admins' && isSuperAdmin && (
@@ -471,7 +471,7 @@ export function UserManagement() {
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
           {([
-            { key: 'installers', label: 'Installers', count: installers.length },
+            { key: 'installers', label: 'Partners', count: installers.length },
             { key: 'admins', label: 'Admins', count: admins.length },
             { key: 'moderators', label: 'Moderators', count: moderators.length },
           ] as { key: ActiveTab; label: string; count: number }[]).map(tab => (
@@ -565,10 +565,10 @@ export function UserManagement() {
                 </div>
                 <div>
                   <h3 className="font-bold text-[#1e293b] text-base">
-                    {drawerMode === 'add-installer' && 'New Installer'}
+                    {drawerMode === 'add-installer' && 'New Partner'}
                     {drawerMode === 'add-admin' && 'New Admin'}
                     {drawerMode === 'add-moderator' && 'New Moderator'}
-                    {drawerMode === 'edit-installer' && 'Edit Installer'}
+                    {drawerMode === 'edit-installer' && 'Edit Partner'}
                     {drawerMode === 'edit-admin' && 'Edit Admin'}
                     {drawerMode === 'edit-moderator' && 'Edit Moderator'}
                   </h3>
@@ -774,7 +774,7 @@ export function UserManagement() {
                     drawerMode?.includes('admin') ? 'bg-amber-50 text-amber-800 border border-amber-100' :
                     'bg-gray-50 text-gray-700 border border-gray-100'
                   }`}>
-                    {drawerMode === 'add-installer' && 'A temporary password will be generated and emailed to the installer. They must reset it on first login.'}
+                    {drawerMode === 'add-installer' && 'A temporary password will be generated and emailed to the partner. They will complete full account setup on first login.'}
                     {drawerMode === 'add-admin' && 'A temporary password will be generated and shown to you once. Make sure to save it before closing.'}
                     {drawerMode === 'add-moderator' && 'A welcome email with login credentials and their assigned permissions will be sent to the moderator.'}
                   </div>

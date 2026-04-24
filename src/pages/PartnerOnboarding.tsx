@@ -470,9 +470,8 @@ function LogoStep({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }
   );
 }
 
-function SecurityStep({ onNext, onSkip, user, profile }: {
+function SecurityStep({ onNext, user, profile }: {
   onNext: () => void;
-  onSkip: () => void;
   user: { id: string };
   profile: { email: string };
 }) {
@@ -483,7 +482,7 @@ function SecurityStep({ onNext, onSkip, user, profile }: {
           <Shield className="w-7 h-7 text-[#3A475B]" />
         </div>
         <h2 className="text-2xl font-bold text-[#3A475B]">Secure Your Account</h2>
-        <p className="text-gray-500 text-sm mt-1.5">Set up two-factor authentication for added security</p>
+        <p className="text-gray-500 text-sm mt-1.5">Two-factor authentication is required for all partner accounts</p>
       </div>
 
       <TwoFactorSetup
@@ -491,7 +490,6 @@ function SecurityStep({ onNext, onSkip, user, profile }: {
         userType="installer"
         email={profile.email}
         onComplete={onNext}
-        onSkip={onSkip}
         accentColor="#6EAE3C"
       />
     </div>
@@ -547,17 +545,12 @@ function DoneStep({ onFinish, profile }: { onFinish: () => void; profile: { full
 
 export function PartnerOnboarding() {
   const navigate = useNavigate();
-  const { user, installerProfile, refreshProfile, markTotpSetupPrompted, completeOnboarding } = useAuth();
+  const { user, installerProfile, refreshProfile, completeOnboarding } = useAuth();
   const [step, setStep] = useState<Step>('welcome');
 
   if (!user || !installerProfile) {
     navigate('/login', { replace: true });
     return null;
-  }
-
-  async function handleSecuritySkip() {
-    await markTotpSetupPrompted();
-    setStep('done');
   }
 
   async function handleSecurityComplete() {
@@ -611,7 +604,6 @@ export function PartnerOnboarding() {
             {step === 'security' && (
               <SecurityStep
                 onNext={handleSecurityComplete}
-                onSkip={handleSecuritySkip}
                 user={user}
                 profile={installerProfile}
               />

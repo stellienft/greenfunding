@@ -22,8 +22,8 @@ Kind regards,
 const TOKENS = [
   { token: '[RecipientName]', description: "The customer's name" },
   { token: '[RecipientCompany]', description: "The customer's company name" },
-  { token: '[InstallerName]', description: "The installer's full name" },
-  { token: '[InstallerCompany]', description: "The installer's company name" },
+  { token: '[InstallerName]', description: "The partner's full name" },
+  { token: '[InstallerCompany]', description: "The partner's company name" },
 ];
 
 export function EmailTemplates() {
@@ -99,7 +99,7 @@ export function EmailTemplates() {
         <div>
           <h2 className="text-2xl font-bold text-[#3A475B]">Email Templates</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Configure the intro email template installers use to introduce clients to Green Funding
+            Configure the intro email template partners use to introduce clients to Green Funding
           </p>
         </div>
         <button
@@ -201,9 +201,9 @@ export function EmailTemplates() {
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
             <h4 className="text-sm font-bold text-blue-900 mb-2">How It Works</h4>
             <ol className="text-xs text-blue-800 space-y-1.5 list-decimal list-inside">
-              <li>Installer opens the Email Proposal modal on the proposal page</li>
+              <li>Partner opens the Email Proposal modal on the proposal page</li>
               <li>An "Intro Email" tab shows this template with tokens replaced</li>
-              <li>The installer can edit the text before copying</li>
+              <li>The partner can edit the text before copying</li>
               <li>They copy it and paste into their own email client</li>
               <li>They then switch to "Proposal Details" to send the PDF proposal</li>
             </ol>

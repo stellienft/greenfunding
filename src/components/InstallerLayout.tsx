@@ -72,7 +72,7 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
           className="h-9 mb-1 cursor-pointer"
           onClick={() => navigate('/dashboard')}
         />
-        <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Installer Portal</p>
+        <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Partner Portal</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
@@ -174,7 +174,7 @@ export function InstallerLayout({ children }: InstallerLayoutProps) {
             <a href="https://greenfunding.com.au" target="_blank" rel="noopener noreferrer">
               <img src="/image copy copy.png" alt="Green Funding" className="h-5 opacity-70 hover:opacity-100 transition-opacity" />
             </a>
-            <span className="text-xs text-gray-400">Installer Portal</span>
+            <span className="text-xs text-gray-400">Partner Portal</span>
           </div>
         </footer>
       </div>

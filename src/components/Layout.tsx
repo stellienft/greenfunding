@@ -62,7 +62,7 @@ export function Layout({ children, showHeader = true }: LayoutProps) {
                 onClick={() => navigate('/dashboard')}
               />
               <h1 className="text-lg sm:text-xl font-bold text-[#3A475B] mb-1">
-                Installer Portal
+                Partner Portal
               </h1>
               <p className="text-xs text-gray-600 max-w-2xl px-4">
                 Calculate your green energy project financing with flexible terms and competitive rates
@@ -218,7 +218,7 @@ export function Layout({ children, showHeader = true }: LayoutProps) {
               />
             </a>
             <p className="text-xs sm:text-sm text-gray-600">
-              Installer Portal
+              Partner Portal
             </p>
           </div>
         </div>

@@ -175,7 +175,7 @@ export function AnalyticsDashboard() {
     { id: 'quotes', label: 'Quote Analytics' },
     { id: 'behaviour', label: 'Behavioural' },
     { id: 'funnel', label: 'Funnel' },
-    { id: 'installers', label: 'Installers' },
+    { id: 'installers', label: 'Partners' },
     { id: 'scores', label: 'Deal Scores' },
     { id: 'opportunities', label: 'Opportunities' },
   ] as const;
@@ -382,7 +382,7 @@ export function AnalyticsDashboard() {
               <InstallerTable stats={installerStats} />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <SimpleBar
-                  title="Top Installers by Volume"
+                  title="Top Partners by Volume"
                   items={[...installerStats]
                     .sort((a, b) => b.quoteCount - a.quoteCount)
                     .slice(0, 8)
@@ -392,7 +392,7 @@ export function AnalyticsDashboard() {
                     }))}
                 />
                 <SimpleBar
-                  title="Top Installers by Value"
+                  title="Top Partners by Value"
                   items={[...installerStats]
                     .sort((a, b) => b.totalValue - a.totalValue)
                     .slice(0, 8)

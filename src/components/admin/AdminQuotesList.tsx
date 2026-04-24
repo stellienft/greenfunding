@@ -461,7 +461,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Installer</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Partner</p>
           {quote.installer ? (
             <div className="space-y-2">
               {quote.installer.logo_url && (
@@ -478,7 +478,7 @@ function ExpandedQuoteRow({ quote, onQuoteUpdated }: ExpandedQuoteRowProps) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">Unknown installer</p>
+            <p className="text-sm text-gray-400 italic">Unknown partner</p>
           )}
         </div>
 
@@ -822,7 +822,7 @@ export function AdminQuotesList() {
   function exportCSV() {
     if (filtered.length === 0) return;
     const headers = [
-      'Proposal Number', 'Date', 'Installer Name', 'Installer Company', 'Installer Email',
+      'Proposal Number', 'Date', 'Partner Name', 'Partner Company', 'Partner Email',
       'Client Name', 'Client Company', 'Client Email', 'Client Phone',
       'Site Address', 'System Size', 'Service Type', 'Payment Timing',
       'Project Cost', 'Status',
@@ -888,7 +888,7 @@ export function AdminQuotesList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by client, installer, quote number..."
+            placeholder="Search by client, partner, quote number..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-9 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#28AA48]/30 focus:border-[#28AA48]"

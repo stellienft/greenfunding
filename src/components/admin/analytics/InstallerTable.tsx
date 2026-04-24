@@ -48,7 +48,7 @@ export function InstallerTable({ stats }: Props) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#3A475B]">Installer Performance</h3>
+        <h3 className="text-sm font-semibold text-[#3A475B]">Partner Performance</h3>
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500" /> Top performer</span>
           <span className="flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-orange-500" /> At risk</span>
@@ -56,13 +56,13 @@ export function InstallerTable({ stats }: Props) {
         </div>
       </div>
       {stats.length === 0 ? (
-        <div className="text-center py-10 text-sm text-gray-400">No installer data available</div>
+        <div className="text-center py-10 text-sm text-gray-400">No partner data available</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Installer</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Partner</th>
                 {col('Quotes', 'quoteCount')}
                 {col('Total Value', 'totalValue')}
                 {col('Avg Deal', 'avgDealSize')}

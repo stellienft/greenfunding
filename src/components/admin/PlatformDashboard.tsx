@@ -348,7 +348,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
     return days > 14;
   });
   if (inactiveInstallers.length > 0) {
-    alerts.push({ msg: `${inactiveInstallers.length} installer${inactiveInstallers.length > 1 ? 's' : ''} inactive for 14+ days`, color: 'text-rose-700 bg-rose-50 border-rose-200' });
+    alerts.push({ msg: `${inactiveInstallers.length} partner${inactiveInstallers.length > 1 ? 's' : ''} inactive for 14+ days`, color: 'text-rose-700 bg-rose-50 border-rose-200' });
   }
 
   const CALC_COLORS = [
@@ -436,7 +436,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           previous={prevAvgDeal}
         />
         <StatCard
-          label="Most Active Installer"
+          label="Most Active Partner"
           value={topInstallers[0] ? (topInstallers[0].company_name || topInstallers[0].full_name) : '—'}
           sub={topInstallers[0] ? `${topInstallers[0].recentQuotes} proposals` : 'No activity yet'}
           icon={Users}
@@ -444,7 +444,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
           onClick={() => onNavigate?.('users')}
         />
         <StatCard
-          label="Highest Value Installer"
+          label="Highest Value Partner"
           value={highestValueInstaller ? (highestValueInstaller.company_name || highestValueInstaller.full_name) : '—'}
           sub={highestValueInstaller ? fmt(highestValueInstaller.allTimeValue) : 'No data'}
           icon={DollarSign}
@@ -539,7 +539,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[#1e293b]">Top Installers (30d)</h3>
+            <h3 className="text-sm font-semibold text-[#1e293b]">Top Partners (30d)</h3>
             <button
               onClick={() => onNavigate?.('users')}
               className="text-xs text-[#28AA48] hover:underline flex items-center gap-0.5"
@@ -618,7 +618,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                 color: 'text-emerald-600 bg-emerald-50',
               },
               {
-                label: 'Total Registered Installers',
+                label: 'Total Registered Partners',
                 value: totalInstallers.toLocaleString(),
                 icon: Users,
                 color: 'text-orange-500 bg-orange-50',
@@ -718,14 +718,14 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-[#1e293b]">User Behaviour Patterns</h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">All-time installer activity</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">All-time partner activity</p>
           </div>
           {installersWithQuotes.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No data</p>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
-                <p className="text-xs font-medium text-gray-500">Avg Proposals per Installer</p>
+                <p className="text-xs font-medium text-gray-500">Avg Proposals per Partner</p>
                 <p className="text-sm font-bold text-[#1e293b]">{avgQuotesPerInstaller.toFixed(1)}</p>
               </div>
 
@@ -737,7 +737,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-[#28AA48] rounded-full transition-all" style={{ width: `${repeatUsersPct}%` }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">{repeatUsers} of {installersWithQuotes.length} active installers</p>
+                <p className="text-[10px] text-gray-400 mt-1">{repeatUsers} of {installersWithQuotes.length} active partners</p>
               </div>
 
               <div className="py-2.5 border-b border-gray-50">
@@ -748,7 +748,7 @@ export function PlatformDashboard({ onNavigate }: { onNavigate?: (tab: string) =
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${powerUsersPct}%` }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1">{powerUsers} of {installersWithQuotes.length} active installers</p>
+                <p className="text-[10px] text-gray-400 mt-1">{powerUsers} of {installersWithQuotes.length} active partners</p>
               </div>
 
               <div className="pt-1">
