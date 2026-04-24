@@ -1306,6 +1306,8 @@ Deno.serve(async (req: Request) => {
         energy_savings: energySavings || null,
         current_electricity_bill: currentElectricityBill || null,
         anticipated_electricity_bill_with_solar: anticipatedElectricityBillWithSolar ?? null,
+        requires_admin_review: projectCost >= 1000000,
+        admin_review_status: projectCost >= 1000000 ? 'pending_review' : null,
       })
       .select('id, quote_number, created_at')
       .single();
@@ -1316,6 +1318,24 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ error: 'Failed to create quote record' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Fire admin notification for large proposals (non-blocking)
+    if (projectCost >= 1000000) {
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/notify-large-proposal`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({ quoteId: quoteRecord.id }),
+          });
+        } catch (e) {
+          console.error('Failed to send large proposal admin notification:', e);
+        }
+      })());
     }
 
     const quoteNumber = formatQuoteNumber(quoteRecord.quote_number);

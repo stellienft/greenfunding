@@ -23,6 +23,10 @@ interface SentQuote {
   system_size: string | null;
   project_cost: number;
   term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced: number }>;
+  custom_term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced?: number }> | null;
+  admin_review_status: string | null;
+  custom_rates_applied_at: string | null;
+  partner_notified_at: string | null;
   asset_names: string[];
   selected_asset_ids: string[];
   calculator_type: string;
@@ -627,16 +631,43 @@ export function QuoteDetail() {
                 </div>
               )}
 
+              {quote.custom_term_options && quote.admin_review_status === 'rates_applied' && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#28AA48] flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-green-800">Custom Rates Applied by Green Funding</p>
+                      <p className="text-xs text-green-700 mt-0.5">
+                        Our team has reviewed this proposal and applied preferential rates.
+                        {quote.custom_rates_applied_at && (
+                          <> Updated {new Date(quote.custom_rates_applied_at).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })}.</>
+                        )}
+                        {' '}You can now resend this proposal to your client with the updated rates.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
-                <p className="text-xs text-gray-400 mb-3">Quoted Terms</p>
+                <div className="flex items-center gap-2 mb-3">
+                  <p className="text-xs text-gray-400">Quoted Terms</p>
+                  {quote.custom_term_options && quote.admin_review_status === 'rates_applied' && (
+                    <span className="text-xs font-semibold text-[#28AA48] bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">Custom Rates</span>
+                  )}
+                </div>
                 <div className="space-y-2">
-                  {quote.term_options?.map((t, i) => (
+                  {(quote.custom_term_options && quote.admin_review_status === 'rates_applied'
+                    ? quote.custom_term_options
+                    : quote.term_options
+                  )?.map((t, i) => (
                     <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-[#28AA48]" />
                         <span className="text-sm font-semibold text-[#3A475B]">{t.years} Year{t.years !== 1 ? 's' : ''}</span>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">{(t.interestRate * 100).toFixed(2)}%</span>
                         <p className="text-sm font-bold text-[#28AA48]">{formatCurrency(t.monthlyPayment)}<span className="text-xs font-normal text-gray-400">/mo</span></p>
                       </div>
                     </div>

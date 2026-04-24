@@ -14,17 +14,18 @@ import { SiteSettings } from '../components/admin/SiteSettings';
 import { EmailTemplates } from '../components/admin/EmailTemplates';
 import { AdminAccount } from '../components/admin/AdminAccount';
 import { AcceptedQuotes } from '../components/admin/AcceptedQuotes';
+import { LargeProposals } from '../components/admin/LargeProposals';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
 import { PlatformDashboard } from '../components/admin/PlatformDashboard';
 import { Step1 } from './Step1';
 import { ServicedRentalStep1 } from './ServicedRentalStep1';
 import { Step3 } from './Step3';
 import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
-import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare, TrendingUp } from 'lucide-react';
 
 type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
-type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'accepted-quotes' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'accepted-quotes' | 'large-proposals' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
 
 const NAV_GROUPS = [
   {
@@ -52,6 +53,7 @@ const NAV_GROUPS = [
     items: [
       { id: 'quotes' as Tab, label: 'Proposals', icon: Send },
       { id: 'accepted-quotes' as Tab, label: 'Accepted Proposals', icon: CheckSquare },
+      { id: 'large-proposals' as Tab, label: 'Large Proposals ($1M+)', icon: TrendingUp },
       { id: 'documents' as Tab, label: 'Documents', icon: FileText },
     ],
   },
@@ -243,6 +245,7 @@ export function AdminDashboard() {
                 {activeTab === 'documents' && <DocumentsManager />}
                 {activeTab === 'quotes' && <AdminQuotesList />}
                 {activeTab === 'accepted-quotes' && <AcceptedQuotes />}
+                {activeTab === 'large-proposals' && <LargeProposals />}
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'site' && <SiteSettings />}
                 {activeTab === 'email' && <EmailTemplates />}
