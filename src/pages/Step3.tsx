@@ -372,6 +372,8 @@ export function Step3() {
           systemSize: quoteClientFields.systemSize.trim() || undefined,
           annualSolarGenerationKwh: state.annualSolarGenerationKwh || undefined,
           energySavings: state.energySavings || undefined,
+          currentElectricityBill: state.currentElectricityBill || undefined,
+          anticipatedElectricityBillWithSolar: state.anticipatedElectricityBillWithSolar ?? undefined,
           installerEmail: installerProfile?.email || user?.email || undefined,
           installerPhone: installerProfile?.phone_number || undefined,
         }),

@@ -43,6 +43,8 @@ interface QuotePayload {
   introEmailBody?: string;
   annualSolarGenerationKwh?: number;
   energySavings?: number;
+  currentElectricityBill?: number;
+  anticipatedElectricityBillWithSolar?: number;
   disclaimerText?: string;
   installerEmail?: string;
   installerPhone?: string;

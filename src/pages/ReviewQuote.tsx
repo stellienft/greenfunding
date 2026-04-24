@@ -71,8 +71,8 @@ interface QuoteData {
   system_size: string | null;
   project_cost: number;
   asset_names: string[];
-  term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced: number }>;
-  custom_term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced?: number }> | null;
+  term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced: number; costPerKwhCents?: number }>;
+  custom_term_options: Array<{ years: number; monthlyPayment: number; interestRate: number; totalFinanced?: number; costPerKwhCents?: number }> | null;
   admin_review_status: string | null;
   payment_timing: string;
   calculator_type: string;
@@ -322,13 +322,17 @@ export function ReviewQuote() {
   const hasElectricityBillData = !!(quote.current_electricity_bill && quote.current_electricity_bill > 0 && quote.anticipated_electricity_bill_with_solar !== undefined && quote.anticipated_electricity_bill_with_solar !== null);
   const showSavingsChart = (hasSolar && effectiveEnergySavings > 0) || (isDecarbOrBuilding && hasElectricityBillData);
 
-  const roiMetrics = hasElectricityBillData && firstTerm
+  const selectedOrFirstTerm = selectedTermYears != null
+    ? sortedTerms.find(t => t.years === selectedTermYears) ?? firstTerm
+    : firstTerm;
+
+  const roiMetrics = hasElectricityBillData && selectedOrFirstTerm
     ? calcSolarROI(
         projectCost,
         quote.current_electricity_bill!,
         quote.anticipated_electricity_bill_with_solar!,
-        firstTerm.years,
-        firstTerm.monthlyPayment * 12
+        selectedOrFirstTerm.years,
+        selectedOrFirstTerm.monthlyPayment * 12
       )
     : null;
 
@@ -456,7 +460,7 @@ export function ReviewQuote() {
                 className={`px-8 py-6 border-b border-gray-100 transition-all duration-300 ${termHighlight ? 'ring-2 ring-inset ring-[#28AA48] bg-[#28AA48]/5 rounded-xl' : ''}`}
               >
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Payment Options</p>
-                <p className="text-sm text-gray-500 mb-4">Select the loan term you'd like to proceed with.</p>
+                <p className="text-sm text-gray-500 mb-4">Select the loan term to proceed with.</p>
                 {termHighlight && (
                   <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium">
                     <span>Please select a loan term below before approving.</span>
@@ -490,13 +494,20 @@ export function ReviewQuote() {
                           <div className={`font-bold text-base ${isSelected ? 'text-[#28AA48]' : 'text-[#3A475B]'}`}>
                             {formatCurrencyDecimals(term.monthlyPayment)}<span className="text-xs font-normal text-gray-400">/mo</span>
                           </div>
-                          <div className="text-xs text-gray-400">Ex. GST</div>
+                          {hasSolar && term.costPerKwhCents != null && (
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              ~<span className="font-semibold text-[#3A475B]">{term.costPerKwhCents.toFixed(2)}¢</span> per kWh
+                            </div>
+                          )}
                         </div>
                       </button>
                     );
                   })}
                 </div>
-                <p className="text-xs text-gray-400 mt-3">GST applies to each payment. Your selected term will be recorded when you approve this proposal.</p>
+                <p className="text-xs text-gray-400 mt-3">* Quote valid for 30 days from {quoteDate}.</p>
+                {hasSolar && (
+                  <p className="text-xs text-gray-400 mt-1">* This calculation shows equivalent cents per kWh for comparison purposes only. Actual billing is based on fixed monthly installments, not per-kWh usage.</p>
+                )}
               </div>
             )}
 
