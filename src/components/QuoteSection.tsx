@@ -546,7 +546,7 @@ export function QuoteSection({
               ) : selectedTerm !== null && selectedTerm !== undefined ? (
                 <>
                   <Send className="w-4 h-4" />
-                  Generate Proposal
+                  {projectCost >= 1000000 ? 'Generate Proposal and Get Better Rates' : 'Generate Proposal'}
                 </>
               ) : (
                 <>
