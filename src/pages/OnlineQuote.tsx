@@ -637,7 +637,7 @@ export function OnlineQuote() {
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 mb-4">
                   <p className="text-xs text-gray-500 mb-0.5">Sending to</p>
-                  <p className="font-semibold text-[#3A475B] text-sm">{displayPreparedFor}</p>
+                  <p className="font-semibold text-[#3A475B] text-sm">{clientPersonName || clientName}</p>
                   <p className="text-sm text-gray-600">{clientEmail}</p>
                 </div>
                 <p className="text-xs text-gray-500 mb-4">The client will receive a unique link with a secure access code to review and approve the proposal online.</p>
