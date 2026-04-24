@@ -86,67 +86,18 @@ function AddressAutocomplete({
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
-          format: 'json',
-          countrycodes: 'au',
-          limit: '10',
-          addressdetails: '1',
-          dedupe: '1',
-          'accept-language': 'en',
-          q: v,
-        });
+        const params = new URLSearchParams({ q: v });
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?${params}`,
-          { headers: { 'Accept-Language': 'en', 'User-Agent': 'GreenFundingPortal/1.0' } }
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/address-lookup?${params}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+          }
         );
         const data = await res.json();
-        const seen = new Set<string>();
-        const results: string[] = data
-          .map((d: any) => {
-            const a = d.address || {};
-            const parts: string[] = [];
-
-            // Street-level address
-            if (a.house_number && a.road) {
-              parts.push(`${a.house_number} ${a.road}`);
-            } else if (a.road) {
-              parts.push(a.road);
-            } else if (a.amenity || a.building || a.shop || a.tourism || a.leisure) {
-              // Named place (business, landmark, etc.)
-              parts.push(a.amenity || a.building || a.shop || a.tourism || a.leisure);
-            }
-
-            // Suburb / locality
-            const suburb = a.suburb || a.neighbourhood || a.quarter || a.hamlet || a.locality;
-            if (suburb) parts.push(suburb);
-
-            // City / town / village
-            const city = a.city || a.town || a.village || a.municipality || a.county;
-            if (city && city !== suburb) parts.push(city);
-
-            // State abbreviation map
-            const stateAbbr: Record<string, string> = {
-              'New South Wales': 'NSW', 'Victoria': 'VIC', 'Queensland': 'QLD',
-              'South Australia': 'SA', 'Western Australia': 'WA', 'Tasmania': 'TAS',
-              'Australian Capital Territory': 'ACT', 'Northern Territory': 'NT',
-            };
-            if (a.state) parts.push(stateAbbr[a.state] || a.state);
-            if (a.postcode) parts.push(a.postcode);
-
-            // Fall back to Nominatim display_name stripped of country
-            if (parts.length < 2) {
-              return d.display_name
-                .replace(/,\s*Australia$/, '')
-                .replace(/,\s*Australia,/, ',')
-                .trim();
-            }
-            return parts.join(', ');
-          })
-          .filter((s: string) => {
-            if (seen.has(s)) return false;
-            seen.add(s);
-            return true;
-          });
+        const results: string[] = data.results || [];
         setSuggestions(results);
         setOpen(results.length > 0);
       } catch {
