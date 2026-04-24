@@ -157,6 +157,8 @@ export function OnlineQuote() {
     siteAddress,
   } = quoteData;
 
+  const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
+
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendingQuote, setSendingQuote] = useState(false);
   const [quoteSent, setQuoteSent] = useState(false);
@@ -169,8 +171,6 @@ export function OnlineQuote() {
 
   const displaySiteAddress = siteAddress || clientAddress;
   const displayPreparedFor = entityName || clientName;
-
-  const sortedTerms = [...termOptions].sort((a, b) => a.years - b.years);
   const firstTerm = sortedTerms[0];
 
   const hasSolar = !!(annualSolarGenerationKwh && annualSolarGenerationKwh > 0);
