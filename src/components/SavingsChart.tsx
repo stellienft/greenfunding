@@ -96,7 +96,7 @@ export function SavingsChart({ currentElectricityBill, anticipatedElectricityBil
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div className="mb-5">
-        <h3 className="text-xl font-bold text-[#3A475B] mb-1">Energy Savings</h3>
+        <h3 className="text-xl font-bold text-[#3A475B] mb-1">{isDecarbOrBuilding ? 'Energy Savings' : 'Savings Thanks to Solar'}</h3>
         <p className="text-sm text-gray-500">See how your electricity savings compare to your annual payments year by year</p>
       </div>
 
