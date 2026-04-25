@@ -7,9 +7,14 @@ import { supabase } from '../lib/supabase';
 import {
   FileText, TrendingUp, ArrowRight,
   DollarSign, Tag, MapPin, Calculator, Users, CheckCircle2,
-  ChevronRight, Clock, Zap
+  ChevronRight, Clock, Zap, Bell, Settings
 } from 'lucide-react';
 import { InstallerEmailTemplates } from '../components/installer/EmailTemplates';
+import { NotificationsPanel } from '../components/installer/NotificationsPanel';
+import { NotificationSettings } from '../components/installer/NotificationSettings';
+import { useNotifications } from '../context/NotificationsContext';
+
+type DashTab = 'home' | 'notifications' | 'notification-settings';
 
 interface QuoteSummary {
   id: string;
@@ -85,6 +90,8 @@ export function InstallerDashboard() {
   const navigate = useNavigate();
   const { installerProfile } = useAuth();
   const { updateState, resetState } = useApp();
+  const { unreadCount } = useNotifications();
+  const [activeTab, setActiveTab] = useState<DashTab>('home');
   const [recentQuotes, setRecentQuotes] = useState<QuoteSummary[]>([]);
   const [acceptedQuotes, setAcceptedQuotes] = useState<QuoteSummary[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyCount[]>([]);
@@ -225,6 +232,27 @@ export function InstallerDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {/* Tab switcher */}
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mr-1">
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'home' ? 'bg-white text-[#1e2d3d] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${activeTab === 'notifications' || activeTab === 'notification-settings' ? 'bg-white text-[#1e2d3d] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <Bell className="w-3.5 h-3.5" />
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#28AA48] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </div>
             {calculators.map(calc => {
               const Icon = calc.icon;
               return (
@@ -246,6 +274,8 @@ export function InstallerDashboard() {
             })}
           </div>
         </div>
+
+        {activeTab === 'home' && <>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-3 gap-4">
@@ -528,6 +558,50 @@ export function InstallerDashboard() {
         </div>
 
         <InstallerEmailTemplates />
+        </>}
+
+        {/* Notifications tab */}
+        {activeTab === 'notifications' && (
+          <div>
+            <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-3">
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`pb-1 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'notifications' ? 'text-[#28AA48] border-[#28AA48]' : 'text-gray-400 border-transparent hover:text-gray-600'}`}
+              >
+                Inbox
+              </button>
+              <button
+                onClick={() => setActiveTab('notification-settings')}
+                className="ml-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                Settings
+              </button>
+            </div>
+            <NotificationsPanel />
+          </div>
+        )}
+
+        {activeTab === 'notification-settings' && (
+          <div>
+            <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-3">
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className="pb-1 text-sm font-semibold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors"
+              >
+                Inbox
+              </button>
+              <button
+                onClick={() => setActiveTab('notification-settings')}
+                className="flex items-center gap-1.5 ml-auto text-xs text-[#28AA48] font-semibold"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                Settings
+              </button>
+            </div>
+            <NotificationSettings />
+          </div>
+        )}
       </div>
     </InstallerLayout>
   );

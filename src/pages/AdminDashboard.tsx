@@ -17,15 +17,16 @@ import { AcceptedQuotes } from '../components/admin/AcceptedQuotes';
 import { LargeProposals } from '../components/admin/LargeProposals';
 import { AnalyticsDashboard } from '../components/admin/analytics/AnalyticsDashboard';
 import { PlatformDashboard } from '../components/admin/PlatformDashboard';
+import { AdminNotificationsPanel } from '../components/admin/AdminNotifications';
 import { Step1 } from './Step1';
 import { ServicedRentalStep1 } from './ServicedRentalStep1';
 import { Step3 } from './Step3';
 import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
-import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare, TrendingUp } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare, TrendingUp, Bell } from 'lucide-react';
 
 type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
-type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'accepted-quotes' | 'large-proposals' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics';
+type Tab = 'dashboard' | 'config' | 'assets' | 'documents' | 'quotes' | 'accepted-quotes' | 'large-proposals' | 'calculator' | 'users' | 'site' | 'email' | 'account' | 'analytics' | 'notifications';
 
 const NAV_GROUPS = [
   {
@@ -68,6 +69,7 @@ const NAV_GROUPS = [
   {
     label: 'Account',
     items: [
+      { id: 'notifications' as Tab, label: 'Notifications', icon: Bell },
       { id: 'account' as Tab, label: 'My Account', icon: UserCircle },
     ],
   },
@@ -81,6 +83,7 @@ export function AdminDashboard() {
   const [config, setConfig] = useState<CalculatorConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifUnread, setNotifUnread] = useState(0);
 
   useEffect(() => {
     if (!admin) {
@@ -170,7 +173,12 @@ export function AdminDashboard() {
                   >
                     <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-[#28AA48]' : 'text-gray-400'}`} />
                     <span className="flex-1 text-left">{item.label}</span>
-                    {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#28AA48]" />}
+                    {item.id === 'notifications' && notifUnread > 0 && (
+                      <span className="w-5 h-5 bg-[#28AA48] text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                        {notifUnread > 9 ? '9+' : notifUnread}
+                      </span>
+                    )}
+                    {isActive && (item.id !== 'notifications' || notifUnread === 0) && <ChevronRight className="w-3.5 h-3.5 text-[#28AA48]" />}
                   </button>
                 );
               })}
@@ -263,6 +271,7 @@ export function AdminDashboard() {
                   </AdminCalculatorProvider>
                 )}
                 {activeTab === 'account' && <AdminAccount />}
+                {activeTab === 'notifications' && <AdminNotificationsPanel onUnreadChange={setNotifUnread} />}
               </>
             )}
           </main>

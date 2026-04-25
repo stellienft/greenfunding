@@ -232,7 +232,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: quote, error: fetchError } = await supabase
       .from('sent_quotes')
-      .select('id, quote_number, recipient_name, recipient_company, client_person_name, recipient_email, project_cost, upload_token, accepted_at')
+      .select('id, quote_number, recipient_name, recipient_company, client_person_name, recipient_email, project_cost, upload_token, accepted_at, installer_id')
       .eq('id', quoteId)
       .maybeSingle();
 
@@ -268,6 +268,56 @@ Deno.serve(async (req: Request) => {
     const uploadUrl = `${appUrl}/upload-documents/${uploadToken}`;
     const quoteNumber = '#' + String(quote.quote_number).padStart(6, '0');
     const clientName = quote.client_person_name || quote.recipient_name || 'Valued Client';
+    const clientCompany = quote.recipient_company || clientName;
+
+    // Create platform notifications
+    EdgeRuntime.waitUntil((async () => {
+      try {
+        const notifRows: Array<{
+          recipient_type: string;
+          recipient_id: string;
+          type: string;
+          title: string;
+          body: string;
+          quote_id: string;
+        }> = [];
+
+        // Notify the installer
+        if (quote.installer_id) {
+          notifRows.push({
+            recipient_type: 'installer',
+            recipient_id: quote.installer_id,
+            type: 'quote_accepted',
+            title: `${clientCompany} accepted proposal ${quoteNumber}`,
+            body: `The client has accepted the finance proposal. Document upload link has been sent.`,
+            quote_id: quoteId,
+          });
+        }
+
+        // Notify all admins
+        const { data: admins } = await supabase
+          .from('admin_users')
+          .select('id');
+        if (admins) {
+          for (const admin of admins) {
+            notifRows.push({
+              recipient_type: 'admin',
+              recipient_id: admin.id,
+              type: 'quote_accepted',
+              title: `${clientCompany} accepted proposal ${quoteNumber}`,
+              body: `Submitted by installer. Document upload link has been sent to client.`,
+              quote_id: quoteId,
+            });
+          }
+        }
+
+        if (notifRows.length > 0) {
+          await supabase.from('notifications').insert(notifRows);
+        }
+      } catch (e) {
+        console.error('Failed to create notifications:', e);
+      }
+    })());
 
     const resendApiKey = await getResendApiKey(supabase);
 

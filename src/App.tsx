@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AdminProvider, useAdmin } from './context/AdminContext';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationsProvider } from './context/NotificationsContext';
 import { Step1 } from './pages/Step1';
 import { ServicedRentalStep1 } from './pages/ServicedRentalStep1';
 import { Step3 } from './pages/Step3';
@@ -118,6 +119,7 @@ function App() {
     <BrowserRouter>
       <AdminProvider>
         <AuthProvider>
+          <NotificationsProvider>
           <AppProvider>
             <SiteMetaInit />
             <AdminInit />
@@ -220,6 +222,7 @@ function App() {
               />
             </Routes>
           </AppProvider>
+          </NotificationsProvider>
         </AuthProvider>
       </AdminProvider>
     </BrowserRouter>
