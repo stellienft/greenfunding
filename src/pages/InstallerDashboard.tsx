@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { InstallerLayout } from '../components/InstallerLayout';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -88,10 +88,12 @@ function ActivityChart({ data }: { data: MonthlyCount[] }) {
 
 export function InstallerDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { installerProfile } = useAuth();
   const { updateState, resetState } = useApp();
   const { unreadCount } = useNotifications();
-  const [activeTab, setActiveTab] = useState<DashTab>('home');
+  const activeTab = (searchParams.get('tab') as DashTab) || 'home';
+  const setActiveTab = (tab: DashTab) => setSearchParams(tab === 'home' ? {} : { tab });
   const [recentQuotes, setRecentQuotes] = useState<QuoteSummary[]>([]);
   const [acceptedQuotes, setAcceptedQuotes] = useState<QuoteSummary[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyCount[]>([]);
@@ -232,27 +234,6 @@ export function InstallerDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {/* Tab switcher */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mr-1">
-              <button
-                onClick={() => setActiveTab('home')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeTab === 'home' ? 'bg-white text-[#1e2d3d] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`relative px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${activeTab === 'notifications' || activeTab === 'notification-settings' ? 'bg-white text-[#1e2d3d] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                <Bell className="w-3.5 h-3.5" />
-                Notifications
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#28AA48] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
             {calculators.map(calc => {
               const Icon = calc.icon;
               return (

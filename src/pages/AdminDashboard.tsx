@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAdmin } from '../context/AdminContext';
@@ -22,7 +22,7 @@ import { Step1 } from './Step1';
 import { ServicedRentalStep1 } from './ServicedRentalStep1';
 import { Step3 } from './Step3';
 import { AdminCalculatorProvider } from '../context/CalculatorLayoutContext';
-import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, Menu, BarChart2, LayoutDashboard, CheckSquare, TrendingUp, Bell } from 'lucide-react';
+import { LogOut, Settings, Package, FileText, Calculator, Users, Globe, Mail, CircleUser as UserCircle, Send, ChevronRight, ChevronDown, Menu, BarChart2, LayoutDashboard, CheckSquare, TrendingUp, Bell } from 'lucide-react';
 
 type CalcView = 'picker' | 'step1' | 'serviced-rental-step1' | 'step3';
 
@@ -66,13 +66,6 @@ const NAV_GROUPS = [
       { id: 'email' as Tab, label: 'Email Templates', icon: Mail },
     ],
   },
-  {
-    label: 'Account',
-    items: [
-      { id: 'notifications' as Tab, label: 'Notifications', icon: Bell },
-      { id: 'account' as Tab, label: 'My Account', icon: UserCircle },
-    ],
-  },
 ];
 
 export function AdminDashboard() {
@@ -84,6 +77,18 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifUnread, setNotifUnread] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   useEffect(() => {
     if (!admin) {
@@ -116,7 +121,9 @@ export function AdminDashboard() {
     window.location.href = '/admin/login';
   };
 
-  const activeLabel = NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeTab)?.label ?? '';
+  const activeLabel = activeTab === 'notifications' ? 'Notifications'
+    : activeTab === 'account' ? 'My Account'
+    : NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeTab)?.label ?? '';
 
   const handleAdminCalcNavigate = (path: string) => {
     if (path.includes('step1') && path.includes('serviced-rental')) {
@@ -231,13 +238,67 @@ export function AdminDashboard() {
             <div>
               <h2 className="text-lg font-bold text-[#3A475B]">{activeLabel}</h2>
             </div>
-            <button
-              onClick={handleLogout}
-              className="ml-auto flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
+
+            {/* Right-side header actions */}
+            <div className="ml-auto flex items-center gap-1">
+              {/* Notification bell */}
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                title="Notifications"
+              >
+                <Bell className="w-5 h-5" />
+                {notifUnread > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-[#28AA48] text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                    {notifUnread > 9 ? '9+' : notifUnread}
+                  </span>
+                )}
+              </button>
+
+              {/* Admin user menu */}
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(v => !v)}
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-7 h-7 bg-[#3A475B] rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-[11px] font-bold text-white">
+                      {admin.email.slice(0, 1).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="hidden sm:block text-sm font-medium text-gray-700 max-w-[140px] truncate">
+                    {admin.email.split('@')[0]}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden sm:block" />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50">
+                    <div className="px-3 py-2.5 border-b border-gray-100 mb-1">
+                      <p className="text-xs font-semibold text-[#1e2d3d] truncate">{admin.email}</p>
+                      {admin.is_super_admin && (
+                        <p className="text-[10px] text-[#28AA48] font-semibold mt-0.5">Super Admin</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => { setUserMenuOpen(false); setActiveTab('account'); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <UserCircle className="w-4 h-4 text-gray-400" />
+                      My Account
+                    </button>
+                    <div className="my-1 border-t border-gray-100" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </header>
 
           <main className="flex-1 p-4 lg:p-8 overflow-auto">
